@@ -1,6 +1,5 @@
-import riot from 'riot'
-import './graph.tag'
+// import 'skatejs-web-components';
+import { define, h, prop } from 'skatejs';
+import { graphViewer } from './graph-viewer.js'
 
-riot.mount('graph')
-
-riot.route.start(true)
+define('graph-viewer', graphViewer);

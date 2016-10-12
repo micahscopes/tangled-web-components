@@ -13,7 +13,9 @@ import cmb from "js-combinatorics"
   <svg name="svg">
     <circle cx="300" cy="100" r="20"></circle>
   </svg>
-  <yield/>
+  <div name="nodes">
+    <yield/>
+  </div>
   <div>hey</div>
   <script>
     this.mixin(Animate);
@@ -21,18 +23,13 @@ import cmb from "js-combinatorics"
     var self = this;
 
     var drawEdge = line()
-        // .x(function(d){
-        //   console.log(d);
-        // })
         .x( (d) => d.offsetLeft )
         .y( (d) => d.offsetTop );
 
     self.updateEdges = function(doms){
-      var nodes = select(self.root).selectAll('span').nodes()
-      // console.log(nodes)
-      // console.log(select(self.root).selectAll('span'))
+      var nodes = select(self.nodes).selectAll('*').nodes()
+      console.log(nodes)
       var pairs = cmb.combination(nodes,2).toArray()
-      console.log(pairs)
       var edgeLines = select(self.root).select("svg").selectAll("path")
           .data(pairs)
       edgeLines.exit().remove();
