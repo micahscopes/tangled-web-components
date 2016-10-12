@@ -20,10 +20,13 @@ text {
 
 </style>
 <svg width="960" height="500"></svg>
+<div id="nodes">
+
+</div>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
 
-var alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
+var alphabet = [5,10,15,20,25,30,35,40,45,50];
 
 var svg = d3.select("svg"),
     width = +svg.attr("width"),
@@ -32,7 +35,7 @@ var svg = d3.select("svg"),
 
 function update(data) {
   var t = d3.transition()
-      .duration(750);
+      .duration(1000);
 
   // JOIN new data with old elements.
   var text = g.selectAll("text")
@@ -41,9 +44,6 @@ function update(data) {
   // EXIT old elements not present in new data.
   text.exit()
       .attr("class", "exit")
-    .transition(t)
-      .attr("y", 60)
-      .style("fill-opacity", 1e-6)
       .remove();
 
   // UPDATE old elements present in new data.
@@ -51,14 +51,14 @@ function update(data) {
       .attr("y", 0)
       .style("fill-opacity", 1)
     .transition(t)
-      .attr("x", function(d, i) { return i * 32; });
+      .attr("x", function(d, i) { return i * 64; });
 
   // ENTER new elements present in new data.
   text.enter().append("text")
       .attr("class", "enter")
       .attr("dy", ".35em")
       .attr("y", -60)
-      .attr("x", function(d, i) { return i * 32; })
+      .attr("x", function(d, i) { return i * 64; })
       .style("fill-opacity", 1e-6)
       .text(function(d) { return d; })
     .transition(t)

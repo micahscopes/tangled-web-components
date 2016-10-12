@@ -20,30 +20,33 @@ import cmb from "js-combinatorics"
     const name = 'nodes';
     var self = this;
 
-    self.edges = function() {
-      var coords = []
-      self.nodes.each(function(){
-        // console.log(this.offsetLeft)
-        coords.push([this.offsetLeft,this.offsetTop]);
-      })
-      return cmb.combination(coords,2).toArray()
-    }
     var drawEdge = line()
-        .x( (d) => d[0] )
-        .y( (d) => d[1] );
+        // .x(function(d){
+        //   console.log(d);
+        // })
+        .x( (d) => d.offsetLeft )
+        .y( (d) => d.offsetTop );
 
-    var updateEdgeLines = function(){
-      self.edgeLines.merge().attr('d', drawEdge )
+    self.updateEdges = function(doms){
+      var nodes = select(self.root).selectAll('span').nodes()
+      // console.log(nodes)
+      // console.log(select(self.root).selectAll('span'))
+      var pairs = cmb.combination(nodes,2).toArray()
+      console.log(pairs)
+      var edgeLines = select(self.root).select("svg").selectAll("path")
+          .data(pairs)
+      edgeLines.exit().remove();
+      edgeLines.enter().append("path");
+    }
+
+    self.updateEdgeSegments = function(){
+      select(self.root).select("svg").selectAll("path")
+          .attr("d",drawEdge)
     }
 
     this.on('mount',()=>{
-      self.svg = select(self.root).selectAll("svg")
-      self.nodes = select(self.root).selectAll('span')
-      self.edgeLines = self.svg.selectAll("path").data(self.edges)
-      self.edgeLines.exit().remove();
-      self.edgeLines = self.edgeLines.enter().append("path");
-
-      this.on('animate',updateEdgeLines)
+      self.updateEdges()
+      this.on('animate',self.updateEdgeSegments)
     });
 
   </script>
