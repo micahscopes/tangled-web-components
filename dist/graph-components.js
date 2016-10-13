@@ -2355,7 +2355,7 @@
 	  throw new Error('Skate requires native custom element support or a polyfill.');
 	}
 
-	var Event$1 = function (TheEvent) {
+	var Event = function (TheEvent) {
 	  if (TheEvent) {
 	    try {
 	      new TheEvent('emit-init'); // eslint-disable-line no-new
@@ -3582,12 +3582,12 @@ var require$$2$2 = Object.freeze({
 	var subscribeToResult$$1 = subscribeToResult.subscribeToResult;
 
 
-	var require$$0$7 = Object.freeze({
+	var require$$0$8 = Object.freeze({
 	    default: subscribeToResult$1,
 	    subscribeToResult: subscribeToResult$$1
 	});
 
-	var debounce$1 = createCommonjsModule(function (module, exports) {
+	var debounce$3 = createCommonjsModule(function (module, exports) {
 	    "use strict";
 
 	    var __extends = commonjsGlobal && commonjsGlobal.__extends || function (d, b) {
@@ -3599,7 +3599,7 @@ var require$$2$2 = Object.freeze({
 	        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	    };
 	    var OuterSubscriber_1 = interopDefault(require$$1$2);
-	    var subscribeToResult_1 = interopDefault(require$$0$7);
+	    var subscribeToResult_1 = interopDefault(require$$0$8);
 	    /**
 	     * Emits a value from the source Observable only after a particular time span
 	     * determined by another Observable has passed without another source emission.
@@ -3719,8 +3719,24 @@ var require$$2$2 = Object.freeze({
 	    }(OuterSubscriber_1.OuterSubscriber);
 	    });
 
+	var debounce$4 = interopDefault(debounce$3);
+	var debounce$$1 = debounce$3.debounce;
+
+
+	var require$$0$7 = Object.freeze({
+	    default: debounce$4,
+	    debounce: debounce$$1
+	});
+
+	var debounce$1 = createCommonjsModule(function (module) {
+	  "use strict";
+
+	  var Observable_1 = interopDefault(require$$3);
+	  var debounce_1 = interopDefault(require$$0$7);
+	  Observable_1.Observable.prototype.debounce = debounce_1.debounce;
+	  });
+
 	interopDefault(debounce$1);
-	var debounce$$1 = debounce$1.debounce;
 
 	var xhtml = "http://www.w3.org/1999/xhtml";
 
@@ -5990,25 +6006,21 @@ var require$$2$2 = Object.freeze({
 	  }
 	};
 
-	var updateEdgeSegments = function updateEdgeSegments(elem) {
-	  console.log(shadowSVGSelector(elem));
-	  console.log(select(elem.shadowRoot.querySelector("svg")));
-	  shadowSVGSelector(elem).selectAll("path").attr("d", drawEdge);
-	};
-
 	var updateNodes = function updateNodes(elem) {
 	  var nodes = select(elem).selectAll("*").nodes();
-
+	  console.log("updateNodes", nodes);
 	  nodes.forEach(function (node) {
 	    var positionChanges = fromEvent$$1(node, "moved");
-	    var observer = new MutationObserver(function () {
-	      elem.dispatch(new Event('moved'));
-	    });
-	    observer.observe(node, {
+	    elem.positionObserver.observe(node, {
 	      attributes: true,
 	      attributeFilter: ['offsetLeft', 'offsetTop']
 	    });
-	    positionChanges.debounce(500).subscribe(updateEdgeSegments(node));
+	    positionChanges.debounce(500).subscribe(function () {
+	      updateEdgeSegments(node);
+	    });
+	    positionChanges.subscribe(function () {
+	      console.log(node, "moved");
+	    });
 	  });
 	  if (nodes.length < 2) {
 	    return;
@@ -6029,6 +6041,10 @@ var require$$2$2 = Object.freeze({
 	  attached: function attached(elem) {
 	    elem.updateNodes = updateNodes;
 	    elem.updateEdgeSegments = updateEdgeSegments;
+	    console.log("graph-viewer attached");
+	    elem.positionObserver = new MutationObserver(function (mutation) {
+	      console.log(mutation);
+	    });
 	    // elem[sym] = setInterval(() => ++elem.count, 1000);
 	    // elem.graphNodes = () => {
 	    //   console.log(elem[mainSlot]);
@@ -6045,7 +6061,7 @@ var require$$2$2 = Object.freeze({
 	    updateEdgeSegments(elem);
 	    return [h('svg', { id: "abc" }), h('slot', {
 	      onSlotchange: function onSlotchange(e) {
-	        updateNodes(elem);console.log("slot change", e);
+	        updateNodes(elem); /* console.log("slot change",e) */
 	      }
 	    }), h("style", css)];
 	  }

@@ -3,9 +3,16 @@
   <title>riot graphs!</title>
 
   <body>
+    <style>
+      #special {
+        position: relative;
+        left: 300px;
+        top: 400px;
+      }
+    </style>
 
     <graph-viewer>
-    <puppy-dog></puppy-dog>
+    <puppy-dog id="special"></puppy-dog>
     <puppy-dog></puppy-dog>
     <puppy-dog></puppy-dog>
 
@@ -13,6 +20,8 @@
 
   <script type="text/javascript" src="dist/graph-components.js"></script>
   <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script>window.specialPuppy = document.querySelector("#special")</script>
+
   </body>
 
 </html>

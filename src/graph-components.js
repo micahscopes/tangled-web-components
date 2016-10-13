@@ -1,6 +1,6 @@
 // import {math} from 'mathjs'
 import {fromEvent} from 'rxjs/observable/fromEvent';
-import 'rxjs/operator/debounce';
+import 'rxjs/add/operator/debounce';
 
 import {
   event,
@@ -33,24 +33,23 @@ var shadowSVGSelector = (elem) => { var sdw = elem.shadowRoot;
                                        else { return select() }
 };
 
-var updateEdgeSegments = function(elem){
-  console.log(shadowSVGSelector(elem))
-  console.log(select(elem.shadowRoot.querySelector("svg")))
+var animate = (elem) => {function(elem){
   shadowSVGSelector(elem).selectAll("path")
       .attr("d",drawEdge)
-}
+  window.requestAnimationFrame( animate(elem) );
+}}
 
 var updateNodes = function(elem){
   var nodes = select(elem).selectAll("*").nodes()
-
+  console.log("updateNodes",nodes)
   nodes.forEach(function(node){
     var positionChanges = fromEvent(node,"moved");
-    var observer = new MutationObserver(()=>{ elem.dispatch(new Event('moved')) });
-      observer.observe(node, {
-          attributes: true,
-          attributeFilter: ['offsetLeft','offsetTop'],
-      });
-    positionChanges.debounce(500).subscribe(updateEdgeSegments(node));
+    elem.positionObserver.observe(node, {
+        attributes: true,
+        attributeFilter: ['offsetLeft','offsetTop'],
+    });
+    positionChanges.debounce(500).subscribe(() => {updateEdgeSegments(node)});
+    positionChanges.subscribe(() => {console.log(node,"moved")});
   });
   if (nodes.length < 2) { return; }
   var pairs = cmb.combination(nodes,2).toArray()
@@ -72,6 +71,8 @@ define('graph-viewer',
   attached(elem) {
     elem.updateNodes = updateNodes;
     elem.updateEdgeSegments = updateEdgeSegments;
+    console.log("graph-viewer attached")
+    elem.positionObserver = new MutationObserver(function(mutation){ console.log(mutation) });
     // elem[sym] = setInterval(() => ++elem.count, 1000);
     // elem.graphNodes = () => {
     //   console.log(elem[mainSlot]);
@@ -89,7 +90,7 @@ define('graph-viewer',
     return [
       h('svg',{id:"abc"}),
       h('slot', {
-        onSlotchange: (e) => {updateNodes(elem); console.log("slot change",e)}
+        onSlotchange: (e) => {updateNodes(elem); /* console.log("slot change",e) */}
       }),
       h("style",css )
     ]
