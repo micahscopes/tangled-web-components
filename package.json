@@ -8,14 +8,20 @@
     "watch": "chokidar 'src/**' -c 'npm run build'"
   },
   "dependencies": {
+    "@reactivex/rxjs": "^5.0.0-rc.1",
     "d3": "^4.2.7",
     "d3-array": "^1.0.1",
     "d3-selection": "^1.0.2",
     "d3-shape": "^1.0.3",
     "d3-svg": "^0.2.0",
     "js-combinatorics": "^0.5.2",
+    "kefir": "^3.5.2",
+    "kefir-observable-selector": "^0.2.1",
+    "mathjs": "^3.5.3",
     "requirejs": "^2.2.0",
-    "riot": "^2.6.3",
+    "rx-dom": "^7.0.3",
+    "rxjs": "^5.0.0-rc.1",
+    "rxjs-es": "^5.0.0-beta.12",
     "skatejs": "^3.1.0",
     "skatejs-web-components": "^1.2.1"
   },

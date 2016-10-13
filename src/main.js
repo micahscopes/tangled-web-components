@@ -1,5 +1,10 @@
 // import 'skatejs-web-components';
 import { define, h, prop } from 'skatejs';
-import { graphViewer } from './graph-viewer.js'
+import './graph-components.js'
 
-define('graph-viewer', graphViewer);
+define("puppy-dog",{
+  render: () => h("img",{
+    src: "http://i.imgur.com/B2YwP9u.gif",
+    style: "height: 100px; border: solid limegreen 4px;"
+  })
+})
