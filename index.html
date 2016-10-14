@@ -5,10 +5,24 @@
   <body>
     <style>
       #special {
-        position: relative;
         left: 300px;
-        top: 400px;
+        top: 200px;
+        animation: special 1.5s alternate infinite ease-in-out;
       }
+      @keyframes special {
+            0% {left: 100px}
+            100%{left: 300px}
+        }
+      puppy-dog {
+        position: relative;
+        margin: 30px;
+        animation: ordinary 2s alternate infinite ease-in-out;
+      }
+      @keyframes ordinary {
+            0% {left: 200px;  top: 0px}
+            100%{left: 100px; top: 42px}
+        }
+
     </style>
 
     <graph-viewer>
