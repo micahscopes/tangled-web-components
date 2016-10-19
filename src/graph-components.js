@@ -6,7 +6,7 @@ import { line } from "d3-shape"
 import cmb from "js-combinatorics"
 import { define, h, prop } from 'skatejs';
 import * as skate from 'skatejs';
-const sym = Symbol();
+import Kefir from 'kefir';
 
 var css=`
 path {stroke: #0f0; stroke-width:4px; fill:none}
@@ -17,53 +17,78 @@ svg {
   z-index: -1;
 }
 `
-
-var drawEdge = line()
+var svgEdge = line()
     .x( (d) => d.offsetLeft )
     .y( (d) => d.offsetTop );
-
 
 var shadowSVGSelector = (elem) => { var sdw = elem.shadowRoot;
                                     if(sdw) { return select(sdw.querySelector("svg")) }
                                        else { return select() }
 };
 
-var animate = (elem) => function(){
-  // a hack, i don't know how to listen for shadowDOM to be ready the first time...
-  var edgeLines = shadowSVGSelector(elem).selectAll("path")
-      .data(elem.pairs)
-  edgeLines.exit().remove();
-  edgeLines.enter().append("path");
-  edgeLines.attr("d",drawEdge);
-  setTimeout( () => { window.requestAnimationFrame( animate(elem) ) }, 1000/elem.fps );
-}
+const edges = Symbol()
+const animateCallback = Symbol();
+var graphEdgesPoly = {
+  redraw(elem){
+    var edgeLines = shadowSVGSelector(elem).selectAll("path")
+        .data(elem[edges])
+    edgeLines.exit().remove();
+    edgeLines.enter().append("path");
+    edgeLines.attr("d",svgEdge);
 
-var updateNodes = function(elem){
-  var nodes = select(elem).selectAll("*").nodes()
-  console.log("updateNodes",nodes)
-  if (nodes.length < 2) { return; }
-  elem.pairs = cmb.combination(nodes,2).toArray()
-}
-
-const mainSlot = Symbol();
-define('graph-viewer',
- {
+    // console.log("animate",elem[edges]);
+  },
+  edges(elem){
+    var nodes = select(elem.parentElement).selectAll("*").filter(() => !this.edges).nodes()
+    console.log("updateEdges",elem.parentElement)
+    if (nodes.length < 2) { return []; }
+    return cmb.combination(nodes,2).toArray()
+  },
    props: {
-     fps: { attribute: true, default: 60 }
+     nodeContainer: { attribute: true }
    },
    attached(elem) {
-    console.log("graph-viewer attached")
-    updateNodes(elem); // doesn't seem to be working
-    animate(elem)();
+    elem[edges] = this.edges(elem);
+    elem[animateCallback] = ()=>{this.redraw(elem)}
+    elem.parentElement.addEventListener('animate',elem[animateCallback])
+  },
+  detached(elem) {
+    elem.parentElement.removeEventListener('animate',elem[animateCallback])
   },
   attributeChanged(elem) {
-    updateNodes(elem); // doesn't seem to be working
+    elem[edges] = this.edges(elem);
   },
   render(elem) {
     return [
       h('svg',{id:"abc"}),
       h('slot', {
-        onSlotchange: (e) => {updateNodes(elem); /* console.log("slot change",e) */}
+        onSlotchange: (e) => {this.attributeChanged(elem); /* console.log("slot change",e) */}
+      }),
+      h("style",css )
+    ]
+  },
+};
+
+define('edges-all-pairs',graphEdgesPoly);
+
+const animate = function(elem){
+  elem.dispatchEvent(new Event('animate'));
+  setTimeout( () => { window.requestAnimationFrame( () => {animate(elem)} ) }, 1000/elem.fps );
+}
+
+define('graph-container',
+ {
+   props: {
+     fps: { attribute: true, default: 60 }
+   },
+   attached(elem) {
+     animate(elem);
+  },
+  attributeChanged(elem) {
+  },
+  render(elem) {
+    return [
+      h('slot', {
       }),
       h("style",css )
     ]
