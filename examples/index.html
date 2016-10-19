@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <title>riot graphs!</title>
+
+  <body>
+    <style>
+      #oso {left: 100px; top: 100px;}
+      #zoo {left: 200px; top: 800px;}
+      #fats {right: 200px; top: 0px;}
+
+      body {
+        background: url(smudgy4.png);
+        color: white;
+        overflow: scroll;
+      }
+
+      h1, h2 {
+        width: 100px;
+        height: 100px;
+        padding: 5px;
+        border: solid white 1px;
+        background-color: rgba(24,32,100,0.5);
+      }
+      #oso {
+        /*animation: wobble 1.5s alternate infinite ease-in-out;*/
+      }
+      @keyframes wobble {
+            0% {left: 100px}
+            100%{left: 300px}
+        }
+      puppy-dog {
+        position: absolute;
+        margin: 50px;
+        opacity: 0.4;
+      }
+
+
+      edges-all-pairs { --color: yellow; --thickness:2px; }
+    </style>
+
+    <graph-container>
+      <edges-all-pairs></edges-all-pairs>
+      <h1>a dog </h1>
+      <puppy-dog id="oso"></puppy-dog>
+      <puppy-dog id="zoo"></puppy-dog>
+      <puppy-dog id="fats"></puppy-dog>
+
+    </graph-container>
+
+  <script type="text/javascript" src="../dist/graph-components.js"></script>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script>window.specialPuppy = document.querySelector("#special")</script>
+
+  </body>
+
+</html>

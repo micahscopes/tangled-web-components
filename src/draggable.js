@@ -17,6 +17,7 @@ const preventDefault = (event) => { event.preventDefault(); }
 const drag = Symbol()
 
 export function startDragging(elem){
+  // console.log(elem.style.left,elem.style.top)
   elem.style.cursor = 'move'
   elem.style.userSelect = 'none'
 
@@ -34,8 +35,11 @@ export function startDragging(elem){
     return mouseMoves.takeUntilBy(mouseUps)
       .diff(eventsPositionDiff, downEvent);
   });
-
-  var position = moves.scan(applyMove, {x: 0, y: 0});
+  var rect = elem.getBoundingClientRect();
+  var currentPosition = { x: parseInt(rect.left),
+                      y: parseInt(rect.top) };
+                      // console.log(computedStyle);
+  var position = moves.scan(applyMove, currentPosition);
   position.onValue(drag);
 
   elem[stopDragging] = function (){

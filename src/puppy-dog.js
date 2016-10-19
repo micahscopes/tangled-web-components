@@ -19,7 +19,7 @@ define("puppy-dog",{
       startDragging(elem);
     },
     detached(elem){
-      stopDragging(elem);
+      // stopDragging(elem);
     },
     render(elem){
       return h("style",puppyStyle)
