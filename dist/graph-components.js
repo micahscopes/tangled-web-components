@@ -65,6 +65,2229 @@
 
 	babelHelpers;
 
+	var xhtml = "http://www.w3.org/1999/xhtml";
+
+	var namespaces = {
+	  svg: "http://www.w3.org/2000/svg",
+	  xhtml: xhtml,
+	  xlink: "http://www.w3.org/1999/xlink",
+	  xml: "http://www.w3.org/XML/1998/namespace",
+	  xmlns: "http://www.w3.org/2000/xmlns/"
+	};
+
+	function namespace (name) {
+	  var prefix = name += "",
+	      i = prefix.indexOf(":");
+	  if (i >= 0 && (prefix = name.slice(0, i)) !== "xmlns") name = name.slice(i + 1);
+	  return namespaces.hasOwnProperty(prefix) ? { space: namespaces[prefix], local: name } : name;
+	}
+
+	function creatorInherit(name) {
+	  return function () {
+	    var document = this.ownerDocument,
+	        uri = this.namespaceURI;
+	    return uri === xhtml && document.documentElement.namespaceURI === xhtml ? document.createElement(name) : document.createElementNS(uri, name);
+	  };
+	}
+
+	function creatorFixed(fullname) {
+	  return function () {
+	    return this.ownerDocument.createElementNS(fullname.space, fullname.local);
+	  };
+	}
+
+	function creator (name) {
+	  var fullname = namespace(name);
+	  return (fullname.local ? creatorFixed : creatorInherit)(fullname);
+	}
+
+	var matcher = function matcher(selector) {
+	  return function () {
+	    return this.matches(selector);
+	  };
+	};
+
+	if (typeof document !== "undefined") {
+	  var element = document.documentElement;
+	  if (!element.matches) {
+	    var vendorMatches = element.webkitMatchesSelector || element.msMatchesSelector || element.mozMatchesSelector || element.oMatchesSelector;
+	    matcher = function matcher(selector) {
+	      return function () {
+	        return vendorMatches.call(this, selector);
+	      };
+	    };
+	  }
+	}
+
+	var matcher$1 = matcher;
+
+	var filterEvents = {};
+
+	var event = null;
+
+	if (typeof document !== "undefined") {
+	  var element$1 = document.documentElement;
+	  if (!("onmouseenter" in element$1)) {
+	    filterEvents = { mouseenter: "mouseover", mouseleave: "mouseout" };
+	  }
+	}
+
+	function filterContextListener(listener, index, group) {
+	  listener = contextListener(listener, index, group);
+	  return function (event) {
+	    var related = event.relatedTarget;
+	    if (!related || related !== this && !(related.compareDocumentPosition(this) & 8)) {
+	      listener.call(this, event);
+	    }
+	  };
+	}
+
+	function contextListener(listener, index, group) {
+	  return function (event1) {
+	    var event0 = event; // Events can be reentrant (e.g., focus).
+	    event = event1;
+	    try {
+	      listener.call(this, this.__data__, index, group);
+	    } finally {
+	      event = event0;
+	    }
+	  };
+	}
+
+	function parseTypenames(typenames) {
+	  return typenames.trim().split(/^|\s+/).map(function (t) {
+	    var name = "",
+	        i = t.indexOf(".");
+	    if (i >= 0) name = t.slice(i + 1), t = t.slice(0, i);
+	    return { type: t, name: name };
+	  });
+	}
+
+	function onRemove(typename) {
+	  return function () {
+	    var on = this.__on;
+	    if (!on) return;
+	    for (var j = 0, i = -1, m = on.length, o; j < m; ++j) {
+	      if (o = on[j], (!typename.type || o.type === typename.type) && o.name === typename.name) {
+	        this.removeEventListener(o.type, o.listener, o.capture);
+	      } else {
+	        on[++i] = o;
+	      }
+	    }
+	    if (++i) on.length = i;else delete this.__on;
+	  };
+	}
+
+	function onAdd(typename, value, capture) {
+	  var wrap = filterEvents.hasOwnProperty(typename.type) ? filterContextListener : contextListener;
+	  return function (d, i, group) {
+	    var on = this.__on,
+	        o,
+	        listener = wrap(value, i, group);
+	    if (on) for (var j = 0, m = on.length; j < m; ++j) {
+	      if ((o = on[j]).type === typename.type && o.name === typename.name) {
+	        this.removeEventListener(o.type, o.listener, o.capture);
+	        this.addEventListener(o.type, o.listener = listener, o.capture = capture);
+	        o.value = value;
+	        return;
+	      }
+	    }
+	    this.addEventListener(typename.type, listener, capture);
+	    o = { type: typename.type, name: typename.name, value: value, listener: listener, capture: capture };
+	    if (!on) this.__on = [o];else on.push(o);
+	  };
+	}
+
+	function selection_on (typename, value, capture) {
+	  var typenames = parseTypenames(typename + ""),
+	      i,
+	      n = typenames.length,
+	      t;
+
+	  if (arguments.length < 2) {
+	    var on = this.node().__on;
+	    if (on) for (var j = 0, m = on.length, o; j < m; ++j) {
+	      for (i = 0, o = on[j]; i < n; ++i) {
+	        if ((t = typenames[i]).type === o.type && t.name === o.name) {
+	          return o.value;
+	        }
+	      }
+	    }
+	    return;
+	  }
+
+	  on = value ? onAdd : onRemove;
+	  if (capture == null) capture = false;
+	  for (i = 0; i < n; ++i) {
+	    this.each(on(typenames[i], value, capture));
+	  }return this;
+	}
+
+	function none() {}
+
+	function selector (selector) {
+	  return selector == null ? none : function () {
+	    return this.querySelector(selector);
+	  };
+	}
+
+	function selection_select (select) {
+	  if (typeof select !== "function") select = selector(select);
+
+	  for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
+	    for (var group = groups[j], n = group.length, subgroup = subgroups[j] = new Array(n), node, subnode, i = 0; i < n; ++i) {
+	      if ((node = group[i]) && (subnode = select.call(node, node.__data__, i, group))) {
+	        if ("__data__" in node) subnode.__data__ = node.__data__;
+	        subgroup[i] = subnode;
+	      }
+	    }
+	  }
+
+	  return new Selection(subgroups, this._parents);
+	}
+
+	function empty() {
+	  return [];
+	}
+
+	function selectorAll (selector) {
+	  return selector == null ? empty : function () {
+	    return this.querySelectorAll(selector);
+	  };
+	}
+
+	function selection_selectAll (select) {
+	  if (typeof select !== "function") select = selectorAll(select);
+
+	  for (var groups = this._groups, m = groups.length, subgroups = [], parents = [], j = 0; j < m; ++j) {
+	    for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) {
+	      if (node = group[i]) {
+	        subgroups.push(select.call(node, node.__data__, i, group));
+	        parents.push(node);
+	      }
+	    }
+	  }
+
+	  return new Selection(subgroups, parents);
+	}
+
+	function selection_filter (match) {
+	  if (typeof match !== "function") match = matcher$1(match);
+
+	  for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
+	    for (var group = groups[j], n = group.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
+	      if ((node = group[i]) && match.call(node, node.__data__, i, group)) {
+	        subgroup.push(node);
+	      }
+	    }
+	  }
+
+	  return new Selection(subgroups, this._parents);
+	}
+
+	function sparse (update) {
+	  return new Array(update.length);
+	}
+
+	function selection_enter () {
+	  return new Selection(this._enter || this._groups.map(sparse), this._parents);
+	}
+
+	function EnterNode(parent, datum) {
+	  this.ownerDocument = parent.ownerDocument;
+	  this.namespaceURI = parent.namespaceURI;
+	  this._next = null;
+	  this._parent = parent;
+	  this.__data__ = datum;
+	}
+
+	EnterNode.prototype = {
+	  constructor: EnterNode,
+	  appendChild: function appendChild(child) {
+	    return this._parent.insertBefore(child, this._next);
+	  },
+	  insertBefore: function insertBefore(child, next) {
+	    return this._parent.insertBefore(child, next);
+	  },
+	  querySelector: function querySelector(selector) {
+	    return this._parent.querySelector(selector);
+	  },
+	  querySelectorAll: function querySelectorAll(selector) {
+	    return this._parent.querySelectorAll(selector);
+	  }
+	};
+
+	function constant (x) {
+	  return function () {
+	    return x;
+	  };
+	}
+
+	var keyPrefix = "$"; // Protect against keys like “__proto__”.
+
+	function bindIndex(parent, group, enter, update, exit, data) {
+	  var i = 0,
+	      node,
+	      groupLength = group.length,
+	      dataLength = data.length;
+
+	  // Put any non-null nodes that fit into update.
+	  // Put any null nodes into enter.
+	  // Put any remaining data into enter.
+	  for (; i < dataLength; ++i) {
+	    if (node = group[i]) {
+	      node.__data__ = data[i];
+	      update[i] = node;
+	    } else {
+	      enter[i] = new EnterNode(parent, data[i]);
+	    }
+	  }
+
+	  // Put any non-null nodes that don’t fit into exit.
+	  for (; i < groupLength; ++i) {
+	    if (node = group[i]) {
+	      exit[i] = node;
+	    }
+	  }
+	}
+
+	function bindKey(parent, group, enter, update, exit, data, key) {
+	  var i,
+	      node,
+	      nodeByKeyValue = {},
+	      groupLength = group.length,
+	      dataLength = data.length,
+	      keyValues = new Array(groupLength),
+	      keyValue;
+
+	  // Compute the key for each node.
+	  // If multiple nodes have the same key, the duplicates are added to exit.
+	  for (i = 0; i < groupLength; ++i) {
+	    if (node = group[i]) {
+	      keyValues[i] = keyValue = keyPrefix + key.call(node, node.__data__, i, group);
+	      if (keyValue in nodeByKeyValue) {
+	        exit[i] = node;
+	      } else {
+	        nodeByKeyValue[keyValue] = node;
+	      }
+	    }
+	  }
+
+	  // Compute the key for each datum.
+	  // If there a node associated with this key, join and add it to update.
+	  // If there is not (or the key is a duplicate), add it to enter.
+	  for (i = 0; i < dataLength; ++i) {
+	    keyValue = keyPrefix + key.call(parent, data[i], i, data);
+	    if (node = nodeByKeyValue[keyValue]) {
+	      update[i] = node;
+	      node.__data__ = data[i];
+	      nodeByKeyValue[keyValue] = null;
+	    } else {
+	      enter[i] = new EnterNode(parent, data[i]);
+	    }
+	  }
+
+	  // Add any remaining nodes that were not bound to data to exit.
+	  for (i = 0; i < groupLength; ++i) {
+	    if ((node = group[i]) && nodeByKeyValue[keyValues[i]] === node) {
+	      exit[i] = node;
+	    }
+	  }
+	}
+
+	function selection_data (value, key) {
+	  if (!value) {
+	    data = new Array(this.size()), j = -1;
+	    this.each(function (d) {
+	      data[++j] = d;
+	    });
+	    return data;
+	  }
+
+	  var bind = key ? bindKey : bindIndex,
+	      parents = this._parents,
+	      groups = this._groups;
+
+	  if (typeof value !== "function") value = constant(value);
+
+	  for (var m = groups.length, update = new Array(m), enter = new Array(m), exit = new Array(m), j = 0; j < m; ++j) {
+	    var parent = parents[j],
+	        group = groups[j],
+	        groupLength = group.length,
+	        data = value.call(parent, parent && parent.__data__, j, parents),
+	        dataLength = data.length,
+	        enterGroup = enter[j] = new Array(dataLength),
+	        updateGroup = update[j] = new Array(dataLength),
+	        exitGroup = exit[j] = new Array(groupLength);
+
+	    bind(parent, group, enterGroup, updateGroup, exitGroup, data, key);
+
+	    // Now connect the enter nodes to their following update node, such that
+	    // appendChild can insert the materialized enter node before this node,
+	    // rather than at the end of the parent node.
+	    for (var i0 = 0, i1 = 0, previous, next; i0 < dataLength; ++i0) {
+	      if (previous = enterGroup[i0]) {
+	        if (i0 >= i1) i1 = i0 + 1;
+	        while (!(next = updateGroup[i1]) && ++i1 < dataLength) {}
+	        previous._next = next || null;
+	      }
+	    }
+	  }
+
+	  update = new Selection(update, parents);
+	  update._enter = enter;
+	  update._exit = exit;
+	  return update;
+	}
+
+	function selection_exit () {
+	  return new Selection(this._exit || this._groups.map(sparse), this._parents);
+	}
+
+	function selection_merge (selection) {
+
+	  for (var groups0 = this._groups, groups1 = selection._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) {
+	    for (var group0 = groups0[j], group1 = groups1[j], n = group0.length, merge = merges[j] = new Array(n), node, i = 0; i < n; ++i) {
+	      if (node = group0[i] || group1[i]) {
+	        merge[i] = node;
+	      }
+	    }
+	  }
+
+	  for (; j < m0; ++j) {
+	    merges[j] = groups0[j];
+	  }
+
+	  return new Selection(merges, this._parents);
+	}
+
+	function selection_order () {
+
+	  for (var groups = this._groups, j = -1, m = groups.length; ++j < m;) {
+	    for (var group = groups[j], i = group.length - 1, next = group[i], node; --i >= 0;) {
+	      if (node = group[i]) {
+	        if (next && next !== node.nextSibling) next.parentNode.insertBefore(node, next);
+	        next = node;
+	      }
+	    }
+	  }
+
+	  return this;
+	}
+
+	function selection_sort (compare) {
+	  if (!compare) compare = ascending;
+
+	  function compareNode(a, b) {
+	    return a && b ? compare(a.__data__, b.__data__) : !a - !b;
+	  }
+
+	  for (var groups = this._groups, m = groups.length, sortgroups = new Array(m), j = 0; j < m; ++j) {
+	    for (var group = groups[j], n = group.length, sortgroup = sortgroups[j] = new Array(n), node, i = 0; i < n; ++i) {
+	      if (node = group[i]) {
+	        sortgroup[i] = node;
+	      }
+	    }
+	    sortgroup.sort(compareNode);
+	  }
+
+	  return new Selection(sortgroups, this._parents).order();
+	}
+
+	function ascending(a, b) {
+	  return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
+	}
+
+	function selection_call () {
+	  var callback = arguments[0];
+	  arguments[0] = this;
+	  callback.apply(null, arguments);
+	  return this;
+	}
+
+	function selection_nodes () {
+	  var nodes = new Array(this.size()),
+	      i = -1;
+	  this.each(function () {
+	    nodes[++i] = this;
+	  });
+	  return nodes;
+	}
+
+	function selection_node () {
+
+	  for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
+	    for (var group = groups[j], i = 0, n = group.length; i < n; ++i) {
+	      var node = group[i];
+	      if (node) return node;
+	    }
+	  }
+
+	  return null;
+	}
+
+	function selection_size () {
+	  var size = 0;
+	  this.each(function () {
+	    ++size;
+	  });
+	  return size;
+	}
+
+	function selection_empty () {
+	  return !this.node();
+	}
+
+	function selection_each (callback) {
+
+	  for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
+	    for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) {
+	      if (node = group[i]) callback.call(node, node.__data__, i, group);
+	    }
+	  }
+
+	  return this;
+	}
+
+	function attrRemove(name) {
+	  return function () {
+	    this.removeAttribute(name);
+	  };
+	}
+
+	function attrRemoveNS(fullname) {
+	  return function () {
+	    this.removeAttributeNS(fullname.space, fullname.local);
+	  };
+	}
+
+	function attrConstant(name, value) {
+	  return function () {
+	    this.setAttribute(name, value);
+	  };
+	}
+
+	function attrConstantNS(fullname, value) {
+	  return function () {
+	    this.setAttributeNS(fullname.space, fullname.local, value);
+	  };
+	}
+
+	function attrFunction(name, value) {
+	  return function () {
+	    var v = value.apply(this, arguments);
+	    if (v == null) this.removeAttribute(name);else this.setAttribute(name, v);
+	  };
+	}
+
+	function attrFunctionNS(fullname, value) {
+	  return function () {
+	    var v = value.apply(this, arguments);
+	    if (v == null) this.removeAttributeNS(fullname.space, fullname.local);else this.setAttributeNS(fullname.space, fullname.local, v);
+	  };
+	}
+
+	function selection_attr (name, value) {
+	  var fullname = namespace(name);
+
+	  if (arguments.length < 2) {
+	    var node = this.node();
+	    return fullname.local ? node.getAttributeNS(fullname.space, fullname.local) : node.getAttribute(fullname);
+	  }
+
+	  return this.each((value == null ? fullname.local ? attrRemoveNS : attrRemove : typeof value === "function" ? fullname.local ? attrFunctionNS : attrFunction : fullname.local ? attrConstantNS : attrConstant)(fullname, value));
+	}
+
+	function defaultView (node) {
+	    return node.ownerDocument && node.ownerDocument.defaultView || // node is a Node
+	    node.document && node // node is a Window
+	    || node.defaultView; // node is a Document
+	}
+
+	function styleRemove(name) {
+	  return function () {
+	    this.style.removeProperty(name);
+	  };
+	}
+
+	function styleConstant(name, value, priority) {
+	  return function () {
+	    this.style.setProperty(name, value, priority);
+	  };
+	}
+
+	function styleFunction(name, value, priority) {
+	  return function () {
+	    var v = value.apply(this, arguments);
+	    if (v == null) this.style.removeProperty(name);else this.style.setProperty(name, v, priority);
+	  };
+	}
+
+	function selection_style (name, value, priority) {
+	  var node;
+	  return arguments.length > 1 ? this.each((value == null ? styleRemove : typeof value === "function" ? styleFunction : styleConstant)(name, value, priority == null ? "" : priority)) : defaultView(node = this.node()).getComputedStyle(node, null).getPropertyValue(name);
+	}
+
+	function propertyRemove(name) {
+	  return function () {
+	    delete this[name];
+	  };
+	}
+
+	function propertyConstant(name, value) {
+	  return function () {
+	    this[name] = value;
+	  };
+	}
+
+	function propertyFunction(name, value) {
+	  return function () {
+	    var v = value.apply(this, arguments);
+	    if (v == null) delete this[name];else this[name] = v;
+	  };
+	}
+
+	function selection_property (name, value) {
+	  return arguments.length > 1 ? this.each((value == null ? propertyRemove : typeof value === "function" ? propertyFunction : propertyConstant)(name, value)) : this.node()[name];
+	}
+
+	function classArray(string) {
+	  return string.trim().split(/^|\s+/);
+	}
+
+	function classList(node) {
+	  return node.classList || new ClassList(node);
+	}
+
+	function ClassList(node) {
+	  this._node = node;
+	  this._names = classArray(node.getAttribute("class") || "");
+	}
+
+	ClassList.prototype = {
+	  add: function add(name) {
+	    var i = this._names.indexOf(name);
+	    if (i < 0) {
+	      this._names.push(name);
+	      this._node.setAttribute("class", this._names.join(" "));
+	    }
+	  },
+	  remove: function remove(name) {
+	    var i = this._names.indexOf(name);
+	    if (i >= 0) {
+	      this._names.splice(i, 1);
+	      this._node.setAttribute("class", this._names.join(" "));
+	    }
+	  },
+	  contains: function contains(name) {
+	    return this._names.indexOf(name) >= 0;
+	  }
+	};
+
+	function classedAdd(node, names) {
+	  var list = classList(node),
+	      i = -1,
+	      n = names.length;
+	  while (++i < n) {
+	    list.add(names[i]);
+	  }
+	}
+
+	function classedRemove(node, names) {
+	  var list = classList(node),
+	      i = -1,
+	      n = names.length;
+	  while (++i < n) {
+	    list.remove(names[i]);
+	  }
+	}
+
+	function classedTrue(names) {
+	  return function () {
+	    classedAdd(this, names);
+	  };
+	}
+
+	function classedFalse(names) {
+	  return function () {
+	    classedRemove(this, names);
+	  };
+	}
+
+	function classedFunction(names, value) {
+	  return function () {
+	    (value.apply(this, arguments) ? classedAdd : classedRemove)(this, names);
+	  };
+	}
+
+	function selection_classed (name, value) {
+	  var names = classArray(name + "");
+
+	  if (arguments.length < 2) {
+	    var list = classList(this.node()),
+	        i = -1,
+	        n = names.length;
+	    while (++i < n) {
+	      if (!list.contains(names[i])) return false;
+	    }return true;
+	  }
+
+	  return this.each((typeof value === "function" ? classedFunction : value ? classedTrue : classedFalse)(names, value));
+	}
+
+	function textRemove() {
+	  this.textContent = "";
+	}
+
+	function textConstant(value) {
+	  return function () {
+	    this.textContent = value;
+	  };
+	}
+
+	function textFunction(value) {
+	  return function () {
+	    var v = value.apply(this, arguments);
+	    this.textContent = v == null ? "" : v;
+	  };
+	}
+
+	function selection_text (value) {
+	  return arguments.length ? this.each(value == null ? textRemove : (typeof value === "function" ? textFunction : textConstant)(value)) : this.node().textContent;
+	}
+
+	function htmlRemove() {
+	  this.innerHTML = "";
+	}
+
+	function htmlConstant(value) {
+	  return function () {
+	    this.innerHTML = value;
+	  };
+	}
+
+	function htmlFunction(value) {
+	  return function () {
+	    var v = value.apply(this, arguments);
+	    this.innerHTML = v == null ? "" : v;
+	  };
+	}
+
+	function selection_html (value) {
+	  return arguments.length ? this.each(value == null ? htmlRemove : (typeof value === "function" ? htmlFunction : htmlConstant)(value)) : this.node().innerHTML;
+	}
+
+	function raise() {
+	  if (this.nextSibling) this.parentNode.appendChild(this);
+	}
+
+	function selection_raise () {
+	  return this.each(raise);
+	}
+
+	function lower() {
+	  if (this.previousSibling) this.parentNode.insertBefore(this, this.parentNode.firstChild);
+	}
+
+	function selection_lower () {
+	  return this.each(lower);
+	}
+
+	function selection_append (name) {
+	  var create = typeof name === "function" ? name : creator(name);
+	  return this.select(function () {
+	    return this.appendChild(create.apply(this, arguments));
+	  });
+	}
+
+	function constantNull() {
+	  return null;
+	}
+
+	function selection_insert (name, before) {
+	  var create = typeof name === "function" ? name : creator(name),
+	      select = before == null ? constantNull : typeof before === "function" ? before : selector(before);
+	  return this.select(function () {
+	    return this.insertBefore(create.apply(this, arguments), select.apply(this, arguments) || null);
+	  });
+	}
+
+	function remove() {
+	  var parent = this.parentNode;
+	  if (parent) parent.removeChild(this);
+	}
+
+	function selection_remove () {
+	  return this.each(remove);
+	}
+
+	function selection_datum (value) {
+	    return arguments.length ? this.property("__data__", value) : this.node().__data__;
+	}
+
+	function dispatchEvent(node, type, params) {
+	  var window = defaultView(node),
+	      event = window.CustomEvent;
+
+	  if (event) {
+	    event = new event(type, params);
+	  } else {
+	    event = window.document.createEvent("Event");
+	    if (params) event.initEvent(type, params.bubbles, params.cancelable), event.detail = params.detail;else event.initEvent(type, false, false);
+	  }
+
+	  node.dispatchEvent(event);
+	}
+
+	function dispatchConstant(type, params) {
+	  return function () {
+	    return dispatchEvent(this, type, params);
+	  };
+	}
+
+	function dispatchFunction(type, params) {
+	  return function () {
+	    return dispatchEvent(this, type, params.apply(this, arguments));
+	  };
+	}
+
+	function selection_dispatch (type, params) {
+	  return this.each((typeof params === "function" ? dispatchFunction : dispatchConstant)(type, params));
+	}
+
+	var root = [null];
+
+	function Selection(groups, parents) {
+	  this._groups = groups;
+	  this._parents = parents;
+	}
+
+	function selection() {
+	  return new Selection([[document.documentElement]], root);
+	}
+
+	Selection.prototype = selection.prototype = {
+	  constructor: Selection,
+	  select: selection_select,
+	  selectAll: selection_selectAll,
+	  filter: selection_filter,
+	  data: selection_data,
+	  enter: selection_enter,
+	  exit: selection_exit,
+	  merge: selection_merge,
+	  order: selection_order,
+	  sort: selection_sort,
+	  call: selection_call,
+	  nodes: selection_nodes,
+	  node: selection_node,
+	  size: selection_size,
+	  empty: selection_empty,
+	  each: selection_each,
+	  attr: selection_attr,
+	  style: selection_style,
+	  property: selection_property,
+	  classed: selection_classed,
+	  text: selection_text,
+	  html: selection_html,
+	  raise: selection_raise,
+	  lower: selection_lower,
+	  append: selection_append,
+	  insert: selection_insert,
+	  remove: selection_remove,
+	  datum: selection_datum,
+	  on: selection_on,
+	  dispatch: selection_dispatch
+	};
+
+	function select (selector) {
+	    return typeof selector === "string" ? new Selection([[document.querySelector(selector)]], [document.documentElement]) : new Selection([[selector]], root);
+	}
+
+	var pi = Math.PI;
+	var tau = 2 * pi;
+	var epsilon = 1e-6;
+	var tauEpsilon = tau - epsilon;
+	function Path() {
+	  this._x0 = this._y0 = // start of current subpath
+	  this._x1 = this._y1 = null; // end of current subpath
+	  this._ = [];
+	}
+
+	function path() {
+	  return new Path();
+	}
+
+	Path.prototype = path.prototype = {
+	  constructor: Path,
+	  moveTo: function moveTo(x, y) {
+	    this._.push("M", this._x0 = this._x1 = +x, ",", this._y0 = this._y1 = +y);
+	  },
+	  closePath: function closePath() {
+	    if (this._x1 !== null) {
+	      this._x1 = this._x0, this._y1 = this._y0;
+	      this._.push("Z");
+	    }
+	  },
+	  lineTo: function lineTo(x, y) {
+	    this._.push("L", this._x1 = +x, ",", this._y1 = +y);
+	  },
+	  quadraticCurveTo: function quadraticCurveTo(x1, y1, x, y) {
+	    this._.push("Q", +x1, ",", +y1, ",", this._x1 = +x, ",", this._y1 = +y);
+	  },
+	  bezierCurveTo: function bezierCurveTo(x1, y1, x2, y2, x, y) {
+	    this._.push("C", +x1, ",", +y1, ",", +x2, ",", +y2, ",", this._x1 = +x, ",", this._y1 = +y);
+	  },
+	  arcTo: function arcTo(x1, y1, x2, y2, r) {
+	    x1 = +x1, y1 = +y1, x2 = +x2, y2 = +y2, r = +r;
+	    var x0 = this._x1,
+	        y0 = this._y1,
+	        x21 = x2 - x1,
+	        y21 = y2 - y1,
+	        x01 = x0 - x1,
+	        y01 = y0 - y1,
+	        l01_2 = x01 * x01 + y01 * y01;
+
+	    // Is the radius negative? Error.
+	    if (r < 0) throw new Error("negative radius: " + r);
+
+	    // Is this path empty? Move to (x1,y1).
+	    if (this._x1 === null) {
+	      this._.push("M", this._x1 = x1, ",", this._y1 = y1);
+	    }
+
+	    // Or, is (x1,y1) coincident with (x0,y0)? Do nothing.
+	    else if (!(l01_2 > epsilon)) {}
+
+	      // Or, are (x0,y0), (x1,y1) and (x2,y2) collinear?
+	      // Equivalently, is (x1,y1) coincident with (x2,y2)?
+	      // Or, is the radius zero? Line to (x1,y1).
+	      else if (!(Math.abs(y01 * x21 - y21 * x01) > epsilon) || !r) {
+	          this._.push("L", this._x1 = x1, ",", this._y1 = y1);
+	        }
+
+	        // Otherwise, draw an arc!
+	        else {
+	            var x20 = x2 - x0,
+	                y20 = y2 - y0,
+	                l21_2 = x21 * x21 + y21 * y21,
+	                l20_2 = x20 * x20 + y20 * y20,
+	                l21 = Math.sqrt(l21_2),
+	                l01 = Math.sqrt(l01_2),
+	                l = r * Math.tan((pi - Math.acos((l21_2 + l01_2 - l20_2) / (2 * l21 * l01))) / 2),
+	                t01 = l / l01,
+	                t21 = l / l21;
+
+	            // If the start tangent is not coincident with (x0,y0), line to.
+	            if (Math.abs(t01 - 1) > epsilon) {
+	              this._.push("L", x1 + t01 * x01, ",", y1 + t01 * y01);
+	            }
+
+	            this._.push("A", r, ",", r, ",0,0,", +(y01 * x20 > x01 * y20), ",", this._x1 = x1 + t21 * x21, ",", this._y1 = y1 + t21 * y21);
+	          }
+	  },
+	  arc: function arc(x, y, r, a0, a1, ccw) {
+	    x = +x, y = +y, r = +r;
+	    var dx = r * Math.cos(a0),
+	        dy = r * Math.sin(a0),
+	        x0 = x + dx,
+	        y0 = y + dy,
+	        cw = 1 ^ ccw,
+	        da = ccw ? a0 - a1 : a1 - a0;
+
+	    // Is the radius negative? Error.
+	    if (r < 0) throw new Error("negative radius: " + r);
+
+	    // Is this path empty? Move to (x0,y0).
+	    if (this._x1 === null) {
+	      this._.push("M", x0, ",", y0);
+	    }
+
+	    // Or, is (x0,y0) not coincident with the previous point? Line to (x0,y0).
+	    else if (Math.abs(this._x1 - x0) > epsilon || Math.abs(this._y1 - y0) > epsilon) {
+	        this._.push("L", x0, ",", y0);
+	      }
+
+	    // Is this arc empty? We’re done.
+	    if (!r) return;
+
+	    // Is this a complete circle? Draw two arcs to complete the circle.
+	    if (da > tauEpsilon) {
+	      this._.push("A", r, ",", r, ",0,1,", cw, ",", x - dx, ",", y - dy, "A", r, ",", r, ",0,1,", cw, ",", this._x1 = x0, ",", this._y1 = y0);
+	    }
+
+	    // Otherwise, draw an arc!
+	    else {
+	        if (da < 0) da = da % tau + tau;
+	        this._.push("A", r, ",", r, ",0,", +(da >= pi), ",", cw, ",", this._x1 = x + r * Math.cos(a1), ",", this._y1 = y + r * Math.sin(a1));
+	      }
+	  },
+	  rect: function rect(x, y, w, h) {
+	    this._.push("M", this._x0 = this._x1 = +x, ",", this._y0 = this._y1 = +y, "h", +w, "v", +h, "h", -w, "Z");
+	  },
+	  toString: function toString() {
+	    return this._.join("");
+	  }
+	};
+
+	function constant$1 (x) {
+	  return function constant() {
+	    return x;
+	  };
+	}
+
+	var epsilon$1 = 1e-12;
+
+	function Linear(context) {
+	  this._context = context;
+	}
+
+	Linear.prototype = {
+	  areaStart: function areaStart() {
+	    this._line = 0;
+	  },
+	  areaEnd: function areaEnd() {
+	    this._line = NaN;
+	  },
+	  lineStart: function lineStart() {
+	    this._point = 0;
+	  },
+	  lineEnd: function lineEnd() {
+	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
+	    this._line = 1 - this._line;
+	  },
+	  point: function point(x, y) {
+	    x = +x, y = +y;
+	    switch (this._point) {
+	      case 0:
+	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
+	      case 1:
+	        this._point = 2; // proceed
+	      default:
+	        this._context.lineTo(x, y);break;
+	    }
+	  }
+	};
+
+	function curveLinear (context) {
+	  return new Linear(context);
+	}
+
+	function x(p) {
+	  return p[0];
+	}
+
+	function y(p) {
+	  return p[1];
+	}
+
+	function line () {
+	  var x$$ = x,
+	      y$$ = y,
+	      defined = constant$1(true),
+	      context = null,
+	      curve = curveLinear,
+	      output = null;
+
+	  function line(data) {
+	    var i,
+	        n = data.length,
+	        d,
+	        defined0 = false,
+	        buffer;
+
+	    if (context == null) output = curve(buffer = path());
+
+	    for (i = 0; i <= n; ++i) {
+	      if (!(i < n && defined(d = data[i], i, data)) === defined0) {
+	        if (defined0 = !defined0) output.lineStart();else output.lineEnd();
+	      }
+	      if (defined0) output.point(+x$$(d, i, data), +y$$(d, i, data));
+	    }
+
+	    if (buffer) return output = null, buffer + "" || null;
+	  }
+
+	  line.x = function (_) {
+	    return arguments.length ? (x$$ = typeof _ === "function" ? _ : constant$1(+_), line) : x$$;
+	  };
+
+	  line.y = function (_) {
+	    return arguments.length ? (y$$ = typeof _ === "function" ? _ : constant$1(+_), line) : y$$;
+	  };
+
+	  line.defined = function (_) {
+	    return arguments.length ? (defined = typeof _ === "function" ? _ : constant$1(!!_), line) : defined;
+	  };
+
+	  line.curve = function (_) {
+	    return arguments.length ? (curve = _, context != null && (output = curve(context)), line) : curve;
+	  };
+
+	  line.context = function (_) {
+	    return arguments.length ? (_ == null ? context = output = null : output = curve(context = _), line) : context;
+	  };
+
+	  return line;
+	}
+
+	function noop () {}
+
+	function _point(that, x, y) {
+	  that._context.bezierCurveTo((2 * that._x0 + that._x1) / 3, (2 * that._y0 + that._y1) / 3, (that._x0 + 2 * that._x1) / 3, (that._y0 + 2 * that._y1) / 3, (that._x0 + 4 * that._x1 + x) / 6, (that._y0 + 4 * that._y1 + y) / 6);
+	}
+
+	function Basis(context) {
+	  this._context = context;
+	}
+
+	Basis.prototype = {
+	  areaStart: function areaStart() {
+	    this._line = 0;
+	  },
+	  areaEnd: function areaEnd() {
+	    this._line = NaN;
+	  },
+	  lineStart: function lineStart() {
+	    this._x0 = this._x1 = this._y0 = this._y1 = NaN;
+	    this._point = 0;
+	  },
+	  lineEnd: function lineEnd() {
+	    switch (this._point) {
+	      case 3:
+	        _point(this, this._x1, this._y1); // proceed
+	      case 2:
+	        this._context.lineTo(this._x1, this._y1);break;
+	    }
+	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
+	    this._line = 1 - this._line;
+	  },
+	  point: function point(x, y) {
+	    x = +x, y = +y;
+	    switch (this._point) {
+	      case 0:
+	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
+	      case 1:
+	        this._point = 2;break;
+	      case 2:
+	        this._point = 3;this._context.lineTo((5 * this._x0 + this._x1) / 6, (5 * this._y0 + this._y1) / 6); // proceed
+	      default:
+	        _point(this, x, y);break;
+	    }
+	    this._x0 = this._x1, this._x1 = x;
+	    this._y0 = this._y1, this._y1 = y;
+	  }
+	};
+
+	function Bundle(context, beta) {
+	  this._basis = new Basis(context);
+	  this._beta = beta;
+	}
+
+	Bundle.prototype = {
+	  lineStart: function lineStart() {
+	    this._x = [];
+	    this._y = [];
+	    this._basis.lineStart();
+	  },
+	  lineEnd: function lineEnd() {
+	    var x = this._x,
+	        y = this._y,
+	        j = x.length - 1;
+
+	    if (j > 0) {
+	      var x0 = x[0],
+	          y0 = y[0],
+	          dx = x[j] - x0,
+	          dy = y[j] - y0,
+	          i = -1,
+	          t;
+
+	      while (++i <= j) {
+	        t = i / j;
+	        this._basis.point(this._beta * x[i] + (1 - this._beta) * (x0 + t * dx), this._beta * y[i] + (1 - this._beta) * (y0 + t * dy));
+	      }
+	    }
+
+	    this._x = this._y = null;
+	    this._basis.lineEnd();
+	  },
+	  point: function point(x, y) {
+	    this._x.push(+x);
+	    this._y.push(+y);
+	  }
+	};
+
+	(function custom(beta) {
+
+	  function bundle(context) {
+	    return beta === 1 ? new Basis(context) : new Bundle(context, beta);
+	  }
+
+	  bundle.beta = function (beta) {
+	    return custom(+beta);
+	  };
+
+	  return bundle;
+	})(0.85);
+
+	function _point$1(that, x, y) {
+	  that._context.bezierCurveTo(that._x1 + that._k * (that._x2 - that._x0), that._y1 + that._k * (that._y2 - that._y0), that._x2 + that._k * (that._x1 - x), that._y2 + that._k * (that._y1 - y), that._x2, that._y2);
+	}
+
+	function Cardinal(context, tension) {
+	  this._context = context;
+	  this._k = (1 - tension) / 6;
+	}
+
+	Cardinal.prototype = {
+	  areaStart: function areaStart() {
+	    this._line = 0;
+	  },
+	  areaEnd: function areaEnd() {
+	    this._line = NaN;
+	  },
+	  lineStart: function lineStart() {
+	    this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
+	    this._point = 0;
+	  },
+	  lineEnd: function lineEnd() {
+	    switch (this._point) {
+	      case 2:
+	        this._context.lineTo(this._x2, this._y2);break;
+	      case 3:
+	        _point$1(this, this._x1, this._y1);break;
+	    }
+	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
+	    this._line = 1 - this._line;
+	  },
+	  point: function point(x, y) {
+	    x = +x, y = +y;
+	    switch (this._point) {
+	      case 0:
+	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
+	      case 1:
+	        this._point = 2;this._x1 = x, this._y1 = y;break;
+	      case 2:
+	        this._point = 3; // proceed
+	      default:
+	        _point$1(this, x, y);break;
+	    }
+	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
+	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
+	  }
+	};
+
+	(function custom(tension) {
+
+	  function cardinal(context) {
+	    return new Cardinal(context, tension);
+	  }
+
+	  cardinal.tension = function (tension) {
+	    return custom(+tension);
+	  };
+
+	  return cardinal;
+	})(0);
+
+	function CardinalClosed(context, tension) {
+	  this._context = context;
+	  this._k = (1 - tension) / 6;
+	}
+
+	CardinalClosed.prototype = {
+	  areaStart: noop,
+	  areaEnd: noop,
+	  lineStart: function lineStart() {
+	    this._x0 = this._x1 = this._x2 = this._x3 = this._x4 = this._x5 = this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = this._y5 = NaN;
+	    this._point = 0;
+	  },
+	  lineEnd: function lineEnd() {
+	    switch (this._point) {
+	      case 1:
+	        {
+	          this._context.moveTo(this._x3, this._y3);
+	          this._context.closePath();
+	          break;
+	        }
+	      case 2:
+	        {
+	          this._context.lineTo(this._x3, this._y3);
+	          this._context.closePath();
+	          break;
+	        }
+	      case 3:
+	        {
+	          this.point(this._x3, this._y3);
+	          this.point(this._x4, this._y4);
+	          this.point(this._x5, this._y5);
+	          break;
+	        }
+	    }
+	  },
+	  point: function point(x, y) {
+	    x = +x, y = +y;
+	    switch (this._point) {
+	      case 0:
+	        this._point = 1;this._x3 = x, this._y3 = y;break;
+	      case 1:
+	        this._point = 2;this._context.moveTo(this._x4 = x, this._y4 = y);break;
+	      case 2:
+	        this._point = 3;this._x5 = x, this._y5 = y;break;
+	      default:
+	        _point$1(this, x, y);break;
+	    }
+	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
+	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
+	  }
+	};
+
+	(function custom(tension) {
+
+	  function cardinal(context) {
+	    return new CardinalClosed(context, tension);
+	  }
+
+	  cardinal.tension = function (tension) {
+	    return custom(+tension);
+	  };
+
+	  return cardinal;
+	})(0);
+
+	function CardinalOpen(context, tension) {
+	  this._context = context;
+	  this._k = (1 - tension) / 6;
+	}
+
+	CardinalOpen.prototype = {
+	  areaStart: function areaStart() {
+	    this._line = 0;
+	  },
+	  areaEnd: function areaEnd() {
+	    this._line = NaN;
+	  },
+	  lineStart: function lineStart() {
+	    this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
+	    this._point = 0;
+	  },
+	  lineEnd: function lineEnd() {
+	    if (this._line || this._line !== 0 && this._point === 3) this._context.closePath();
+	    this._line = 1 - this._line;
+	  },
+	  point: function point(x, y) {
+	    x = +x, y = +y;
+	    switch (this._point) {
+	      case 0:
+	        this._point = 1;break;
+	      case 1:
+	        this._point = 2;break;
+	      case 2:
+	        this._point = 3;this._line ? this._context.lineTo(this._x2, this._y2) : this._context.moveTo(this._x2, this._y2);break;
+	      case 3:
+	        this._point = 4; // proceed
+	      default:
+	        _point$1(this, x, y);break;
+	    }
+	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
+	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
+	  }
+	};
+
+	(function custom(tension) {
+
+	  function cardinal(context) {
+	    return new CardinalOpen(context, tension);
+	  }
+
+	  cardinal.tension = function (tension) {
+	    return custom(+tension);
+	  };
+
+	  return cardinal;
+	})(0);
+
+	function _point$2(that, x, y) {
+	  var x1 = that._x1,
+	      y1 = that._y1,
+	      x2 = that._x2,
+	      y2 = that._y2;
+
+	  if (that._l01_a > epsilon$1) {
+	    var a = 2 * that._l01_2a + 3 * that._l01_a * that._l12_a + that._l12_2a,
+	        n = 3 * that._l01_a * (that._l01_a + that._l12_a);
+	    x1 = (x1 * a - that._x0 * that._l12_2a + that._x2 * that._l01_2a) / n;
+	    y1 = (y1 * a - that._y0 * that._l12_2a + that._y2 * that._l01_2a) / n;
+	  }
+
+	  if (that._l23_a > epsilon$1) {
+	    var b = 2 * that._l23_2a + 3 * that._l23_a * that._l12_a + that._l12_2a,
+	        m = 3 * that._l23_a * (that._l23_a + that._l12_a);
+	    x2 = (x2 * b + that._x1 * that._l23_2a - x * that._l12_2a) / m;
+	    y2 = (y2 * b + that._y1 * that._l23_2a - y * that._l12_2a) / m;
+	  }
+
+	  that._context.bezierCurveTo(x1, y1, x2, y2, that._x2, that._y2);
+	}
+
+	function CatmullRom(context, alpha) {
+	  this._context = context;
+	  this._alpha = alpha;
+	}
+
+	CatmullRom.prototype = {
+	  areaStart: function areaStart() {
+	    this._line = 0;
+	  },
+	  areaEnd: function areaEnd() {
+	    this._line = NaN;
+	  },
+	  lineStart: function lineStart() {
+	    this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
+	    this._l01_a = this._l12_a = this._l23_a = this._l01_2a = this._l12_2a = this._l23_2a = this._point = 0;
+	  },
+	  lineEnd: function lineEnd() {
+	    switch (this._point) {
+	      case 2:
+	        this._context.lineTo(this._x2, this._y2);break;
+	      case 3:
+	        this.point(this._x2, this._y2);break;
+	    }
+	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
+	    this._line = 1 - this._line;
+	  },
+	  point: function point(x, y) {
+	    x = +x, y = +y;
+
+	    if (this._point) {
+	      var x23 = this._x2 - x,
+	          y23 = this._y2 - y;
+	      this._l23_a = Math.sqrt(this._l23_2a = Math.pow(x23 * x23 + y23 * y23, this._alpha));
+	    }
+
+	    switch (this._point) {
+	      case 0:
+	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
+	      case 1:
+	        this._point = 2;break;
+	      case 2:
+	        this._point = 3; // proceed
+	      default:
+	        _point$2(this, x, y);break;
+	    }
+
+	    this._l01_a = this._l12_a, this._l12_a = this._l23_a;
+	    this._l01_2a = this._l12_2a, this._l12_2a = this._l23_2a;
+	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
+	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
+	  }
+	};
+
+	(function custom(alpha) {
+
+	  function catmullRom(context) {
+	    return alpha ? new CatmullRom(context, alpha) : new Cardinal(context, 0);
+	  }
+
+	  catmullRom.alpha = function (alpha) {
+	    return custom(+alpha);
+	  };
+
+	  return catmullRom;
+	})(0.5);
+
+	function CatmullRomClosed(context, alpha) {
+	  this._context = context;
+	  this._alpha = alpha;
+	}
+
+	CatmullRomClosed.prototype = {
+	  areaStart: noop,
+	  areaEnd: noop,
+	  lineStart: function lineStart() {
+	    this._x0 = this._x1 = this._x2 = this._x3 = this._x4 = this._x5 = this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = this._y5 = NaN;
+	    this._l01_a = this._l12_a = this._l23_a = this._l01_2a = this._l12_2a = this._l23_2a = this._point = 0;
+	  },
+	  lineEnd: function lineEnd() {
+	    switch (this._point) {
+	      case 1:
+	        {
+	          this._context.moveTo(this._x3, this._y3);
+	          this._context.closePath();
+	          break;
+	        }
+	      case 2:
+	        {
+	          this._context.lineTo(this._x3, this._y3);
+	          this._context.closePath();
+	          break;
+	        }
+	      case 3:
+	        {
+	          this.point(this._x3, this._y3);
+	          this.point(this._x4, this._y4);
+	          this.point(this._x5, this._y5);
+	          break;
+	        }
+	    }
+	  },
+	  point: function point(x, y) {
+	    x = +x, y = +y;
+
+	    if (this._point) {
+	      var x23 = this._x2 - x,
+	          y23 = this._y2 - y;
+	      this._l23_a = Math.sqrt(this._l23_2a = Math.pow(x23 * x23 + y23 * y23, this._alpha));
+	    }
+
+	    switch (this._point) {
+	      case 0:
+	        this._point = 1;this._x3 = x, this._y3 = y;break;
+	      case 1:
+	        this._point = 2;this._context.moveTo(this._x4 = x, this._y4 = y);break;
+	      case 2:
+	        this._point = 3;this._x5 = x, this._y5 = y;break;
+	      default:
+	        _point$2(this, x, y);break;
+	    }
+
+	    this._l01_a = this._l12_a, this._l12_a = this._l23_a;
+	    this._l01_2a = this._l12_2a, this._l12_2a = this._l23_2a;
+	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
+	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
+	  }
+	};
+
+	(function custom(alpha) {
+
+	  function catmullRom(context) {
+	    return alpha ? new CatmullRomClosed(context, alpha) : new CardinalClosed(context, 0);
+	  }
+
+	  catmullRom.alpha = function (alpha) {
+	    return custom(+alpha);
+	  };
+
+	  return catmullRom;
+	})(0.5);
+
+	function CatmullRomOpen(context, alpha) {
+	  this._context = context;
+	  this._alpha = alpha;
+	}
+
+	CatmullRomOpen.prototype = {
+	  areaStart: function areaStart() {
+	    this._line = 0;
+	  },
+	  areaEnd: function areaEnd() {
+	    this._line = NaN;
+	  },
+	  lineStart: function lineStart() {
+	    this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
+	    this._l01_a = this._l12_a = this._l23_a = this._l01_2a = this._l12_2a = this._l23_2a = this._point = 0;
+	  },
+	  lineEnd: function lineEnd() {
+	    if (this._line || this._line !== 0 && this._point === 3) this._context.closePath();
+	    this._line = 1 - this._line;
+	  },
+	  point: function point(x, y) {
+	    x = +x, y = +y;
+
+	    if (this._point) {
+	      var x23 = this._x2 - x,
+	          y23 = this._y2 - y;
+	      this._l23_a = Math.sqrt(this._l23_2a = Math.pow(x23 * x23 + y23 * y23, this._alpha));
+	    }
+
+	    switch (this._point) {
+	      case 0:
+	        this._point = 1;break;
+	      case 1:
+	        this._point = 2;break;
+	      case 2:
+	        this._point = 3;this._line ? this._context.lineTo(this._x2, this._y2) : this._context.moveTo(this._x2, this._y2);break;
+	      case 3:
+	        this._point = 4; // proceed
+	      default:
+	        _point$2(this, x, y);break;
+	    }
+
+	    this._l01_a = this._l12_a, this._l12_a = this._l23_a;
+	    this._l01_2a = this._l12_2a, this._l12_2a = this._l23_2a;
+	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
+	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
+	  }
+	};
+
+	(function custom(alpha) {
+
+	  function catmullRom(context) {
+	    return alpha ? new CatmullRomOpen(context, alpha) : new CardinalOpen(context, 0);
+	  }
+
+	  catmullRom.alpha = function (alpha) {
+	    return custom(+alpha);
+	  };
+
+	  return catmullRom;
+	})(0.5);
+
+	function sign(x) {
+	  return x < 0 ? -1 : 1;
+	}
+
+	// Calculate the slopes of the tangents (Hermite-type interpolation) based on
+	// the following paper: Steffen, M. 1990. A Simple Method for Monotonic
+	// Interpolation in One Dimension. Astronomy and Astrophysics, Vol. 239, NO.
+	// NOV(II), P. 443, 1990.
+	function slope3(that, x2, y2) {
+	  var h0 = that._x1 - that._x0,
+	      h1 = x2 - that._x1,
+	      s0 = (that._y1 - that._y0) / (h0 || h1 < 0 && -0),
+	      s1 = (y2 - that._y1) / (h1 || h0 < 0 && -0),
+	      p = (s0 * h1 + s1 * h0) / (h0 + h1);
+	  return (sign(s0) + sign(s1)) * Math.min(Math.abs(s0), Math.abs(s1), 0.5 * Math.abs(p)) || 0;
+	}
+
+	// Calculate a one-sided slope.
+	function slope2(that, t) {
+	  var h = that._x1 - that._x0;
+	  return h ? (3 * (that._y1 - that._y0) / h - t) / 2 : t;
+	}
+
+	// According to https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Representations
+	// "you can express cubic Hermite interpolation in terms of cubic Bézier curves
+	// with respect to the four values p0, p0 + m0 / 3, p1 - m1 / 3, p1".
+	function _point$3(that, t0, t1) {
+	  var x0 = that._x0,
+	      y0 = that._y0,
+	      x1 = that._x1,
+	      y1 = that._y1,
+	      dx = (x1 - x0) / 3;
+	  that._context.bezierCurveTo(x0 + dx, y0 + dx * t0, x1 - dx, y1 - dx * t1, x1, y1);
+	}
+
+	function MonotoneX(context) {
+	  this._context = context;
+	}
+
+	MonotoneX.prototype = {
+	  areaStart: function areaStart() {
+	    this._line = 0;
+	  },
+	  areaEnd: function areaEnd() {
+	    this._line = NaN;
+	  },
+	  lineStart: function lineStart() {
+	    this._x0 = this._x1 = this._y0 = this._y1 = this._t0 = NaN;
+	    this._point = 0;
+	  },
+	  lineEnd: function lineEnd() {
+	    switch (this._point) {
+	      case 2:
+	        this._context.lineTo(this._x1, this._y1);break;
+	      case 3:
+	        _point$3(this, this._t0, slope2(this, this._t0));break;
+	    }
+	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
+	    this._line = 1 - this._line;
+	  },
+	  point: function point(x, y) {
+	    var t1 = NaN;
+
+	    x = +x, y = +y;
+	    if (x === this._x1 && y === this._y1) return; // Ignore coincident points.
+	    switch (this._point) {
+	      case 0:
+	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
+	      case 1:
+	        this._point = 2;break;
+	      case 2:
+	        this._point = 3;_point$3(this, slope2(this, t1 = slope3(this, x, y)), t1);break;
+	      default:
+	        _point$3(this, this._t0, t1 = slope3(this, x, y));break;
+	    }
+
+	    this._x0 = this._x1, this._x1 = x;
+	    this._y0 = this._y1, this._y1 = y;
+	    this._t0 = t1;
+	  }
+	};
+
+	function MonotoneY(context) {
+	  this._context = new ReflectContext(context);
+	}
+
+	(MonotoneY.prototype = Object.create(MonotoneX.prototype)).point = function (x, y) {
+	  MonotoneX.prototype.point.call(this, y, x);
+	};
+
+	function ReflectContext(context) {
+	  this._context = context;
+	}
+
+	ReflectContext.prototype = {
+	  moveTo: function moveTo(x, y) {
+	    this._context.moveTo(y, x);
+	  },
+	  closePath: function closePath() {
+	    this._context.closePath();
+	  },
+	  lineTo: function lineTo(x, y) {
+	    this._context.lineTo(y, x);
+	  },
+	  bezierCurveTo: function bezierCurveTo(x1, y1, x2, y2, x, y) {
+	    this._context.bezierCurveTo(y1, x1, y2, x2, y, x);
+	  }
+	};
+
+	var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {}
+
+	function interopDefault(ex) {
+		return ex && typeof ex === 'object' && 'default' in ex ? ex['default'] : ex;
+	}
+
+	function createCommonjsModule(fn, module) {
+		return module = { exports: {} }, fn(module, module.exports), module.exports;
+	}
+
+	var combinatorics = createCommonjsModule(function (module, exports) {
+	    /*
+	     * $Id: combinatorics.js,v 0.25 2013/03/11 15:42:14 dankogai Exp dankogai $
+	     *
+	     *  Licensed under the MIT license.
+	     *  http://www.opensource.org/licenses/mit-license.php
+	     *
+	     *  References:
+	     *    http://www.ruby-doc.org/core-2.0/Array.html#method-i-combination
+	     *    http://www.ruby-doc.org/core-2.0/Array.html#method-i-permutation
+	     *    http://en.wikipedia.org/wiki/Factorial_number_system
+	     */
+	    (function (root, factory) {
+	        if (typeof define === 'function' && define.amd) {
+	            define([], factory);
+	        } else if ((typeof exports === 'undefined' ? 'undefined' : babelHelpers.typeof(exports)) === 'object') {
+	            module.exports = factory();
+	        } else {
+	            root.Combinatorics = factory();
+	        }
+	    })(commonjsGlobal, function () {
+	        'use strict';
+
+	        var version = "0.5.2";
+	        /* combinatory arithmetics */
+	        var P = function P(m, n) {
+	            var p = 1;
+	            while (n--) {
+	                p *= m--;
+	            }return p;
+	        };
+	        var C = function C(m, n) {
+	            if (n > m) {
+	                return 0;
+	            }
+	            return P(m, n) / P(n, n);
+	        };
+	        var factorial = function factorial(n) {
+	            return P(n, n);
+	        };
+	        var factoradic = function factoradic(n, d) {
+	            var f = 1;
+	            if (!d) {
+	                for (d = 1; f < n; f *= ++d) {}
+	                if (f > n) f /= d--;
+	            } else {
+	                f = factorial(d);
+	            }
+	            var result = [0];
+	            for (; d; f /= d--) {
+	                result[d] = Math.floor(n / f);
+	                n %= f;
+	            }
+	            return result;
+	        };
+	        /* common methods */
+	        var addProperties = function addProperties(dst, src) {
+	            Object.keys(src).forEach(function (p) {
+	                Object.defineProperty(dst, p, {
+	                    value: src[p],
+	                    configurable: p == 'next'
+	                });
+	            });
+	        };
+	        var hideProperty = function hideProperty(o, p) {
+	            Object.defineProperty(o, p, {
+	                writable: true
+	            });
+	        };
+	        var toArray = function toArray(f) {
+	            var e,
+	                result = [];
+	            this.init();
+	            while (e = this.next()) {
+	                result.push(f ? f(e) : e);
+	            }this.init();
+	            return result;
+	        };
+	        var common = {
+	            toArray: toArray,
+	            map: toArray,
+	            forEach: function forEach(f) {
+	                var e;
+	                this.init();
+	                while (e = this.next()) {
+	                    f(e);
+	                }this.init();
+	            },
+	            filter: function filter(f) {
+	                var e,
+	                    result = [];
+	                this.init();
+	                while (e = this.next()) {
+	                    if (f(e)) result.push(e);
+	                }this.init();
+	                return result;
+	            },
+	            lazyMap: function lazyMap(f) {
+	                this._lazyMap = f;
+	                return this;
+	            },
+	            lazyFilter: function lazyFilter(f) {
+	                Object.defineProperty(this, 'next', {
+	                    writable: true
+	                });
+	                if (typeof f !== 'function') {
+	                    this.next = this._next;
+	                } else {
+	                    if (typeof this._next !== 'function') {
+	                        this._next = this.next;
+	                    }
+	                    var _next = this._next.bind(this);
+	                    this.next = function () {
+	                        var e;
+	                        while (e = _next()) {
+	                            if (f(e)) return e;
+	                        }
+	                        return e;
+	                    }.bind(this);
+	                }
+	                Object.defineProperty(this, 'next', {
+	                    writable: false
+	                });
+	                return this;
+	            }
+
+	        };
+	        /* power set */
+	        var power = function power(ary, fun) {
+	            var size = 1 << ary.length,
+	                sizeOf = function sizeOf() {
+	                return size;
+	            },
+	                that = Object.create(ary.slice(), {
+	                length: {
+	                    get: sizeOf
+	                }
+	            });
+	            hideProperty(that, 'index');
+	            addProperties(that, {
+	                valueOf: sizeOf,
+	                init: function init() {
+	                    that.index = 0;
+	                },
+	                nth: function nth(n) {
+	                    if (n >= size) return;
+	                    var i = 0,
+	                        result = [];
+	                    for (; n; n >>>= 1, i++) {
+	                        if (n & 1) result.push(this[i]);
+	                    }return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
+	                },
+	                next: function next() {
+	                    return this.nth(this.index++);
+	                }
+	            });
+	            addProperties(that, common);
+	            that.init();
+	            return typeof fun === 'function' ? that.map(fun) : that;
+	        };
+	        /* combination */
+	        var nextIndex = function nextIndex(n) {
+	            var smallest = n & -n,
+	                ripple = n + smallest,
+	                new_smallest = ripple & -ripple,
+	                ones = (new_smallest / smallest >> 1) - 1;
+	            return ripple | ones;
+	        };
+	        var combination = function combination(ary, nelem, fun) {
+	            if (!nelem) nelem = ary.length;
+	            if (nelem < 1) throw new RangeError();
+	            if (nelem > ary.length) throw new RangeError();
+	            var first = (1 << nelem) - 1,
+	                size = C(ary.length, nelem),
+	                maxIndex = 1 << ary.length,
+	                sizeOf = function sizeOf() {
+	                return size;
+	            },
+	                that = Object.create(ary.slice(), {
+	                length: {
+	                    get: sizeOf
+	                }
+	            });
+	            hideProperty(that, 'index');
+	            addProperties(that, {
+	                valueOf: sizeOf,
+	                init: function init() {
+	                    this.index = first;
+	                },
+	                next: function next() {
+	                    if (this.index >= maxIndex) return;
+	                    var i = 0,
+	                        n = this.index,
+	                        result = [];
+	                    for (; n; n >>>= 1, i++) {
+	                        if (n & 1) result[result.length] = this[i];
+	                    }
+
+	                    this.index = nextIndex(this.index);
+	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
+	                }
+	            });
+	            addProperties(that, common);
+	            that.init();
+	            return typeof fun === 'function' ? that.map(fun) : that;
+	        };
+	        /* bigcombination */
+	        var bigNextIndex = function bigNextIndex(n, nelem) {
+
+	            var result = n;
+	            var j = nelem;
+	            var i = 0;
+	            for (i = result.length - 1; i >= 0; i--) {
+	                if (result[i] == 1) {
+	                    j--;
+	                } else {
+	                    break;
+	                }
+	            }
+	            if (j == 0) {
+	                // Overflow
+	                result[result.length] = 1;
+	                for (var k = result.length - 2; k >= 0; k--) {
+	                    result[k] = k < nelem - 1 ? 1 : 0;
+	                }
+	            } else {
+	                // Normal
+
+	                // first zero after 1
+	                var i1 = -1;
+	                var i0 = -1;
+	                for (var i = 0; i < result.length; i++) {
+	                    if (result[i] == 0 && i1 != -1) {
+	                        i0 = i;
+	                    }
+	                    if (result[i] == 1) {
+	                        i1 = i;
+	                    }
+	                    if (i0 != -1 && i1 != -1) {
+	                        result[i0] = 1;
+	                        result[i1] = 0;
+	                        break;
+	                    }
+	                }
+
+	                j = nelem;
+	                for (var i = result.length - 1; i >= i1; i--) {
+	                    if (result[i] == 1) j--;
+	                }
+	                for (var i = 0; i < i1; i++) {
+	                    result[i] = i < j ? 1 : 0;
+	                }
+	            }
+
+	            return result;
+	        };
+	        var buildFirst = function buildFirst(nelem) {
+	            var result = [];
+	            for (var i = 0; i < nelem; i++) {
+	                result[i] = 1;
+	            }
+	            result[0] = 1;
+	            return result;
+	        };
+	        var bigCombination = function bigCombination(ary, nelem, fun) {
+	            if (!nelem) nelem = ary.length;
+	            if (nelem < 1) throw new RangeError();
+	            if (nelem > ary.length) throw new RangeError();
+	            var first = buildFirst(nelem),
+	                size = C(ary.length, nelem),
+	                maxIndex = ary.length,
+	                sizeOf = function sizeOf() {
+	                return size;
+	            },
+	                that = Object.create(ary.slice(), {
+	                length: {
+	                    get: sizeOf
+	                }
+	            });
+	            hideProperty(that, 'index');
+	            addProperties(that, {
+	                valueOf: sizeOf,
+	                init: function init() {
+	                    this.index = first.concat();
+	                },
+	                next: function next() {
+	                    if (this.index.length > maxIndex) return;
+	                    var i = 0,
+	                        n = this.index,
+	                        result = [];
+	                    for (var j = 0; j < n.length; j++, i++) {
+	                        if (n[j]) result[result.length] = this[i];
+	                    }
+	                    bigNextIndex(this.index, nelem);
+	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
+	                }
+	            });
+	            addProperties(that, common);
+	            that.init();
+	            return typeof fun === 'function' ? that.map(fun) : that;
+	        };
+	        /* permutation */
+	        var _permutation = function _permutation(ary) {
+	            var that = ary.slice(),
+	                size = factorial(that.length);
+	            that.index = 0;
+	            that.next = function () {
+	                if (this.index >= size) return;
+	                var copy = this.slice(),
+	                    digits = factoradic(this.index, this.length),
+	                    result = [],
+	                    i = this.length - 1;
+	                for (; i >= 0; --i) {
+	                    result.push(copy.splice(digits[i], 1)[0]);
+	                }this.index++;
+	                return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
+	            };
+	            return that;
+	        };
+	        // which is really a permutation of combination
+	        var permutation = function permutation(ary, nelem, fun) {
+	            if (!nelem) nelem = ary.length;
+	            if (nelem < 1) throw new RangeError();
+	            if (nelem > ary.length) throw new RangeError();
+	            var size = P(ary.length, nelem),
+	                sizeOf = function sizeOf() {
+	                return size;
+	            },
+	                that = Object.create(ary.slice(), {
+	                length: {
+	                    get: sizeOf
+	                }
+	            });
+	            hideProperty(that, 'cmb');
+	            hideProperty(that, 'per');
+	            addProperties(that, {
+	                valueOf: function valueOf() {
+	                    return size;
+	                },
+	                init: function init() {
+	                    this.cmb = combination(ary, nelem);
+	                    this.per = _permutation(this.cmb.next());
+	                },
+	                next: function next() {
+	                    var result = this.per.next();
+	                    if (!result) {
+	                        var cmb = this.cmb.next();
+	                        if (!cmb) return;
+	                        this.per = _permutation(cmb);
+	                        return this.next();
+	                    }
+	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
+	                }
+	            });
+	            addProperties(that, common);
+	            that.init();
+	            return typeof fun === 'function' ? that.map(fun) : that;
+	        };
+
+	        var PC = function PC(m) {
+	            var total = 0;
+	            for (var n = 1; n <= m; n++) {
+	                var p = P(m, n);
+	                total += p;
+	            };
+	            return total;
+	        };
+	        // which is really a permutation of combination
+	        var permutationCombination = function permutationCombination(ary, fun) {
+	            // if (!nelem) nelem = ary.length;
+	            // if (nelem < 1) throw new RangeError;
+	            // if (nelem > ary.length) throw new RangeError;
+	            var size = PC(ary.length),
+	                sizeOf = function sizeOf() {
+	                return size;
+	            },
+	                that = Object.create(ary.slice(), {
+	                length: {
+	                    get: sizeOf
+	                }
+	            });
+	            hideProperty(that, 'cmb');
+	            hideProperty(that, 'per');
+	            hideProperty(that, 'nelem');
+	            addProperties(that, {
+	                valueOf: function valueOf() {
+	                    return size;
+	                },
+	                init: function init() {
+	                    this.nelem = 1;
+	                    // console.log("Starting nelem: " + this.nelem);
+	                    this.cmb = combination(ary, this.nelem);
+	                    this.per = _permutation(this.cmb.next());
+	                },
+	                next: function next() {
+	                    var result = this.per.next();
+	                    if (!result) {
+	                        var cmb = this.cmb.next();
+	                        if (!cmb) {
+	                            this.nelem++;
+	                            // console.log("increment nelem: " + this.nelem + " vs " + ary.length);
+	                            if (this.nelem > ary.length) return;
+	                            this.cmb = combination(ary, this.nelem);
+	                            cmb = this.cmb.next();
+	                            if (!cmb) return;
+	                        }
+	                        this.per = _permutation(cmb);
+	                        return this.next();
+	                    }
+	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
+	                }
+	            });
+	            addProperties(that, common);
+	            that.init();
+	            return typeof fun === 'function' ? that.map(fun) : that;
+	        };
+	        /* Cartesian Product */
+	        var arraySlice = Array.prototype.slice;
+	        var cartesianProduct = function cartesianProduct() {
+	            if (!arguments.length) throw new RangeError();
+	            var args = arraySlice.call(arguments),
+	                size = args.reduce(function (p, a) {
+	                return p * a.length;
+	            }, 1),
+	                sizeOf = function sizeOf() {
+	                return size;
+	            },
+	                dim = args.length,
+	                that = Object.create(args, {
+	                length: {
+	                    get: sizeOf
+	                }
+	            });
+	            if (!size) throw new RangeError();
+	            hideProperty(that, 'index');
+	            addProperties(that, {
+	                valueOf: sizeOf,
+	                dim: dim,
+	                init: function init() {
+	                    this.index = 0;
+	                },
+	                get: function get() {
+	                    if (arguments.length !== this.length) return;
+	                    var result = [],
+	                        d = 0;
+	                    for (; d < dim; d++) {
+	                        var i = arguments[d];
+	                        if (i >= this[d].length) return;
+	                        result.push(this[d][i]);
+	                    }
+	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
+	                },
+	                nth: function nth(n) {
+	                    var result = [],
+	                        d = 0;
+	                    for (; d < dim; d++) {
+	                        var l = this[d].length;
+	                        var i = n % l;
+	                        result.push(this[d][i]);
+	                        n -= i;
+	                        n /= l;
+	                    }
+	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
+	                },
+	                next: function next() {
+	                    if (this.index >= size) return;
+	                    var result = this.nth(this.index);
+	                    this.index++;
+	                    return result;
+	                }
+	            });
+	            addProperties(that, common);
+	            that.init();
+	            return that;
+	        };
+	        /* baseN */
+	        var baseN = function baseN(ary, nelem, fun) {
+	            if (!nelem) nelem = ary.length;
+	            if (nelem < 1) throw new RangeError();
+	            var base = ary.length,
+	                size = Math.pow(base, nelem);
+	            var sizeOf = function sizeOf() {
+	                return size;
+	            },
+	                that = Object.create(ary.slice(), {
+	                length: {
+	                    get: sizeOf
+	                }
+	            });
+	            hideProperty(that, 'index');
+	            addProperties(that, {
+	                valueOf: sizeOf,
+	                init: function init() {
+	                    that.index = 0;
+	                },
+	                nth: function nth(n) {
+	                    if (n >= size) return;
+	                    var result = [];
+	                    for (var i = 0; i < nelem; i++) {
+	                        var d = n % base;
+	                        result.push(ary[d]);
+	                        n -= d;n /= base;
+	                    }
+	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
+	                },
+	                next: function next() {
+	                    return this.nth(this.index++);
+	                }
+	            });
+	            addProperties(that, common);
+	            that.init();
+	            return typeof fun === 'function' ? that.map(fun) : that;
+	        };
+
+	        /* export */
+	        var Combinatorics = Object.create(null);
+	        addProperties(Combinatorics, {
+	            C: C,
+	            P: P,
+	            factorial: factorial,
+	            factoradic: factoradic,
+	            cartesianProduct: cartesianProduct,
+	            combination: combination,
+	            bigCombination: bigCombination,
+	            permutation: permutation,
+	            permutationCombination: permutationCombination,
+	            power: power,
+	            baseN: baseN,
+	            VERSION: version
+	        });
+	        return Combinatorics;
+	    });
+	});
+
+	var cmb = interopDefault(combinatorics);
+
 	function keys() {
 	  var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
@@ -92,7 +2315,7 @@
 	  return obj;
 	});
 
-	function empty (val) {
+	function empty$1 (val) {
 	  return typeof val === 'undefined' || val === null;
 	}
 
@@ -106,16 +2329,6 @@
 	var $rendererDebounced = '____skate_rendererDebounced';
 	var $shadowRoot = '____skate_shadowRoot';
 	var $updated = '____skate_updated';
-
-	var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {}
-
-	function interopDefault(ex) {
-		return ex && typeof ex === 'object' && 'default' in ex ? ex['default'] : ex;
-	}
-
-	function createCommonjsModule(fn, module) {
-		return module = { exports: {} }, fn(module, module.exports), module.exports;
-	}
 
 	var incrementalDomCjs = createCommonjsModule(function (module, exports) {
 	  /**
@@ -1190,7 +3403,7 @@
 	interopDefault(incrementalDomCjs);
 	var applyProp = incrementalDomCjs.applyProp;
 	var attributes = incrementalDomCjs.attributes;
-	var symbols = incrementalDomCjs.symbols;
+	var symbols$1 = incrementalDomCjs.symbols;
 	var text = incrementalDomCjs.text;
 	var elementClose = incrementalDomCjs.elementClose;
 	var elementOpen$1 = incrementalDomCjs.elementOpen;
@@ -1234,7 +3447,7 @@
 	  };
 	}
 
-	var applyDefault = attributes[symbols.default];
+	var applyDefault = attributes[symbols$1.default];
 	var fallbackToV0 = !shadowDomV1 && shadowDomV0;
 
 	// A stack of children that corresponds to the current function helper being
@@ -1255,7 +3468,7 @@
 	// The number of levels deep after skipping a tree.
 	var skips = 0;
 
-	var noop = function noop() {};
+	var noop$1 = function noop() {};
 
 	// Adds or removes an event listener for an element.
 	function applyEvent(elem, ename, newFunc) {
@@ -1280,8 +3493,8 @@
 
 	var attributesContext = propContext(attributes, babelHelpers.defineProperty({
 	  // Attributes that shouldn't be applied to the DOM.
-	  key: noop,
-	  statics: noop,
+	  key: noop$1,
+	  statics: noop$1,
 
 	  // Attributes that *must* be set via a property on all elements.
 	  checked: applyProp,
@@ -1313,7 +3526,7 @@
 	      delete elem[$skip];
 	    }
 	  }
-	}, symbols.default, function (elem, name, value) {
+	}, symbols$1.default, function (elem, name, value) {
 	  // Custom element properties should be set as properties.
 	  var props = elem.constructor.props;
 	  if (props && name in props) {
@@ -1395,7 +3608,7 @@
 	}
 
 	function wrapIdomFunc(func) {
-	  var tnameFuncHandler = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : noop;
+	  var tnameFuncHandler = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : noop$1;
 
 	  return function wrap() {
 	    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
@@ -1524,7 +3737,7 @@
 
 	// Convenience function for declaring an Incremental DOM element using
 	// hyperscript-style syntax.
-	function element(tname, attrs) {
+	function element$2(tname, attrs) {
 	  var atype = typeof attrs === 'undefined' ? 'undefined' : babelHelpers.typeof(attrs);
 
 	  // If attributes are a function, then they should be treated as children.
@@ -1587,7 +3800,7 @@
 	        args[_key7] = arguments[_key7];
 	      }
 
-	      return element.bind.apply(element, [null].concat(args));
+	      return element$2.bind.apply(element$2, [null].concat(args));
 	    };
 	  }
 	  return tags.map(function (tag) {
@@ -1596,7 +3809,7 @@
 	        args[_key8] = arguments[_key8];
 	      }
 
-	      return element.bind.apply(element, [null, tag].concat(args));
+	      return element$2.bind.apply(element$2, [null, tag].concat(args));
 	    };
 	  });
 	}
@@ -1711,17 +3924,17 @@
 
 	function syncFirstTimeProp(elem, prop, propName, attributeName, propData) {
 	  var syncAttrValue = propData.lastAssignedValue;
-	  if (empty(syncAttrValue)) {
+	  if (empty$1(syncAttrValue)) {
 	    if ('initial' in prop) {
 	      syncAttrValue = getInitialValue(elem, propName, prop);
 	    } else if ('default' in prop) {
 	      syncAttrValue = getDefaultValue(elem, propName, prop);
 	    }
 	  }
-	  if (!empty(syncAttrValue) && prop.serialize) {
+	  if (!empty$1(syncAttrValue) && prop.serialize) {
 	    syncAttrValue = prop.serialize(syncAttrValue);
 	  }
-	  if (!empty(syncAttrValue)) {
+	  if (!empty$1(syncAttrValue)) {
 	    propData.syncingAttribute = true;
 	    elem.setAttribute(attributeName, syncAttrValue);
 	  }
@@ -1733,12 +3946,12 @@
 
 	    var serializedValue = prop.serialize(internalValue);
 	    var currentAttrValue = elem.getAttribute(attributeName);
-	    var serializedIsEmpty = empty(serializedValue);
-	    var attributeChanged = !(serializedIsEmpty && empty(currentAttrValue) || serializedValue === currentAttrValue);
+	    var serializedIsEmpty = empty$1(serializedValue);
+	    var attributeChanged = !(serializedIsEmpty && empty$1(currentAttrValue) || serializedValue === currentAttrValue);
 
 	    propData.syncingAttribute = true;
 
-	    var shouldRemoveAttribute = empty(propData.lastAssignedValue);
+	    var shouldRemoveAttribute = empty$1(propData.lastAssignedValue);
 	    if (shouldRemoveAttribute || serializedIsEmpty) {
 	      elem.removeAttribute(attributeName);
 	    } else {
@@ -2116,7 +4329,7 @@
 	    data(elem, 'propertyLinks')[name] = attributeName;
 
 	    // Set up initial value if it wasn't specified.
-	    if (empty(initialValue)) {
+	    if (empty$1(initialValue)) {
 	      if (attributeName && elem.hasAttribute(attributeName)) {
 	        initialValue = opts.deserialize(elem.getAttribute(attributeName));
 	      } else if ('initial' in opts) {
@@ -2142,11 +4355,11 @@
 	    var oldValue = propData.oldValue;
 
 
-	    if (empty(oldValue)) {
+	    if (empty$1(oldValue)) {
 	      oldValue = null;
 	    }
 
-	    if (empty(newValue)) {
+	    if (empty$1(newValue)) {
 	      newValue = getDefaultValue(this, name, opts);
 	    }
 
@@ -2347,2218 +4560,97 @@
 
 	var h = builder();
 
-	var xhtml = "http://www.w3.org/1999/xhtml";
-
-	var namespaces = {
-	  svg: "http://www.w3.org/2000/svg",
-	  xhtml: xhtml,
-	  xlink: "http://www.w3.org/1999/xlink",
-	  xml: "http://www.w3.org/XML/1998/namespace",
-	  xmlns: "http://www.w3.org/2000/xmlns/"
-	};
-
-	function namespace (name) {
-	  var prefix = name += "",
-	      i = prefix.indexOf(":");
-	  if (i >= 0 && (prefix = name.slice(0, i)) !== "xmlns") name = name.slice(i + 1);
-	  return namespaces.hasOwnProperty(prefix) ? { space: namespaces[prefix], local: name } : name;
-	}
-
-	function creatorInherit(name) {
-	  return function () {
-	    var document = this.ownerDocument,
-	        uri = this.namespaceURI;
-	    return uri === xhtml && document.documentElement.namespaceURI === xhtml ? document.createElement(name) : document.createElementNS(uri, name);
-	  };
-	}
-
-	function creatorFixed(fullname) {
-	  return function () {
-	    return this.ownerDocument.createElementNS(fullname.space, fullname.local);
-	  };
-	}
-
-	function creator (name) {
-	  var fullname = namespace(name);
-	  return (fullname.local ? creatorFixed : creatorInherit)(fullname);
-	}
-
-	var matcher = function matcher(selector) {
-	  return function () {
-	    return this.matches(selector);
-	  };
-	};
-
-	if (typeof document !== "undefined") {
-	  var element$1 = document.documentElement;
-	  if (!element$1.matches) {
-	    var vendorMatches = element$1.webkitMatchesSelector || element$1.msMatchesSelector || element$1.mozMatchesSelector || element$1.oMatchesSelector;
-	    matcher = function matcher(selector) {
-	      return function () {
-	        return vendorMatches.call(this, selector);
-	      };
-	    };
-	  }
-	}
-
-	var matcher$1 = matcher;
-
-	var filterEvents = {};
-
-	var event = null;
-
-	if (typeof document !== "undefined") {
-	  var element$2 = document.documentElement;
-	  if (!("onmouseenter" in element$2)) {
-	    filterEvents = { mouseenter: "mouseover", mouseleave: "mouseout" };
-	  }
-	}
-
-	function filterContextListener(listener, index, group) {
-	  listener = contextListener(listener, index, group);
-	  return function (event) {
-	    var related = event.relatedTarget;
-	    if (!related || related !== this && !(related.compareDocumentPosition(this) & 8)) {
-	      listener.call(this, event);
-	    }
-	  };
-	}
-
-	function contextListener(listener, index, group) {
-	  return function (event1) {
-	    var event0 = event; // Events can be reentrant (e.g., focus).
-	    event = event1;
-	    try {
-	      listener.call(this, this.__data__, index, group);
-	    } finally {
-	      event = event0;
-	    }
-	  };
-	}
-
-	function parseTypenames(typenames) {
-	  return typenames.trim().split(/^|\s+/).map(function (t) {
-	    var name = "",
-	        i = t.indexOf(".");
-	    if (i >= 0) name = t.slice(i + 1), t = t.slice(0, i);
-	    return { type: t, name: name };
-	  });
-	}
-
-	function onRemove(typename) {
-	  return function () {
-	    var on = this.__on;
-	    if (!on) return;
-	    for (var j = 0, i = -1, m = on.length, o; j < m; ++j) {
-	      if (o = on[j], (!typename.type || o.type === typename.type) && o.name === typename.name) {
-	        this.removeEventListener(o.type, o.listener, o.capture);
-	      } else {
-	        on[++i] = o;
-	      }
-	    }
-	    if (++i) on.length = i;else delete this.__on;
-	  };
-	}
-
-	function onAdd(typename, value, capture) {
-	  var wrap = filterEvents.hasOwnProperty(typename.type) ? filterContextListener : contextListener;
-	  return function (d, i, group) {
-	    var on = this.__on,
-	        o,
-	        listener = wrap(value, i, group);
-	    if (on) for (var j = 0, m = on.length; j < m; ++j) {
-	      if ((o = on[j]).type === typename.type && o.name === typename.name) {
-	        this.removeEventListener(o.type, o.listener, o.capture);
-	        this.addEventListener(o.type, o.listener = listener, o.capture = capture);
-	        o.value = value;
-	        return;
-	      }
-	    }
-	    this.addEventListener(typename.type, listener, capture);
-	    o = { type: typename.type, name: typename.name, value: value, listener: listener, capture: capture };
-	    if (!on) this.__on = [o];else on.push(o);
-	  };
-	}
-
-	function selection_on (typename, value, capture) {
-	  var typenames = parseTypenames(typename + ""),
-	      i,
-	      n = typenames.length,
-	      t;
-
-	  if (arguments.length < 2) {
-	    var on = this.node().__on;
-	    if (on) for (var j = 0, m = on.length, o; j < m; ++j) {
-	      for (i = 0, o = on[j]; i < n; ++i) {
-	        if ((t = typenames[i]).type === o.type && t.name === o.name) {
-	          return o.value;
-	        }
-	      }
-	    }
-	    return;
-	  }
-
-	  on = value ? onAdd : onRemove;
-	  if (capture == null) capture = false;
-	  for (i = 0; i < n; ++i) {
-	    this.each(on(typenames[i], value, capture));
-	  }return this;
-	}
-
-	function none() {}
-
-	function selector (selector) {
-	  return selector == null ? none : function () {
-	    return this.querySelector(selector);
-	  };
-	}
-
-	function selection_select (select) {
-	  if (typeof select !== "function") select = selector(select);
-
-	  for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
-	    for (var group = groups[j], n = group.length, subgroup = subgroups[j] = new Array(n), node, subnode, i = 0; i < n; ++i) {
-	      if ((node = group[i]) && (subnode = select.call(node, node.__data__, i, group))) {
-	        if ("__data__" in node) subnode.__data__ = node.__data__;
-	        subgroup[i] = subnode;
-	      }
-	    }
-	  }
-
-	  return new Selection(subgroups, this._parents);
-	}
-
-	function empty$1() {
-	  return [];
-	}
-
-	function selectorAll (selector) {
-	  return selector == null ? empty$1 : function () {
-	    return this.querySelectorAll(selector);
-	  };
-	}
-
-	function selection_selectAll (select) {
-	  if (typeof select !== "function") select = selectorAll(select);
-
-	  for (var groups = this._groups, m = groups.length, subgroups = [], parents = [], j = 0; j < m; ++j) {
-	    for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) {
-	      if (node = group[i]) {
-	        subgroups.push(select.call(node, node.__data__, i, group));
-	        parents.push(node);
-	      }
-	    }
-	  }
-
-	  return new Selection(subgroups, parents);
-	}
-
-	function selection_filter (match) {
-	  if (typeof match !== "function") match = matcher$1(match);
-
-	  for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
-	    for (var group = groups[j], n = group.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
-	      if ((node = group[i]) && match.call(node, node.__data__, i, group)) {
-	        subgroup.push(node);
-	      }
-	    }
-	  }
-
-	  return new Selection(subgroups, this._parents);
-	}
-
-	function sparse (update) {
-	  return new Array(update.length);
-	}
-
-	function selection_enter () {
-	  return new Selection(this._enter || this._groups.map(sparse), this._parents);
-	}
-
-	function EnterNode(parent, datum) {
-	  this.ownerDocument = parent.ownerDocument;
-	  this.namespaceURI = parent.namespaceURI;
-	  this._next = null;
-	  this._parent = parent;
-	  this.__data__ = datum;
-	}
-
-	EnterNode.prototype = {
-	  constructor: EnterNode,
-	  appendChild: function appendChild(child) {
-	    return this._parent.insertBefore(child, this._next);
-	  },
-	  insertBefore: function insertBefore(child, next) {
-	    return this._parent.insertBefore(child, next);
-	  },
-	  querySelector: function querySelector(selector) {
-	    return this._parent.querySelector(selector);
-	  },
-	  querySelectorAll: function querySelectorAll(selector) {
-	    return this._parent.querySelectorAll(selector);
-	  }
-	};
-
-	function constant (x) {
-	  return function () {
-	    return x;
-	  };
-	}
-
-	var keyPrefix = "$"; // Protect against keys like “__proto__”.
-
-	function bindIndex(parent, group, enter, update, exit, data) {
-	  var i = 0,
-	      node,
-	      groupLength = group.length,
-	      dataLength = data.length;
-
-	  // Put any non-null nodes that fit into update.
-	  // Put any null nodes into enter.
-	  // Put any remaining data into enter.
-	  for (; i < dataLength; ++i) {
-	    if (node = group[i]) {
-	      node.__data__ = data[i];
-	      update[i] = node;
-	    } else {
-	      enter[i] = new EnterNode(parent, data[i]);
-	    }
-	  }
-
-	  // Put any non-null nodes that don’t fit into exit.
-	  for (; i < groupLength; ++i) {
-	    if (node = group[i]) {
-	      exit[i] = node;
-	    }
-	  }
-	}
-
-	function bindKey(parent, group, enter, update, exit, data, key) {
-	  var i,
-	      node,
-	      nodeByKeyValue = {},
-	      groupLength = group.length,
-	      dataLength = data.length,
-	      keyValues = new Array(groupLength),
-	      keyValue;
-
-	  // Compute the key for each node.
-	  // If multiple nodes have the same key, the duplicates are added to exit.
-	  for (i = 0; i < groupLength; ++i) {
-	    if (node = group[i]) {
-	      keyValues[i] = keyValue = keyPrefix + key.call(node, node.__data__, i, group);
-	      if (keyValue in nodeByKeyValue) {
-	        exit[i] = node;
-	      } else {
-	        nodeByKeyValue[keyValue] = node;
-	      }
-	    }
-	  }
-
-	  // Compute the key for each datum.
-	  // If there a node associated with this key, join and add it to update.
-	  // If there is not (or the key is a duplicate), add it to enter.
-	  for (i = 0; i < dataLength; ++i) {
-	    keyValue = keyPrefix + key.call(parent, data[i], i, data);
-	    if (node = nodeByKeyValue[keyValue]) {
-	      update[i] = node;
-	      node.__data__ = data[i];
-	      nodeByKeyValue[keyValue] = null;
-	    } else {
-	      enter[i] = new EnterNode(parent, data[i]);
-	    }
-	  }
-
-	  // Add any remaining nodes that were not bound to data to exit.
-	  for (i = 0; i < groupLength; ++i) {
-	    if ((node = group[i]) && nodeByKeyValue[keyValues[i]] === node) {
-	      exit[i] = node;
-	    }
-	  }
-	}
-
-	function selection_data (value, key) {
-	  if (!value) {
-	    data = new Array(this.size()), j = -1;
-	    this.each(function (d) {
-	      data[++j] = d;
-	    });
-	    return data;
-	  }
-
-	  var bind = key ? bindKey : bindIndex,
-	      parents = this._parents,
-	      groups = this._groups;
-
-	  if (typeof value !== "function") value = constant(value);
-
-	  for (var m = groups.length, update = new Array(m), enter = new Array(m), exit = new Array(m), j = 0; j < m; ++j) {
-	    var parent = parents[j],
-	        group = groups[j],
-	        groupLength = group.length,
-	        data = value.call(parent, parent && parent.__data__, j, parents),
-	        dataLength = data.length,
-	        enterGroup = enter[j] = new Array(dataLength),
-	        updateGroup = update[j] = new Array(dataLength),
-	        exitGroup = exit[j] = new Array(groupLength);
-
-	    bind(parent, group, enterGroup, updateGroup, exitGroup, data, key);
-
-	    // Now connect the enter nodes to their following update node, such that
-	    // appendChild can insert the materialized enter node before this node,
-	    // rather than at the end of the parent node.
-	    for (var i0 = 0, i1 = 0, previous, next; i0 < dataLength; ++i0) {
-	      if (previous = enterGroup[i0]) {
-	        if (i0 >= i1) i1 = i0 + 1;
-	        while (!(next = updateGroup[i1]) && ++i1 < dataLength) {}
-	        previous._next = next || null;
-	      }
-	    }
-	  }
-
-	  update = new Selection(update, parents);
-	  update._enter = enter;
-	  update._exit = exit;
-	  return update;
-	}
-
-	function selection_exit () {
-	  return new Selection(this._exit || this._groups.map(sparse), this._parents);
-	}
-
-	function selection_merge (selection) {
-
-	  for (var groups0 = this._groups, groups1 = selection._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) {
-	    for (var group0 = groups0[j], group1 = groups1[j], n = group0.length, merge = merges[j] = new Array(n), node, i = 0; i < n; ++i) {
-	      if (node = group0[i] || group1[i]) {
-	        merge[i] = node;
-	      }
-	    }
-	  }
-
-	  for (; j < m0; ++j) {
-	    merges[j] = groups0[j];
-	  }
-
-	  return new Selection(merges, this._parents);
-	}
-
-	function selection_order () {
-
-	  for (var groups = this._groups, j = -1, m = groups.length; ++j < m;) {
-	    for (var group = groups[j], i = group.length - 1, next = group[i], node; --i >= 0;) {
-	      if (node = group[i]) {
-	        if (next && next !== node.nextSibling) next.parentNode.insertBefore(node, next);
-	        next = node;
-	      }
-	    }
-	  }
-
-	  return this;
-	}
-
-	function selection_sort (compare) {
-	  if (!compare) compare = ascending;
-
-	  function compareNode(a, b) {
-	    return a && b ? compare(a.__data__, b.__data__) : !a - !b;
-	  }
-
-	  for (var groups = this._groups, m = groups.length, sortgroups = new Array(m), j = 0; j < m; ++j) {
-	    for (var group = groups[j], n = group.length, sortgroup = sortgroups[j] = new Array(n), node, i = 0; i < n; ++i) {
-	      if (node = group[i]) {
-	        sortgroup[i] = node;
-	      }
-	    }
-	    sortgroup.sort(compareNode);
-	  }
-
-	  return new Selection(sortgroups, this._parents).order();
-	}
-
-	function ascending(a, b) {
-	  return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
-	}
-
-	function selection_call () {
-	  var callback = arguments[0];
-	  arguments[0] = this;
-	  callback.apply(null, arguments);
-	  return this;
-	}
-
-	function selection_nodes () {
-	  var nodes = new Array(this.size()),
-	      i = -1;
-	  this.each(function () {
-	    nodes[++i] = this;
-	  });
-	  return nodes;
-	}
-
-	function selection_node () {
-
-	  for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
-	    for (var group = groups[j], i = 0, n = group.length; i < n; ++i) {
-	      var node = group[i];
-	      if (node) return node;
-	    }
-	  }
-
-	  return null;
-	}
-
-	function selection_size () {
-	  var size = 0;
-	  this.each(function () {
-	    ++size;
-	  });
-	  return size;
-	}
-
-	function selection_empty () {
-	  return !this.node();
-	}
-
-	function selection_each (callback) {
-
-	  for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
-	    for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) {
-	      if (node = group[i]) callback.call(node, node.__data__, i, group);
-	    }
-	  }
-
-	  return this;
-	}
-
-	function attrRemove(name) {
-	  return function () {
-	    this.removeAttribute(name);
-	  };
-	}
-
-	function attrRemoveNS(fullname) {
-	  return function () {
-	    this.removeAttributeNS(fullname.space, fullname.local);
-	  };
-	}
-
-	function attrConstant(name, value) {
-	  return function () {
-	    this.setAttribute(name, value);
-	  };
-	}
-
-	function attrConstantNS(fullname, value) {
-	  return function () {
-	    this.setAttributeNS(fullname.space, fullname.local, value);
-	  };
-	}
-
-	function attrFunction(name, value) {
-	  return function () {
-	    var v = value.apply(this, arguments);
-	    if (v == null) this.removeAttribute(name);else this.setAttribute(name, v);
-	  };
-	}
-
-	function attrFunctionNS(fullname, value) {
-	  return function () {
-	    var v = value.apply(this, arguments);
-	    if (v == null) this.removeAttributeNS(fullname.space, fullname.local);else this.setAttributeNS(fullname.space, fullname.local, v);
-	  };
-	}
-
-	function selection_attr (name, value) {
-	  var fullname = namespace(name);
-
-	  if (arguments.length < 2) {
-	    var node = this.node();
-	    return fullname.local ? node.getAttributeNS(fullname.space, fullname.local) : node.getAttribute(fullname);
-	  }
-
-	  return this.each((value == null ? fullname.local ? attrRemoveNS : attrRemove : typeof value === "function" ? fullname.local ? attrFunctionNS : attrFunction : fullname.local ? attrConstantNS : attrConstant)(fullname, value));
-	}
-
-	function defaultView (node) {
-	    return node.ownerDocument && node.ownerDocument.defaultView || // node is a Node
-	    node.document && node // node is a Window
-	    || node.defaultView; // node is a Document
-	}
-
-	function styleRemove(name) {
-	  return function () {
-	    this.style.removeProperty(name);
-	  };
-	}
-
-	function styleConstant(name, value, priority) {
-	  return function () {
-	    this.style.setProperty(name, value, priority);
-	  };
-	}
-
-	function styleFunction(name, value, priority) {
-	  return function () {
-	    var v = value.apply(this, arguments);
-	    if (v == null) this.style.removeProperty(name);else this.style.setProperty(name, v, priority);
-	  };
-	}
-
-	function selection_style (name, value, priority) {
-	  var node;
-	  return arguments.length > 1 ? this.each((value == null ? styleRemove : typeof value === "function" ? styleFunction : styleConstant)(name, value, priority == null ? "" : priority)) : defaultView(node = this.node()).getComputedStyle(node, null).getPropertyValue(name);
-	}
-
-	function propertyRemove(name) {
-	  return function () {
-	    delete this[name];
-	  };
-	}
-
-	function propertyConstant(name, value) {
-	  return function () {
-	    this[name] = value;
-	  };
-	}
-
-	function propertyFunction(name, value) {
-	  return function () {
-	    var v = value.apply(this, arguments);
-	    if (v == null) delete this[name];else this[name] = v;
-	  };
-	}
-
-	function selection_property (name, value) {
-	  return arguments.length > 1 ? this.each((value == null ? propertyRemove : typeof value === "function" ? propertyFunction : propertyConstant)(name, value)) : this.node()[name];
-	}
-
-	function classArray(string) {
-	  return string.trim().split(/^|\s+/);
-	}
-
-	function classList(node) {
-	  return node.classList || new ClassList(node);
-	}
-
-	function ClassList(node) {
-	  this._node = node;
-	  this._names = classArray(node.getAttribute("class") || "");
-	}
-
-	ClassList.prototype = {
-	  add: function add(name) {
-	    var i = this._names.indexOf(name);
-	    if (i < 0) {
-	      this._names.push(name);
-	      this._node.setAttribute("class", this._names.join(" "));
-	    }
-	  },
-	  remove: function remove(name) {
-	    var i = this._names.indexOf(name);
-	    if (i >= 0) {
-	      this._names.splice(i, 1);
-	      this._node.setAttribute("class", this._names.join(" "));
-	    }
-	  },
-	  contains: function contains(name) {
-	    return this._names.indexOf(name) >= 0;
-	  }
-	};
-
-	function classedAdd(node, names) {
-	  var list = classList(node),
-	      i = -1,
-	      n = names.length;
-	  while (++i < n) {
-	    list.add(names[i]);
-	  }
-	}
-
-	function classedRemove(node, names) {
-	  var list = classList(node),
-	      i = -1,
-	      n = names.length;
-	  while (++i < n) {
-	    list.remove(names[i]);
-	  }
-	}
-
-	function classedTrue(names) {
-	  return function () {
-	    classedAdd(this, names);
-	  };
-	}
-
-	function classedFalse(names) {
-	  return function () {
-	    classedRemove(this, names);
-	  };
-	}
-
-	function classedFunction(names, value) {
-	  return function () {
-	    (value.apply(this, arguments) ? classedAdd : classedRemove)(this, names);
-	  };
-	}
-
-	function selection_classed (name, value) {
-	  var names = classArray(name + "");
-
-	  if (arguments.length < 2) {
-	    var list = classList(this.node()),
-	        i = -1,
-	        n = names.length;
-	    while (++i < n) {
-	      if (!list.contains(names[i])) return false;
-	    }return true;
-	  }
-
-	  return this.each((typeof value === "function" ? classedFunction : value ? classedTrue : classedFalse)(names, value));
-	}
-
-	function textRemove() {
-	  this.textContent = "";
-	}
-
-	function textConstant(value) {
-	  return function () {
-	    this.textContent = value;
-	  };
-	}
-
-	function textFunction(value) {
-	  return function () {
-	    var v = value.apply(this, arguments);
-	    this.textContent = v == null ? "" : v;
-	  };
-	}
-
-	function selection_text (value) {
-	  return arguments.length ? this.each(value == null ? textRemove : (typeof value === "function" ? textFunction : textConstant)(value)) : this.node().textContent;
-	}
-
-	function htmlRemove() {
-	  this.innerHTML = "";
-	}
-
-	function htmlConstant(value) {
-	  return function () {
-	    this.innerHTML = value;
-	  };
-	}
-
-	function htmlFunction(value) {
-	  return function () {
-	    var v = value.apply(this, arguments);
-	    this.innerHTML = v == null ? "" : v;
-	  };
-	}
-
-	function selection_html (value) {
-	  return arguments.length ? this.each(value == null ? htmlRemove : (typeof value === "function" ? htmlFunction : htmlConstant)(value)) : this.node().innerHTML;
-	}
-
-	function raise() {
-	  if (this.nextSibling) this.parentNode.appendChild(this);
-	}
-
-	function selection_raise () {
-	  return this.each(raise);
-	}
-
-	function lower() {
-	  if (this.previousSibling) this.parentNode.insertBefore(this, this.parentNode.firstChild);
-	}
-
-	function selection_lower () {
-	  return this.each(lower);
-	}
-
-	function selection_append (name) {
-	  var create = typeof name === "function" ? name : creator(name);
-	  return this.select(function () {
-	    return this.appendChild(create.apply(this, arguments));
-	  });
-	}
-
-	function constantNull() {
-	  return null;
-	}
-
-	function selection_insert (name, before) {
-	  var create = typeof name === "function" ? name : creator(name),
-	      select = before == null ? constantNull : typeof before === "function" ? before : selector(before);
-	  return this.select(function () {
-	    return this.insertBefore(create.apply(this, arguments), select.apply(this, arguments) || null);
-	  });
-	}
-
-	function remove() {
-	  var parent = this.parentNode;
-	  if (parent) parent.removeChild(this);
-	}
-
-	function selection_remove () {
-	  return this.each(remove);
-	}
-
-	function selection_datum (value) {
-	    return arguments.length ? this.property("__data__", value) : this.node().__data__;
-	}
-
-	function dispatchEvent(node, type, params) {
-	  var window = defaultView(node),
-	      event = window.CustomEvent;
-
-	  if (event) {
-	    event = new event(type, params);
-	  } else {
-	    event = window.document.createEvent("Event");
-	    if (params) event.initEvent(type, params.bubbles, params.cancelable), event.detail = params.detail;else event.initEvent(type, false, false);
-	  }
-
-	  node.dispatchEvent(event);
-	}
-
-	function dispatchConstant(type, params) {
-	  return function () {
-	    return dispatchEvent(this, type, params);
-	  };
-	}
-
-	function dispatchFunction(type, params) {
-	  return function () {
-	    return dispatchEvent(this, type, params.apply(this, arguments));
-	  };
-	}
-
-	function selection_dispatch (type, params) {
-	  return this.each((typeof params === "function" ? dispatchFunction : dispatchConstant)(type, params));
-	}
-
-	var root = [null];
-
-	function Selection(groups, parents) {
-	  this._groups = groups;
-	  this._parents = parents;
-	}
-
-	function selection() {
-	  return new Selection([[document.documentElement]], root);
-	}
-
-	Selection.prototype = selection.prototype = {
-	  constructor: Selection,
-	  select: selection_select,
-	  selectAll: selection_selectAll,
-	  filter: selection_filter,
-	  data: selection_data,
-	  enter: selection_enter,
-	  exit: selection_exit,
-	  merge: selection_merge,
-	  order: selection_order,
-	  sort: selection_sort,
-	  call: selection_call,
-	  nodes: selection_nodes,
-	  node: selection_node,
-	  size: selection_size,
-	  empty: selection_empty,
-	  each: selection_each,
-	  attr: selection_attr,
-	  style: selection_style,
-	  property: selection_property,
-	  classed: selection_classed,
-	  text: selection_text,
-	  html: selection_html,
-	  raise: selection_raise,
-	  lower: selection_lower,
-	  append: selection_append,
-	  insert: selection_insert,
-	  remove: selection_remove,
-	  datum: selection_datum,
-	  on: selection_on,
-	  dispatch: selection_dispatch
-	};
-
-	function select (selector) {
-	    return typeof selector === "string" ? new Selection([[document.querySelector(selector)]], [document.documentElement]) : new Selection([[selector]], root);
-	}
-
-	var pi = Math.PI;
-	var tau = 2 * pi;
-	var epsilon = 1e-6;
-	var tauEpsilon = tau - epsilon;
-	function Path() {
-	  this._x0 = this._y0 = // start of current subpath
-	  this._x1 = this._y1 = null; // end of current subpath
-	  this._ = [];
-	}
-
-	function path() {
-	  return new Path();
-	}
-
-	Path.prototype = path.prototype = {
-	  constructor: Path,
-	  moveTo: function moveTo(x, y) {
-	    this._.push("M", this._x0 = this._x1 = +x, ",", this._y0 = this._y1 = +y);
-	  },
-	  closePath: function closePath() {
-	    if (this._x1 !== null) {
-	      this._x1 = this._x0, this._y1 = this._y0;
-	      this._.push("Z");
-	    }
-	  },
-	  lineTo: function lineTo(x, y) {
-	    this._.push("L", this._x1 = +x, ",", this._y1 = +y);
-	  },
-	  quadraticCurveTo: function quadraticCurveTo(x1, y1, x, y) {
-	    this._.push("Q", +x1, ",", +y1, ",", this._x1 = +x, ",", this._y1 = +y);
-	  },
-	  bezierCurveTo: function bezierCurveTo(x1, y1, x2, y2, x, y) {
-	    this._.push("C", +x1, ",", +y1, ",", +x2, ",", +y2, ",", this._x1 = +x, ",", this._y1 = +y);
-	  },
-	  arcTo: function arcTo(x1, y1, x2, y2, r) {
-	    x1 = +x1, y1 = +y1, x2 = +x2, y2 = +y2, r = +r;
-	    var x0 = this._x1,
-	        y0 = this._y1,
-	        x21 = x2 - x1,
-	        y21 = y2 - y1,
-	        x01 = x0 - x1,
-	        y01 = y0 - y1,
-	        l01_2 = x01 * x01 + y01 * y01;
-
-	    // Is the radius negative? Error.
-	    if (r < 0) throw new Error("negative radius: " + r);
-
-	    // Is this path empty? Move to (x1,y1).
-	    if (this._x1 === null) {
-	      this._.push("M", this._x1 = x1, ",", this._y1 = y1);
-	    }
-
-	    // Or, is (x1,y1) coincident with (x0,y0)? Do nothing.
-	    else if (!(l01_2 > epsilon)) {}
-
-	      // Or, are (x0,y0), (x1,y1) and (x2,y2) collinear?
-	      // Equivalently, is (x1,y1) coincident with (x2,y2)?
-	      // Or, is the radius zero? Line to (x1,y1).
-	      else if (!(Math.abs(y01 * x21 - y21 * x01) > epsilon) || !r) {
-	          this._.push("L", this._x1 = x1, ",", this._y1 = y1);
-	        }
-
-	        // Otherwise, draw an arc!
-	        else {
-	            var x20 = x2 - x0,
-	                y20 = y2 - y0,
-	                l21_2 = x21 * x21 + y21 * y21,
-	                l20_2 = x20 * x20 + y20 * y20,
-	                l21 = Math.sqrt(l21_2),
-	                l01 = Math.sqrt(l01_2),
-	                l = r * Math.tan((pi - Math.acos((l21_2 + l01_2 - l20_2) / (2 * l21 * l01))) / 2),
-	                t01 = l / l01,
-	                t21 = l / l21;
-
-	            // If the start tangent is not coincident with (x0,y0), line to.
-	            if (Math.abs(t01 - 1) > epsilon) {
-	              this._.push("L", x1 + t01 * x01, ",", y1 + t01 * y01);
-	            }
-
-	            this._.push("A", r, ",", r, ",0,0,", +(y01 * x20 > x01 * y20), ",", this._x1 = x1 + t21 * x21, ",", this._y1 = y1 + t21 * y21);
-	          }
-	  },
-	  arc: function arc(x, y, r, a0, a1, ccw) {
-	    x = +x, y = +y, r = +r;
-	    var dx = r * Math.cos(a0),
-	        dy = r * Math.sin(a0),
-	        x0 = x + dx,
-	        y0 = y + dy,
-	        cw = 1 ^ ccw,
-	        da = ccw ? a0 - a1 : a1 - a0;
-
-	    // Is the radius negative? Error.
-	    if (r < 0) throw new Error("negative radius: " + r);
-
-	    // Is this path empty? Move to (x0,y0).
-	    if (this._x1 === null) {
-	      this._.push("M", x0, ",", y0);
-	    }
-
-	    // Or, is (x0,y0) not coincident with the previous point? Line to (x0,y0).
-	    else if (Math.abs(this._x1 - x0) > epsilon || Math.abs(this._y1 - y0) > epsilon) {
-	        this._.push("L", x0, ",", y0);
-	      }
-
-	    // Is this arc empty? We’re done.
-	    if (!r) return;
-
-	    // Is this a complete circle? Draw two arcs to complete the circle.
-	    if (da > tauEpsilon) {
-	      this._.push("A", r, ",", r, ",0,1,", cw, ",", x - dx, ",", y - dy, "A", r, ",", r, ",0,1,", cw, ",", this._x1 = x0, ",", this._y1 = y0);
-	    }
-
-	    // Otherwise, draw an arc!
-	    else {
-	        if (da < 0) da = da % tau + tau;
-	        this._.push("A", r, ",", r, ",0,", +(da >= pi), ",", cw, ",", this._x1 = x + r * Math.cos(a1), ",", this._y1 = y + r * Math.sin(a1));
-	      }
-	  },
-	  rect: function rect(x, y, w, h) {
-	    this._.push("M", this._x0 = this._x1 = +x, ",", this._y0 = this._y1 = +y, "h", +w, "v", +h, "h", -w, "Z");
-	  },
-	  toString: function toString() {
-	    return this._.join("");
-	  }
-	};
-
-	function constant$1 (x) {
-	  return function constant() {
-	    return x;
-	  };
-	}
-
-	var epsilon$1 = 1e-12;
-
-	function Linear(context) {
-	  this._context = context;
-	}
-
-	Linear.prototype = {
-	  areaStart: function areaStart() {
-	    this._line = 0;
-	  },
-	  areaEnd: function areaEnd() {
-	    this._line = NaN;
-	  },
-	  lineStart: function lineStart() {
-	    this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
-	    this._line = 1 - this._line;
-	  },
-	  point: function point(x, y) {
-	    x = +x, y = +y;
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
-	      case 1:
-	        this._point = 2; // proceed
-	      default:
-	        this._context.lineTo(x, y);break;
-	    }
-	  }
-	};
-
-	function curveLinear (context) {
-	  return new Linear(context);
-	}
-
-	function x(p) {
-	  return p[0];
-	}
-
-	function y(p) {
-	  return p[1];
-	}
-
-	function line () {
-	  var x$$ = x,
-	      y$$ = y,
-	      defined = constant$1(true),
-	      context = null,
-	      curve = curveLinear,
-	      output = null;
-
-	  function line(data) {
-	    var i,
-	        n = data.length,
-	        d,
-	        defined0 = false,
-	        buffer;
-
-	    if (context == null) output = curve(buffer = path());
-
-	    for (i = 0; i <= n; ++i) {
-	      if (!(i < n && defined(d = data[i], i, data)) === defined0) {
-	        if (defined0 = !defined0) output.lineStart();else output.lineEnd();
-	      }
-	      if (defined0) output.point(+x$$(d, i, data), +y$$(d, i, data));
-	    }
-
-	    if (buffer) return output = null, buffer + "" || null;
-	  }
-
-	  line.x = function (_) {
-	    return arguments.length ? (x$$ = typeof _ === "function" ? _ : constant$1(+_), line) : x$$;
-	  };
-
-	  line.y = function (_) {
-	    return arguments.length ? (y$$ = typeof _ === "function" ? _ : constant$1(+_), line) : y$$;
-	  };
-
-	  line.defined = function (_) {
-	    return arguments.length ? (defined = typeof _ === "function" ? _ : constant$1(!!_), line) : defined;
-	  };
-
-	  line.curve = function (_) {
-	    return arguments.length ? (curve = _, context != null && (output = curve(context)), line) : curve;
-	  };
-
-	  line.context = function (_) {
-	    return arguments.length ? (_ == null ? context = output = null : output = curve(context = _), line) : context;
-	  };
-
-	  return line;
-	}
-
-	function noop$1 () {}
-
-	function _point(that, x, y) {
-	  that._context.bezierCurveTo((2 * that._x0 + that._x1) / 3, (2 * that._y0 + that._y1) / 3, (that._x0 + 2 * that._x1) / 3, (that._y0 + 2 * that._y1) / 3, (that._x0 + 4 * that._x1 + x) / 6, (that._y0 + 4 * that._y1 + y) / 6);
-	}
-
-	function Basis(context) {
-	  this._context = context;
-	}
-
-	Basis.prototype = {
-	  areaStart: function areaStart() {
-	    this._line = 0;
-	  },
-	  areaEnd: function areaEnd() {
-	    this._line = NaN;
-	  },
-	  lineStart: function lineStart() {
-	    this._x0 = this._x1 = this._y0 = this._y1 = NaN;
-	    this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    switch (this._point) {
-	      case 3:
-	        _point(this, this._x1, this._y1); // proceed
-	      case 2:
-	        this._context.lineTo(this._x1, this._y1);break;
-	    }
-	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
-	    this._line = 1 - this._line;
-	  },
-	  point: function point(x, y) {
-	    x = +x, y = +y;
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
-	      case 1:
-	        this._point = 2;break;
-	      case 2:
-	        this._point = 3;this._context.lineTo((5 * this._x0 + this._x1) / 6, (5 * this._y0 + this._y1) / 6); // proceed
-	      default:
-	        _point(this, x, y);break;
-	    }
-	    this._x0 = this._x1, this._x1 = x;
-	    this._y0 = this._y1, this._y1 = y;
-	  }
-	};
-
-	function Bundle(context, beta) {
-	  this._basis = new Basis(context);
-	  this._beta = beta;
-	}
-
-	Bundle.prototype = {
-	  lineStart: function lineStart() {
-	    this._x = [];
-	    this._y = [];
-	    this._basis.lineStart();
-	  },
-	  lineEnd: function lineEnd() {
-	    var x = this._x,
-	        y = this._y,
-	        j = x.length - 1;
-
-	    if (j > 0) {
-	      var x0 = x[0],
-	          y0 = y[0],
-	          dx = x[j] - x0,
-	          dy = y[j] - y0,
-	          i = -1,
-	          t;
-
-	      while (++i <= j) {
-	        t = i / j;
-	        this._basis.point(this._beta * x[i] + (1 - this._beta) * (x0 + t * dx), this._beta * y[i] + (1 - this._beta) * (y0 + t * dy));
-	      }
-	    }
-
-	    this._x = this._y = null;
-	    this._basis.lineEnd();
-	  },
-	  point: function point(x, y) {
-	    this._x.push(+x);
-	    this._y.push(+y);
-	  }
-	};
-
-	(function custom(beta) {
-
-	  function bundle(context) {
-	    return beta === 1 ? new Basis(context) : new Bundle(context, beta);
-	  }
-
-	  bundle.beta = function (beta) {
-	    return custom(+beta);
-	  };
-
-	  return bundle;
-	})(0.85);
-
-	function _point$1(that, x, y) {
-	  that._context.bezierCurveTo(that._x1 + that._k * (that._x2 - that._x0), that._y1 + that._k * (that._y2 - that._y0), that._x2 + that._k * (that._x1 - x), that._y2 + that._k * (that._y1 - y), that._x2, that._y2);
-	}
-
-	function Cardinal(context, tension) {
-	  this._context = context;
-	  this._k = (1 - tension) / 6;
-	}
-
-	Cardinal.prototype = {
-	  areaStart: function areaStart() {
-	    this._line = 0;
-	  },
-	  areaEnd: function areaEnd() {
-	    this._line = NaN;
-	  },
-	  lineStart: function lineStart() {
-	    this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
-	    this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    switch (this._point) {
-	      case 2:
-	        this._context.lineTo(this._x2, this._y2);break;
-	      case 3:
-	        _point$1(this, this._x1, this._y1);break;
-	    }
-	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
-	    this._line = 1 - this._line;
-	  },
-	  point: function point(x, y) {
-	    x = +x, y = +y;
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
-	      case 1:
-	        this._point = 2;this._x1 = x, this._y1 = y;break;
-	      case 2:
-	        this._point = 3; // proceed
-	      default:
-	        _point$1(this, x, y);break;
-	    }
-	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
-	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
-	  }
-	};
-
-	(function custom(tension) {
-
-	  function cardinal(context) {
-	    return new Cardinal(context, tension);
-	  }
-
-	  cardinal.tension = function (tension) {
-	    return custom(+tension);
-	  };
-
-	  return cardinal;
-	})(0);
-
-	function CardinalClosed(context, tension) {
-	  this._context = context;
-	  this._k = (1 - tension) / 6;
-	}
-
-	CardinalClosed.prototype = {
-	  areaStart: noop$1,
-	  areaEnd: noop$1,
-	  lineStart: function lineStart() {
-	    this._x0 = this._x1 = this._x2 = this._x3 = this._x4 = this._x5 = this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = this._y5 = NaN;
-	    this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    switch (this._point) {
-	      case 1:
-	        {
-	          this._context.moveTo(this._x3, this._y3);
-	          this._context.closePath();
-	          break;
-	        }
-	      case 2:
-	        {
-	          this._context.lineTo(this._x3, this._y3);
-	          this._context.closePath();
-	          break;
-	        }
-	      case 3:
-	        {
-	          this.point(this._x3, this._y3);
-	          this.point(this._x4, this._y4);
-	          this.point(this._x5, this._y5);
-	          break;
-	        }
-	    }
-	  },
-	  point: function point(x, y) {
-	    x = +x, y = +y;
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;this._x3 = x, this._y3 = y;break;
-	      case 1:
-	        this._point = 2;this._context.moveTo(this._x4 = x, this._y4 = y);break;
-	      case 2:
-	        this._point = 3;this._x5 = x, this._y5 = y;break;
-	      default:
-	        _point$1(this, x, y);break;
-	    }
-	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
-	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
-	  }
-	};
-
-	(function custom(tension) {
-
-	  function cardinal(context) {
-	    return new CardinalClosed(context, tension);
-	  }
-
-	  cardinal.tension = function (tension) {
-	    return custom(+tension);
-	  };
-
-	  return cardinal;
-	})(0);
-
-	function CardinalOpen(context, tension) {
-	  this._context = context;
-	  this._k = (1 - tension) / 6;
-	}
-
-	CardinalOpen.prototype = {
-	  areaStart: function areaStart() {
-	    this._line = 0;
-	  },
-	  areaEnd: function areaEnd() {
-	    this._line = NaN;
-	  },
-	  lineStart: function lineStart() {
-	    this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
-	    this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    if (this._line || this._line !== 0 && this._point === 3) this._context.closePath();
-	    this._line = 1 - this._line;
-	  },
-	  point: function point(x, y) {
-	    x = +x, y = +y;
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;break;
-	      case 1:
-	        this._point = 2;break;
-	      case 2:
-	        this._point = 3;this._line ? this._context.lineTo(this._x2, this._y2) : this._context.moveTo(this._x2, this._y2);break;
-	      case 3:
-	        this._point = 4; // proceed
-	      default:
-	        _point$1(this, x, y);break;
-	    }
-	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
-	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
-	  }
-	};
-
-	(function custom(tension) {
-
-	  function cardinal(context) {
-	    return new CardinalOpen(context, tension);
-	  }
-
-	  cardinal.tension = function (tension) {
-	    return custom(+tension);
-	  };
-
-	  return cardinal;
-	})(0);
-
-	function _point$2(that, x, y) {
-	  var x1 = that._x1,
-	      y1 = that._y1,
-	      x2 = that._x2,
-	      y2 = that._y2;
-
-	  if (that._l01_a > epsilon$1) {
-	    var a = 2 * that._l01_2a + 3 * that._l01_a * that._l12_a + that._l12_2a,
-	        n = 3 * that._l01_a * (that._l01_a + that._l12_a);
-	    x1 = (x1 * a - that._x0 * that._l12_2a + that._x2 * that._l01_2a) / n;
-	    y1 = (y1 * a - that._y0 * that._l12_2a + that._y2 * that._l01_2a) / n;
-	  }
-
-	  if (that._l23_a > epsilon$1) {
-	    var b = 2 * that._l23_2a + 3 * that._l23_a * that._l12_a + that._l12_2a,
-	        m = 3 * that._l23_a * (that._l23_a + that._l12_a);
-	    x2 = (x2 * b + that._x1 * that._l23_2a - x * that._l12_2a) / m;
-	    y2 = (y2 * b + that._y1 * that._l23_2a - y * that._l12_2a) / m;
-	  }
-
-	  that._context.bezierCurveTo(x1, y1, x2, y2, that._x2, that._y2);
-	}
-
-	function CatmullRom(context, alpha) {
-	  this._context = context;
-	  this._alpha = alpha;
-	}
-
-	CatmullRom.prototype = {
-	  areaStart: function areaStart() {
-	    this._line = 0;
-	  },
-	  areaEnd: function areaEnd() {
-	    this._line = NaN;
-	  },
-	  lineStart: function lineStart() {
-	    this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
-	    this._l01_a = this._l12_a = this._l23_a = this._l01_2a = this._l12_2a = this._l23_2a = this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    switch (this._point) {
-	      case 2:
-	        this._context.lineTo(this._x2, this._y2);break;
-	      case 3:
-	        this.point(this._x2, this._y2);break;
-	    }
-	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
-	    this._line = 1 - this._line;
-	  },
-	  point: function point(x, y) {
-	    x = +x, y = +y;
-
-	    if (this._point) {
-	      var x23 = this._x2 - x,
-	          y23 = this._y2 - y;
-	      this._l23_a = Math.sqrt(this._l23_2a = Math.pow(x23 * x23 + y23 * y23, this._alpha));
-	    }
-
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
-	      case 1:
-	        this._point = 2;break;
-	      case 2:
-	        this._point = 3; // proceed
-	      default:
-	        _point$2(this, x, y);break;
-	    }
-
-	    this._l01_a = this._l12_a, this._l12_a = this._l23_a;
-	    this._l01_2a = this._l12_2a, this._l12_2a = this._l23_2a;
-	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
-	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
-	  }
-	};
-
-	(function custom(alpha) {
-
-	  function catmullRom(context) {
-	    return alpha ? new CatmullRom(context, alpha) : new Cardinal(context, 0);
-	  }
-
-	  catmullRom.alpha = function (alpha) {
-	    return custom(+alpha);
-	  };
-
-	  return catmullRom;
-	})(0.5);
-
-	function CatmullRomClosed(context, alpha) {
-	  this._context = context;
-	  this._alpha = alpha;
-	}
-
-	CatmullRomClosed.prototype = {
-	  areaStart: noop$1,
-	  areaEnd: noop$1,
-	  lineStart: function lineStart() {
-	    this._x0 = this._x1 = this._x2 = this._x3 = this._x4 = this._x5 = this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = this._y5 = NaN;
-	    this._l01_a = this._l12_a = this._l23_a = this._l01_2a = this._l12_2a = this._l23_2a = this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    switch (this._point) {
-	      case 1:
-	        {
-	          this._context.moveTo(this._x3, this._y3);
-	          this._context.closePath();
-	          break;
-	        }
-	      case 2:
-	        {
-	          this._context.lineTo(this._x3, this._y3);
-	          this._context.closePath();
-	          break;
-	        }
-	      case 3:
-	        {
-	          this.point(this._x3, this._y3);
-	          this.point(this._x4, this._y4);
-	          this.point(this._x5, this._y5);
-	          break;
-	        }
-	    }
-	  },
-	  point: function point(x, y) {
-	    x = +x, y = +y;
-
-	    if (this._point) {
-	      var x23 = this._x2 - x,
-	          y23 = this._y2 - y;
-	      this._l23_a = Math.sqrt(this._l23_2a = Math.pow(x23 * x23 + y23 * y23, this._alpha));
-	    }
-
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;this._x3 = x, this._y3 = y;break;
-	      case 1:
-	        this._point = 2;this._context.moveTo(this._x4 = x, this._y4 = y);break;
-	      case 2:
-	        this._point = 3;this._x5 = x, this._y5 = y;break;
-	      default:
-	        _point$2(this, x, y);break;
-	    }
-
-	    this._l01_a = this._l12_a, this._l12_a = this._l23_a;
-	    this._l01_2a = this._l12_2a, this._l12_2a = this._l23_2a;
-	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
-	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
-	  }
-	};
-
-	(function custom(alpha) {
-
-	  function catmullRom(context) {
-	    return alpha ? new CatmullRomClosed(context, alpha) : new CardinalClosed(context, 0);
-	  }
-
-	  catmullRom.alpha = function (alpha) {
-	    return custom(+alpha);
-	  };
-
-	  return catmullRom;
-	})(0.5);
-
-	function CatmullRomOpen(context, alpha) {
-	  this._context = context;
-	  this._alpha = alpha;
-	}
-
-	CatmullRomOpen.prototype = {
-	  areaStart: function areaStart() {
-	    this._line = 0;
-	  },
-	  areaEnd: function areaEnd() {
-	    this._line = NaN;
-	  },
-	  lineStart: function lineStart() {
-	    this._x0 = this._x1 = this._x2 = this._y0 = this._y1 = this._y2 = NaN;
-	    this._l01_a = this._l12_a = this._l23_a = this._l01_2a = this._l12_2a = this._l23_2a = this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    if (this._line || this._line !== 0 && this._point === 3) this._context.closePath();
-	    this._line = 1 - this._line;
-	  },
-	  point: function point(x, y) {
-	    x = +x, y = +y;
-
-	    if (this._point) {
-	      var x23 = this._x2 - x,
-	          y23 = this._y2 - y;
-	      this._l23_a = Math.sqrt(this._l23_2a = Math.pow(x23 * x23 + y23 * y23, this._alpha));
-	    }
-
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;break;
-	      case 1:
-	        this._point = 2;break;
-	      case 2:
-	        this._point = 3;this._line ? this._context.lineTo(this._x2, this._y2) : this._context.moveTo(this._x2, this._y2);break;
-	      case 3:
-	        this._point = 4; // proceed
-	      default:
-	        _point$2(this, x, y);break;
-	    }
-
-	    this._l01_a = this._l12_a, this._l12_a = this._l23_a;
-	    this._l01_2a = this._l12_2a, this._l12_2a = this._l23_2a;
-	    this._x0 = this._x1, this._x1 = this._x2, this._x2 = x;
-	    this._y0 = this._y1, this._y1 = this._y2, this._y2 = y;
-	  }
-	};
-
-	(function custom(alpha) {
-
-	  function catmullRom(context) {
-	    return alpha ? new CatmullRomOpen(context, alpha) : new CardinalOpen(context, 0);
-	  }
-
-	  catmullRom.alpha = function (alpha) {
-	    return custom(+alpha);
-	  };
-
-	  return catmullRom;
-	})(0.5);
-
-	function sign(x) {
-	  return x < 0 ? -1 : 1;
-	}
-
-	// Calculate the slopes of the tangents (Hermite-type interpolation) based on
-	// the following paper: Steffen, M. 1990. A Simple Method for Monotonic
-	// Interpolation in One Dimension. Astronomy and Astrophysics, Vol. 239, NO.
-	// NOV(II), P. 443, 1990.
-	function slope3(that, x2, y2) {
-	  var h0 = that._x1 - that._x0,
-	      h1 = x2 - that._x1,
-	      s0 = (that._y1 - that._y0) / (h0 || h1 < 0 && -0),
-	      s1 = (y2 - that._y1) / (h1 || h0 < 0 && -0),
-	      p = (s0 * h1 + s1 * h0) / (h0 + h1);
-	  return (sign(s0) + sign(s1)) * Math.min(Math.abs(s0), Math.abs(s1), 0.5 * Math.abs(p)) || 0;
-	}
-
-	// Calculate a one-sided slope.
-	function slope2(that, t) {
-	  var h = that._x1 - that._x0;
-	  return h ? (3 * (that._y1 - that._y0) / h - t) / 2 : t;
-	}
-
-	// According to https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Representations
-	// "you can express cubic Hermite interpolation in terms of cubic Bézier curves
-	// with respect to the four values p0, p0 + m0 / 3, p1 - m1 / 3, p1".
-	function _point$3(that, t0, t1) {
-	  var x0 = that._x0,
-	      y0 = that._y0,
-	      x1 = that._x1,
-	      y1 = that._y1,
-	      dx = (x1 - x0) / 3;
-	  that._context.bezierCurveTo(x0 + dx, y0 + dx * t0, x1 - dx, y1 - dx * t1, x1, y1);
-	}
-
-	function MonotoneX(context) {
-	  this._context = context;
-	}
-
-	MonotoneX.prototype = {
-	  areaStart: function areaStart() {
-	    this._line = 0;
-	  },
-	  areaEnd: function areaEnd() {
-	    this._line = NaN;
-	  },
-	  lineStart: function lineStart() {
-	    this._x0 = this._x1 = this._y0 = this._y1 = this._t0 = NaN;
-	    this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    switch (this._point) {
-	      case 2:
-	        this._context.lineTo(this._x1, this._y1);break;
-	      case 3:
-	        _point$3(this, this._t0, slope2(this, this._t0));break;
-	    }
-	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
-	    this._line = 1 - this._line;
-	  },
-	  point: function point(x, y) {
-	    var t1 = NaN;
-
-	    x = +x, y = +y;
-	    if (x === this._x1 && y === this._y1) return; // Ignore coincident points.
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
-	      case 1:
-	        this._point = 2;break;
-	      case 2:
-	        this._point = 3;_point$3(this, slope2(this, t1 = slope3(this, x, y)), t1);break;
-	      default:
-	        _point$3(this, this._t0, t1 = slope3(this, x, y));break;
-	    }
-
-	    this._x0 = this._x1, this._x1 = x;
-	    this._y0 = this._y1, this._y1 = y;
-	    this._t0 = t1;
-	  }
-	};
-
-	function MonotoneY(context) {
-	  this._context = new ReflectContext(context);
-	}
-
-	(MonotoneY.prototype = Object.create(MonotoneX.prototype)).point = function (x, y) {
-	  MonotoneX.prototype.point.call(this, y, x);
-	};
-
-	function ReflectContext(context) {
-	  this._context = context;
-	}
-
-	ReflectContext.prototype = {
-	  moveTo: function moveTo(x, y) {
-	    this._context.moveTo(y, x);
-	  },
-	  closePath: function closePath() {
-	    this._context.closePath();
-	  },
-	  lineTo: function lineTo(x, y) {
-	    this._context.lineTo(y, x);
-	  },
-	  bezierCurveTo: function bezierCurveTo(x1, y1, x2, y2, x, y) {
-	    this._context.bezierCurveTo(y1, x1, y2, x2, y, x);
-	  }
-	};
-
-	var combinatorics = createCommonjsModule(function (module, exports) {
-	    /*
-	     * $Id: combinatorics.js,v 0.25 2013/03/11 15:42:14 dankogai Exp dankogai $
-	     *
-	     *  Licensed under the MIT license.
-	     *  http://www.opensource.org/licenses/mit-license.php
-	     *
-	     *  References:
-	     *    http://www.ruby-doc.org/core-2.0/Array.html#method-i-combination
-	     *    http://www.ruby-doc.org/core-2.0/Array.html#method-i-permutation
-	     *    http://en.wikipedia.org/wiki/Factorial_number_system
-	     */
-	    (function (root, factory) {
-	        if (typeof define === 'function' && define.amd) {
-	            define([], factory);
-	        } else if ((typeof exports === 'undefined' ? 'undefined' : babelHelpers.typeof(exports)) === 'object') {
-	            module.exports = factory();
-	        } else {
-	            root.Combinatorics = factory();
-	        }
-	    })(commonjsGlobal, function () {
-	        'use strict';
-
-	        var version = "0.5.2";
-	        /* combinatory arithmetics */
-	        var P = function P(m, n) {
-	            var p = 1;
-	            while (n--) {
-	                p *= m--;
-	            }return p;
-	        };
-	        var C = function C(m, n) {
-	            if (n > m) {
-	                return 0;
-	            }
-	            return P(m, n) / P(n, n);
-	        };
-	        var factorial = function factorial(n) {
-	            return P(n, n);
-	        };
-	        var factoradic = function factoradic(n, d) {
-	            var f = 1;
-	            if (!d) {
-	                for (d = 1; f < n; f *= ++d) {}
-	                if (f > n) f /= d--;
-	            } else {
-	                f = factorial(d);
-	            }
-	            var result = [0];
-	            for (; d; f /= d--) {
-	                result[d] = Math.floor(n / f);
-	                n %= f;
-	            }
-	            return result;
-	        };
-	        /* common methods */
-	        var addProperties = function addProperties(dst, src) {
-	            Object.keys(src).forEach(function (p) {
-	                Object.defineProperty(dst, p, {
-	                    value: src[p],
-	                    configurable: p == 'next'
-	                });
-	            });
-	        };
-	        var hideProperty = function hideProperty(o, p) {
-	            Object.defineProperty(o, p, {
-	                writable: true
-	            });
-	        };
-	        var toArray = function toArray(f) {
-	            var e,
-	                result = [];
-	            this.init();
-	            while (e = this.next()) {
-	                result.push(f ? f(e) : e);
-	            }this.init();
-	            return result;
-	        };
-	        var common = {
-	            toArray: toArray,
-	            map: toArray,
-	            forEach: function forEach(f) {
-	                var e;
-	                this.init();
-	                while (e = this.next()) {
-	                    f(e);
-	                }this.init();
-	            },
-	            filter: function filter(f) {
-	                var e,
-	                    result = [];
-	                this.init();
-	                while (e = this.next()) {
-	                    if (f(e)) result.push(e);
-	                }this.init();
-	                return result;
-	            },
-	            lazyMap: function lazyMap(f) {
-	                this._lazyMap = f;
-	                return this;
-	            },
-	            lazyFilter: function lazyFilter(f) {
-	                Object.defineProperty(this, 'next', {
-	                    writable: true
-	                });
-	                if (typeof f !== 'function') {
-	                    this.next = this._next;
-	                } else {
-	                    if (typeof this._next !== 'function') {
-	                        this._next = this.next;
-	                    }
-	                    var _next = this._next.bind(this);
-	                    this.next = function () {
-	                        var e;
-	                        while (e = _next()) {
-	                            if (f(e)) return e;
-	                        }
-	                        return e;
-	                    }.bind(this);
-	                }
-	                Object.defineProperty(this, 'next', {
-	                    writable: false
-	                });
-	                return this;
-	            }
-
-	        };
-	        /* power set */
-	        var power = function power(ary, fun) {
-	            var size = 1 << ary.length,
-	                sizeOf = function sizeOf() {
-	                return size;
-	            },
-	                that = Object.create(ary.slice(), {
-	                length: {
-	                    get: sizeOf
-	                }
-	            });
-	            hideProperty(that, 'index');
-	            addProperties(that, {
-	                valueOf: sizeOf,
-	                init: function init() {
-	                    that.index = 0;
-	                },
-	                nth: function nth(n) {
-	                    if (n >= size) return;
-	                    var i = 0,
-	                        result = [];
-	                    for (; n; n >>>= 1, i++) {
-	                        if (n & 1) result.push(this[i]);
-	                    }return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
-	                },
-	                next: function next() {
-	                    return this.nth(this.index++);
-	                }
-	            });
-	            addProperties(that, common);
-	            that.init();
-	            return typeof fun === 'function' ? that.map(fun) : that;
-	        };
-	        /* combination */
-	        var nextIndex = function nextIndex(n) {
-	            var smallest = n & -n,
-	                ripple = n + smallest,
-	                new_smallest = ripple & -ripple,
-	                ones = (new_smallest / smallest >> 1) - 1;
-	            return ripple | ones;
-	        };
-	        var combination = function combination(ary, nelem, fun) {
-	            if (!nelem) nelem = ary.length;
-	            if (nelem < 1) throw new RangeError();
-	            if (nelem > ary.length) throw new RangeError();
-	            var first = (1 << nelem) - 1,
-	                size = C(ary.length, nelem),
-	                maxIndex = 1 << ary.length,
-	                sizeOf = function sizeOf() {
-	                return size;
-	            },
-	                that = Object.create(ary.slice(), {
-	                length: {
-	                    get: sizeOf
-	                }
-	            });
-	            hideProperty(that, 'index');
-	            addProperties(that, {
-	                valueOf: sizeOf,
-	                init: function init() {
-	                    this.index = first;
-	                },
-	                next: function next() {
-	                    if (this.index >= maxIndex) return;
-	                    var i = 0,
-	                        n = this.index,
-	                        result = [];
-	                    for (; n; n >>>= 1, i++) {
-	                        if (n & 1) result[result.length] = this[i];
-	                    }
-
-	                    this.index = nextIndex(this.index);
-	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
-	                }
-	            });
-	            addProperties(that, common);
-	            that.init();
-	            return typeof fun === 'function' ? that.map(fun) : that;
-	        };
-	        /* bigcombination */
-	        var bigNextIndex = function bigNextIndex(n, nelem) {
-
-	            var result = n;
-	            var j = nelem;
-	            var i = 0;
-	            for (i = result.length - 1; i >= 0; i--) {
-	                if (result[i] == 1) {
-	                    j--;
-	                } else {
-	                    break;
-	                }
-	            }
-	            if (j == 0) {
-	                // Overflow
-	                result[result.length] = 1;
-	                for (var k = result.length - 2; k >= 0; k--) {
-	                    result[k] = k < nelem - 1 ? 1 : 0;
-	                }
-	            } else {
-	                // Normal
-
-	                // first zero after 1
-	                var i1 = -1;
-	                var i0 = -1;
-	                for (var i = 0; i < result.length; i++) {
-	                    if (result[i] == 0 && i1 != -1) {
-	                        i0 = i;
-	                    }
-	                    if (result[i] == 1) {
-	                        i1 = i;
-	                    }
-	                    if (i0 != -1 && i1 != -1) {
-	                        result[i0] = 1;
-	                        result[i1] = 0;
-	                        break;
-	                    }
-	                }
-
-	                j = nelem;
-	                for (var i = result.length - 1; i >= i1; i--) {
-	                    if (result[i] == 1) j--;
-	                }
-	                for (var i = 0; i < i1; i++) {
-	                    result[i] = i < j ? 1 : 0;
-	                }
-	            }
-
-	            return result;
-	        };
-	        var buildFirst = function buildFirst(nelem) {
-	            var result = [];
-	            for (var i = 0; i < nelem; i++) {
-	                result[i] = 1;
-	            }
-	            result[0] = 1;
-	            return result;
-	        };
-	        var bigCombination = function bigCombination(ary, nelem, fun) {
-	            if (!nelem) nelem = ary.length;
-	            if (nelem < 1) throw new RangeError();
-	            if (nelem > ary.length) throw new RangeError();
-	            var first = buildFirst(nelem),
-	                size = C(ary.length, nelem),
-	                maxIndex = ary.length,
-	                sizeOf = function sizeOf() {
-	                return size;
-	            },
-	                that = Object.create(ary.slice(), {
-	                length: {
-	                    get: sizeOf
-	                }
-	            });
-	            hideProperty(that, 'index');
-	            addProperties(that, {
-	                valueOf: sizeOf,
-	                init: function init() {
-	                    this.index = first.concat();
-	                },
-	                next: function next() {
-	                    if (this.index.length > maxIndex) return;
-	                    var i = 0,
-	                        n = this.index,
-	                        result = [];
-	                    for (var j = 0; j < n.length; j++, i++) {
-	                        if (n[j]) result[result.length] = this[i];
-	                    }
-	                    bigNextIndex(this.index, nelem);
-	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
-	                }
-	            });
-	            addProperties(that, common);
-	            that.init();
-	            return typeof fun === 'function' ? that.map(fun) : that;
-	        };
-	        /* permutation */
-	        var _permutation = function _permutation(ary) {
-	            var that = ary.slice(),
-	                size = factorial(that.length);
-	            that.index = 0;
-	            that.next = function () {
-	                if (this.index >= size) return;
-	                var copy = this.slice(),
-	                    digits = factoradic(this.index, this.length),
-	                    result = [],
-	                    i = this.length - 1;
-	                for (; i >= 0; --i) {
-	                    result.push(copy.splice(digits[i], 1)[0]);
-	                }this.index++;
-	                return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
-	            };
-	            return that;
-	        };
-	        // which is really a permutation of combination
-	        var permutation = function permutation(ary, nelem, fun) {
-	            if (!nelem) nelem = ary.length;
-	            if (nelem < 1) throw new RangeError();
-	            if (nelem > ary.length) throw new RangeError();
-	            var size = P(ary.length, nelem),
-	                sizeOf = function sizeOf() {
-	                return size;
-	            },
-	                that = Object.create(ary.slice(), {
-	                length: {
-	                    get: sizeOf
-	                }
-	            });
-	            hideProperty(that, 'cmb');
-	            hideProperty(that, 'per');
-	            addProperties(that, {
-	                valueOf: function valueOf() {
-	                    return size;
-	                },
-	                init: function init() {
-	                    this.cmb = combination(ary, nelem);
-	                    this.per = _permutation(this.cmb.next());
-	                },
-	                next: function next() {
-	                    var result = this.per.next();
-	                    if (!result) {
-	                        var cmb = this.cmb.next();
-	                        if (!cmb) return;
-	                        this.per = _permutation(cmb);
-	                        return this.next();
-	                    }
-	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
-	                }
-	            });
-	            addProperties(that, common);
-	            that.init();
-	            return typeof fun === 'function' ? that.map(fun) : that;
-	        };
-
-	        var PC = function PC(m) {
-	            var total = 0;
-	            for (var n = 1; n <= m; n++) {
-	                var p = P(m, n);
-	                total += p;
-	            };
-	            return total;
-	        };
-	        // which is really a permutation of combination
-	        var permutationCombination = function permutationCombination(ary, fun) {
-	            // if (!nelem) nelem = ary.length;
-	            // if (nelem < 1) throw new RangeError;
-	            // if (nelem > ary.length) throw new RangeError;
-	            var size = PC(ary.length),
-	                sizeOf = function sizeOf() {
-	                return size;
-	            },
-	                that = Object.create(ary.slice(), {
-	                length: {
-	                    get: sizeOf
-	                }
-	            });
-	            hideProperty(that, 'cmb');
-	            hideProperty(that, 'per');
-	            hideProperty(that, 'nelem');
-	            addProperties(that, {
-	                valueOf: function valueOf() {
-	                    return size;
-	                },
-	                init: function init() {
-	                    this.nelem = 1;
-	                    // console.log("Starting nelem: " + this.nelem);
-	                    this.cmb = combination(ary, this.nelem);
-	                    this.per = _permutation(this.cmb.next());
-	                },
-	                next: function next() {
-	                    var result = this.per.next();
-	                    if (!result) {
-	                        var cmb = this.cmb.next();
-	                        if (!cmb) {
-	                            this.nelem++;
-	                            // console.log("increment nelem: " + this.nelem + " vs " + ary.length);
-	                            if (this.nelem > ary.length) return;
-	                            this.cmb = combination(ary, this.nelem);
-	                            cmb = this.cmb.next();
-	                            if (!cmb) return;
-	                        }
-	                        this.per = _permutation(cmb);
-	                        return this.next();
-	                    }
-	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
-	                }
-	            });
-	            addProperties(that, common);
-	            that.init();
-	            return typeof fun === 'function' ? that.map(fun) : that;
-	        };
-	        /* Cartesian Product */
-	        var arraySlice = Array.prototype.slice;
-	        var cartesianProduct = function cartesianProduct() {
-	            if (!arguments.length) throw new RangeError();
-	            var args = arraySlice.call(arguments),
-	                size = args.reduce(function (p, a) {
-	                return p * a.length;
-	            }, 1),
-	                sizeOf = function sizeOf() {
-	                return size;
-	            },
-	                dim = args.length,
-	                that = Object.create(args, {
-	                length: {
-	                    get: sizeOf
-	                }
-	            });
-	            if (!size) throw new RangeError();
-	            hideProperty(that, 'index');
-	            addProperties(that, {
-	                valueOf: sizeOf,
-	                dim: dim,
-	                init: function init() {
-	                    this.index = 0;
-	                },
-	                get: function get() {
-	                    if (arguments.length !== this.length) return;
-	                    var result = [],
-	                        d = 0;
-	                    for (; d < dim; d++) {
-	                        var i = arguments[d];
-	                        if (i >= this[d].length) return;
-	                        result.push(this[d][i]);
-	                    }
-	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
-	                },
-	                nth: function nth(n) {
-	                    var result = [],
-	                        d = 0;
-	                    for (; d < dim; d++) {
-	                        var l = this[d].length;
-	                        var i = n % l;
-	                        result.push(this[d][i]);
-	                        n -= i;
-	                        n /= l;
-	                    }
-	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
-	                },
-	                next: function next() {
-	                    if (this.index >= size) return;
-	                    var result = this.nth(this.index);
-	                    this.index++;
-	                    return result;
-	                }
-	            });
-	            addProperties(that, common);
-	            that.init();
-	            return that;
-	        };
-	        /* baseN */
-	        var baseN = function baseN(ary, nelem, fun) {
-	            if (!nelem) nelem = ary.length;
-	            if (nelem < 1) throw new RangeError();
-	            var base = ary.length,
-	                size = Math.pow(base, nelem);
-	            var sizeOf = function sizeOf() {
-	                return size;
-	            },
-	                that = Object.create(ary.slice(), {
-	                length: {
-	                    get: sizeOf
-	                }
-	            });
-	            hideProperty(that, 'index');
-	            addProperties(that, {
-	                valueOf: sizeOf,
-	                init: function init() {
-	                    that.index = 0;
-	                },
-	                nth: function nth(n) {
-	                    if (n >= size) return;
-	                    var result = [];
-	                    for (var i = 0; i < nelem; i++) {
-	                        var d = n % base;
-	                        result.push(ary[d]);
-	                        n -= d;n /= base;
-	                    }
-	                    return typeof that._lazyMap === 'function' ? that._lazyMap(result) : result;
-	                },
-	                next: function next() {
-	                    return this.nth(this.index++);
-	                }
-	            });
-	            addProperties(that, common);
-	            that.init();
-	            return typeof fun === 'function' ? that.map(fun) : that;
-	        };
-
-	        /* export */
-	        var Combinatorics = Object.create(null);
-	        addProperties(Combinatorics, {
-	            C: C,
-	            P: P,
-	            factorial: factorial,
-	            factoradic: factoradic,
-	            cartesianProduct: cartesianProduct,
-	            combination: combination,
-	            bigCombination: bigCombination,
-	            permutation: permutation,
-	            permutationCombination: permutationCombination,
-	            power: power,
-	            baseN: baseN,
-	            VERSION: version
-	        });
-	        return Combinatorics;
-	    });
+	var css = "\npath {\n  stroke: var(--color,#0f0);\n  stroke-width: var(--thickness,4px);\n  fill:none\n}\nsvg {\n  width: 97%;\n  height: 97%;\n  position: absolute;\n  z-index: -1;\n}\n";
+	var svgEdge = line().x(function (d) {
+	  return d.offsetLeft + d.offsetWidth / 2;
+	}).y(function (d) {
+	  return d.offsetTop + d.offsetHeight / 2;
 	});
 
-	var cmb = interopDefault(combinatorics);
+	var shadowSVGSelector = function shadowSVGSelector(elem) {
+	  var sdw = elem.shadowRoot;
+	  if (sdw) {
+	    return select(sdw.querySelector("svg"));
+	  } else {
+	    return select();
+	  }
+	};
+
+	var edges = Symbol();
+	var animateCallback = Symbol();
+	var graphEdgesPoly = {
+	  redraw: function redraw(elem) {
+	    var edgeLines = shadowSVGSelector(elem).selectAll("path").data(elem[edges]);
+	    edgeLines.exit().remove();
+	    edgeLines.enter().append("path");
+	    edgeLines.attr("d", svgEdge);
+	  },
+	  edges: function edges(elem) {
+	    var nodes = select(elem.parentElement).selectAll("*").filter(function (d, i, nodes) {
+	      return !nodes[i].edges;
+	    }).nodes();
+	    if (nodes.length < 2) {
+	      return [];
+	    }
+	    return cmb.combination(nodes, 2).toArray();
+	  },
+
+	  props: {
+	    nodeContainer: { attribute: true }
+	  },
+	  attached: function attached(elem) {
+	    var _this = this;
+
+	    elem.edges = function () {
+	      return elem[edges];
+	    };
+	    elem[edges] = this.edges(elem);
+	    elem[animateCallback] = function () {
+	      _this.redraw(elem);
+	    };
+	    elem.parentElement.addEventListener('animate', elem[animateCallback]);
+	  },
+	  detached: function detached(elem) {
+	    console.log("detached", elem);
+	    elem.parentElement.removeEventListener('animate', elem[animateCallback]);
+	  },
+	  attributeChanged: function attributeChanged(elem) {
+	    elem[edges] = this.edges(elem);
+	  },
+	  render: function render(elem) {
+	    var _this2 = this;
+
+	    return [h('svg', { id: "abc" }), h('slot', {
+	      onSlotchange: function onSlotchange(e) {
+	        _this2.attributeChanged(elem); /* console.log("slot change",e) */
+	      }
+	    }), h("style", css)];
+	  }
+	};
+
+	define$1('edges-all-pairs', graphEdgesPoly);
+
+	var animate = function animate(elem) {
+	  elem.dispatchEvent(new Event('animate'));
+	  setTimeout(function () {
+	    window.requestAnimationFrame(function () {
+	      animate(elem);
+	    });
+	  }, 1000 / elem.fps);
+	};
+
+	define$1('graph-container', {
+	  props: {
+	    fps: { attribute: true, default: 120 }
+	  },
+	  attached: function attached(elem) {
+	    animate(elem);
+	  },
+	  attributeChanged: function attributeChanged(elem) {},
+	  render: function render(elem) {
+	    return [h('slot', {}), h("style", css)];
+	  }
+	});
 
 	var kefir = createCommonjsModule(function (module, exports) {
 		/*! Kefir.js v3.5.2
@@ -8026,108 +8118,69 @@
 		});
 	});
 
-	interopDefault(kefir);
+	var Kefir = interopDefault(kefir);
 
-	var css = "\npath {stroke: #0f0; stroke-width:4px; fill:none}\nsvg {\n  width: 97%;\n  height: 97%;\n  position: absolute;\n  z-index: -1;\n}\n";
-	var svgEdge = line().x(function (d) {
-	  return d.offsetLeft;
-	}).y(function (d) {
-	  return d.offsetTop;
-	});
+	function eventsPositionDiff(prevEvent, nextEvent) {
+	  return {
+	    x: nextEvent.clientX - prevEvent.clientX,
+	    y: nextEvent.clientY - prevEvent.clientY
+	  };
+	}
 
-	var shadowSVGSelector = function shadowSVGSelector(elem) {
-	  var sdw = elem.shadowRoot;
-	  if (sdw) {
-	    return select(sdw.querySelector("svg"));
-	  } else {
-	    return select();
-	  }
+	function applyMove(currentPosition, move) {
+	  return {
+	    x: currentPosition.x + move.x,
+	    y: currentPosition.y + move.y
+	  };
+	}
+	var preventDefault = function preventDefault(event) {
+	  event.preventDefault();
 	};
+	function startDragging(elem) {
+	  elem.style.cursor = 'move';
+	  elem.style.userSelect = 'none';
 
-	var edges = Symbol();
-	var animateCallback = Symbol();
-	var graphEdgesPoly = {
-	  redraw: function redraw(elem) {
-	    var edgeLines = shadowSVGSelector(elem).selectAll("path").data(elem[edges]);
-	    edgeLines.exit().remove();
-	    edgeLines.enter().append("path");
-	    edgeLines.attr("d", svgEdge);
+	  var drag = function drag(pos) {
+	    elem.style.top = pos.y + 'px';
+	    elem.style.left = pos.x + 'px';
+	  };
 
-	    // console.log("animate",elem[edges]);
-	  },
-	  edges: function edges(elem) {
-	    var _this = this;
+	  var mouseUps = Kefir.fromEvents(document, 'mouseup');
+	  var mouseMoves = Kefir.fromEvents(document, 'mousemove');
+	  var mouseDowns = Kefir.fromEvents(elem, 'mousedown');
+	  mouseDowns.onValue(preventDefault);
 
-	    var nodes = select(elem.parentElement).selectAll("*").filter(function () {
-	      return !_this.edges;
-	    }).nodes();
-	    console.log("updateEdges", elem.parentElement);
-	    if (nodes.length < 2) {
-	      return [];
-	    }
-	    return cmb.combination(nodes, 2).toArray();
-	  },
+	  var moves = mouseDowns.flatMap(function (downEvent) {
+	    return mouseMoves.takeUntilBy(mouseUps).diff(eventsPositionDiff, downEvent);
+	  });
 
-	  props: {
-	    nodeContainer: { attribute: true }
-	  },
+	  var position = moves.scan(applyMove, { x: 0, y: 0 });
+	  position.onValue(drag);
+
+	  elem[stopDragging] = function () {
+	    elem.style.cursor = 'default';
+	    elem.style.userSelect = 'default';
+	    position.offValue(drag);
+	    mouseDowns.offValue(preventDefault);
+	  };
+	}
+
+	function stopDragging(elem) {
+	  elem[stopDragging]();
+	}
+
+	var puppyStyle = '\n  :host {\n    display: inline-block;\n    background-image: url(http://i.imgur.com/B2YwP9u.gif);\n    background-position: center;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 100px;\n    height: 150px;\n    border: solid deeppink 5px;\n  }\n';
+	define$1("puppy-dog", {
 	  attached: function attached(elem) {
-	    var _this2 = this;
-
-	    elem[edges] = this.edges(elem);
-	    elem[animateCallback] = function () {
-	      _this2.redraw(elem);
-	    };
-	    elem.parentElement.addEventListener('animate', elem[animateCallback]);
+	    startDragging(elem);
 	  },
 	  detached: function detached(elem) {
-	    elem.parentElement.removeEventListener('animate', elem[animateCallback]);
-	  },
-	  attributeChanged: function attributeChanged(elem) {
-	    elem[edges] = this.edges(elem);
+	    stopDragging(elem);
 	  },
 	  render: function render(elem) {
-	    var _this3 = this;
-
-	    return [h('svg', { id: "abc" }), h('slot', {
-	      onSlotchange: function onSlotchange(e) {
-	        _this3.attributeChanged(elem); /* console.log("slot change",e) */
-	      }
-	    }), h("style", css)];
-	  }
-	};
-
-	define$1('edges-all-pairs', graphEdgesPoly);
-
-	var animate = function animate(elem) {
-	  elem.dispatchEvent(new Event('animate'));
-	  setTimeout(function () {
-	    window.requestAnimationFrame(function () {
-	      animate(elem);
-	    });
-	  }, 1000 / elem.fps);
-	};
-
-	define$1('graph-container', {
-	  props: {
-	    fps: { attribute: true, default: 60 }
+	    return h("style", puppyStyle);
 	  },
-	  attached: function attached(elem) {
-	    animate(elem);
-	  },
-	  attributeChanged: function attributeChanged(elem) {},
-	  render: function render(elem) {
-	    return [h('slot', {}), h("style", css)];
-	  }
-	});
-
-	define$1("puppy-dog", {
-	  render: function render() {
-	    return h("img", {
-	      src: "http://i.imgur.com/B2YwP9u.gif",
-	      style: "height: 100px; border: solid limegreen 4px;"
-	    });
-	  }
+	  rendered: function rendered(elem) {}
 	});
 
 }());

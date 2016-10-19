@@ -6,10 +6,13 @@ import { line } from "d3-shape"
 import cmb from "js-combinatorics"
 import { define, h, prop } from 'skatejs';
 import * as skate from 'skatejs';
-import Kefir from 'kefir';
 
 var css=`
-path {stroke: #0f0; stroke-width:4px; fill:none}
+path {
+  stroke: var(--color,#0f0);
+  stroke-width: var(--thickness,4px);
+  fill:none
+}
 svg {
   width: 97%;
   height: 97%;
@@ -18,8 +21,8 @@ svg {
 }
 `
 var svgEdge = line()
-    .x( (d) => d.offsetLeft )
-    .y( (d) => d.offsetTop );
+    .x( (d) => d.offsetLeft + d.offsetWidth/2 )
+    .y( (d) => d.offsetTop + d.offsetHeight/2 );
 
 var shadowSVGSelector = (elem) => { var sdw = elem.shadowRoot;
                                     if(sdw) { return select(sdw.querySelector("svg")) }
@@ -35,12 +38,10 @@ var graphEdgesPoly = {
     edgeLines.exit().remove();
     edgeLines.enter().append("path");
     edgeLines.attr("d",svgEdge);
-
-    // console.log("animate",elem[edges]);
   },
   edges(elem){
-    var nodes = select(elem.parentElement).selectAll("*").filter(() => !this.edges).nodes()
-    console.log("updateEdges",elem.parentElement)
+    var nodes = select(elem.parentElement).selectAll("*")
+         .filter((d,i,nodes)=>{return !nodes[i].edges;}).nodes()
     if (nodes.length < 2) { return []; }
     return cmb.combination(nodes,2).toArray()
   },
@@ -48,11 +49,13 @@ var graphEdgesPoly = {
      nodeContainer: { attribute: true }
    },
    attached(elem) {
+    elem.edges = () => elem[edges];
     elem[edges] = this.edges(elem);
     elem[animateCallback] = ()=>{this.redraw(elem)}
     elem.parentElement.addEventListener('animate',elem[animateCallback])
   },
   detached(elem) {
+    console.log("detached",elem)
     elem.parentElement.removeEventListener('animate',elem[animateCallback])
   },
   attributeChanged(elem) {
@@ -79,7 +82,7 @@ const animate = function(elem){
 define('graph-container',
  {
    props: {
-     fps: { attribute: true, default: 60 }
+     fps: { attribute: true, default: 120 }
    },
    attached(elem) {
      animate(elem);
