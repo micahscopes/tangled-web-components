@@ -9,7 +9,7 @@ var puppyStyle = `
     background-size: 100%;
     margin: 0;
     padding: 0;
-    width: 64px;
+    width: 100px;
     height: 150px;
     border: solid deeppink 5px;
   }

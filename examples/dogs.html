@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+  <title>web component dog graph</title>
+  <script type="text/javascript" src="../dist/graph-components.js"></script>
+
+  <body>
+  <div class="narrow">
+      <graph-container>
+      <edges-all-pairs color="white"></edges-all-pairs>
+        <puppy-dog id="oso"></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+      </graph-container>
+
+      <graph-container>
+        <edges-adjacency-matrix thickness="5" color="black">
+              [[0,1],[0,0]]
+        </edges-adjacency-matrix>
+        <handle-box>
+            <h1> dogs riding scooters </h1>
+        </handle-box>
+        <handle-box>
+          <h4 class="next"><a href="balls.html">more...</a></h4>
+        </handle-box>
+      </graph-container>
+  </div>
+    <style>
+      body {
+        background: url(smudgy4.png);
+        opacity: 20%;
+        color: white;
+        overflow: scroll;
+      }
+
+      handle-box, puppy-dog {
+        margin:100px;
+        padding: 20px;
+        border: solid white 1px;
+        display: inline-block;
+        background-color: rgba(30, 30, 255, 0.4);
+        color: white;
+      }
+
+      .next {
+        position: inherit;
+        display: inline;
+        margin: 500px;
+        position: static
+      }
+      a, a:visited {
+        color: yellow;
+      }
+
+    </style>
+  </body>
+
+</html>

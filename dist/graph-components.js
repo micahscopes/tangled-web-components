@@ -22369,7 +22369,7 @@ var require$$0$15 = Object.freeze({
 	  }
 	}));
 
-	var puppyStyle = '\n  div {\n    display: inline-block;\n    background-image: url(http://i.imgur.com/B2YwP9u.gif);\n    background-position: center;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 64px;\n    height: 150px;\n    border: solid deeppink 5px;\n  }\n  puppy-dog {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n  :host {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n';
+	var puppyStyle = '\n  div {\n    display: inline-block;\n    background-image: url(http://i.imgur.com/B2YwP9u.gif);\n    background-position: center;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 100px;\n    height: 150px;\n    border: solid deeppink 5px;\n  }\n  puppy-dog {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n  :host {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n';
 	define$1("puppy-dog", {
 	  attached: function attached(elem) {
 	    startDragging(elem);

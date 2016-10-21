@@ -1,62 +1,50 @@
 <!doctype html>
 <html>
-  <title>riot graphs!</title>
+  <title>web component graphs</title>
+  <script type="text/javascript" src="../dist/graph-components.js"></script>
 
   <body>
-    <style>
-      /*#oso {left: 100px; top: 100px;}
-      #zoo {left: 200px; top: 200px;}
-      #fats {right: 200px; top: 0px;}*/
 
+  <div class="narrow">
+      <graph-container>
+      <edges-all-pairs></edges-all-pairs>
+      <edges-adjacency-matrix thickness=5 color="deeppink">[[0,0,1],[1,0,0],[0,1,0]]</edges-adjacency-matrix>
+        <puppy-dog id="oso"></puppy-dog>
+        <puppy-dog id="fido"></puppy-dog>
+        <puppy-dog id="zoo"></puppy-dog>
+        <handle-box>
+            <h1> dogs riding scooters </h1>
+        </handle-box>
+
+        <h4 class="next"><a href="dogs.html">next...</a></h4>
+
+      </graph-container>
+  </div>
+
+    <style>
       body {
-        background: url(smudgy4.png);
+        background: url(smudgy2.png);
         color: white;
         overflow: scroll;
       }
 
-      h1, h2 {
-        width: 100px;
-        height: 100px;
-        padding: 5px;
+      .next, handle-box, puppy-dog {
+        margin:100px;
+        padding: 20px;
         border: solid white 1px;
-        background-color: rgba(24,32,100,0.5);
+        display: inline-block;
+        background-color: slateblue;
       }
-      #oso {
-        /*animation: wobble 1.5s alternate infinite ease-in-out;*/
+
+      .next {
+        position: fixed;
+        right: 10px;
+        bottom: 10px
       }
-      @keyframes wobble {
-            0% {left: 100px}
-            100%{left: 300px}
-        }
-      puppy-dog {
-        left:0;
-        top:0;
-        margin: 50px;
-        opacity: 0.4;
-        float: left;
-      }
-      .narrow {
-        width: 50%;
-        border: solid white 1px;
+      a, a:visited {
+        color: yellow;
       }
     </style>
-<div class="narrow">
-    <graph-container>
-    <edges-all-pairs></edges-all-pairs>
-    <edges-adjacency-matrix thickness=3 color="white">[[0,0,1],[1,0,0],[0,1,0]]</edges-adjacency-matrix>
-      <handle-box>
-          <h1> dogs riding scooters </h1>
-          <h1>testing</h1>
-      </handle-box>
-      <puppy-dog id="oso"></puppy-dog>
-      <puppy-dog id="fat-boy"></puppy-dog>
-      <puppy-dog id="zoo"></puppy-dog>
-
-    </graph-container>
-</div>
-  <script type="text/javascript" src="../dist/graph-components.js"></script>
-  <script src="https://d3js.org/d3.v4.min.js"></script>
-  <script>window.specialPuppy = document.querySelector("#special")</script>
 
   </body>
 
