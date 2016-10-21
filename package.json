@@ -21,7 +21,6 @@
     "victor": "^1.1.0"
   },
   "devDependencies": {
-    "webcomponentsjs": "^1.0.2",
     "babel-preset-es2015-rollup": "^1.1.1",
     "chokidar-cli": "^1.2.0",
     "rollup": "^0.31.2",
@@ -30,7 +29,9 @@
     "rollup-plugin-eslint": "^3.0.0",
     "rollup-plugin-node-resolve": "^1.7.0",
     "rollup-plugin-riot": "^0.4.0",
-    "rollup-plugin-uglify": "^1.0.1"
+    "rollup-plugin-uglify": "^1.0.1",
+    "uglify-js": "^2.7.3",
+    "webcomponentsjs": "^1.0.2"
   },
   "license": "MIT"
 }

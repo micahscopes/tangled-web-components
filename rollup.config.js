@@ -4,10 +4,11 @@ import babel from 'rollup-plugin-babel';
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import uglify from 'rollup-plugin-uglify';
+import { minify } from 'uglify-js';
 
 export default {
   entry: 'src/main.js',
-  dest: 'dist/graph-components.js',
+  dest: 'dist/tangled-web-components.js',
   format: 'iife',
   // sourceMap: 'inline',
   plugins: [
