@@ -15,7 +15,7 @@ import matrices from 'mathjs/lib/type/matrix'
 var math = core.create();
 math.import(matrices)
 
-const css=`
+export const css=`
 // path {
 //   stroke: var(--color);
 //   // fill: var(--color);
@@ -78,9 +78,11 @@ const animate = function(elem){
   setTimeout( () => { window.requestAnimationFrame( () => {animate(elem)} ) }, 1000/elem.fps );
 }
 
-const svgElement = Symbol();
-const edgeData = Symbol();
-const animateCallback = Symbol();
+export const svgElement = Symbol();
+export const edgeData = Symbol();
+export const animateCallback = Symbol();
+export const refreshEdges = Symbol();
+
 window.edgeData = edgeData;
 window.svgElement = svgElement;
 
@@ -145,8 +147,8 @@ const graphAllEdges = {
     // var setupSVG = this.setupSVG;
     this.setupSVG(elem[svgElement])
 
-    var refreshEdges = (e) => {elem[edgeData] = this.edges(elem);}
-    elem.parentElement.addEventListener('graph-updated', refreshEdges)
+    elem[refreshEdges] = (e) => {elem[edgeData] = this.edges(elem);}
+    elem.parentElement.addEventListener('graph-updated', elem[refreshEdges])
   },
 
   detached(elem) {

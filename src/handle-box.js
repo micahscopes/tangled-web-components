@@ -1,7 +1,7 @@
 import { define, h } from 'skatejs';
 import {startDragging, stopDragging, draggableHostStyle} from './draggable.js';
 
-const css = ` :host {position: relative; display: inline-table} handle-box {position: relative; display: inline-table}`
+const css = ` :host {display: inline-table} handle-box {display: inline-table}`
 
 const HandleBox = define("handle-box",{
     attached(elem){

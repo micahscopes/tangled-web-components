@@ -15,14 +15,14 @@ var puppyStyle = `
   }
   puppy-dog {
     display: inline-block;
-    position: relative;
+    // position: relative;
     background-size: 100%;
     margin: 0;
     padding: 0;
   }
   :host {
     display: inline-block;
-    position: relative;
+    // position: relative;
     background-size: 100%;
     margin: 0;
     padding: 0;

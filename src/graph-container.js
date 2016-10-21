@@ -25,6 +25,10 @@ const GraphContainer = define('graph-container',
       h('style',css)
     ]
   },
+  updated(elem){
+    console.log("updated")
+    return true;
+  }
 });
 
 export default GraphContainer

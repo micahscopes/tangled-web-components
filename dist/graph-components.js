@@ -8615,37 +8615,46 @@ var require$$0 = Object.freeze({
 	var preventDefault = function preventDefault(event) {
 	  event.preventDefault();
 	};
-	function startDragging(elem) {
-	  // console.log(elem.style.left,elem.style.top)
-	  elem.style.cursor = 'move';
-	  elem.style.userSelect = 'none';
+	function startDragging(elem, timeout) {
+	  timeout = timeout ? timeout : 200;
+	  setTimeout(function () {
+	    // console.log(elem.style.left,elem.style.top)
+	    elem.style.cursor = 'move';
+	    elem.style.userSelect = 'none';
 
-	  var drag = function drag(pos) {
-	    elem.style.top = pos.y + 'px';
-	    elem.style.left = pos.x + 'px';
-	  };
+	    var drag = function drag(pos) {
+	      elem.style.top = pos.y + 'px';
+	      elem.style.left = pos.x + 'px';
+	    };
 
-	  var mouseUps = Kefir.fromEvents(document, 'mouseup');
-	  var mouseMoves = Kefir.fromEvents(document, 'mousemove');
-	  var mouseDowns = Kefir.fromEvents(elem, 'mousedown');
-	  mouseDowns.onValue(preventDefault);
+	    var mouseUps = Kefir.fromEvents(document, 'mouseup');
+	    var mouseMoves = Kefir.fromEvents(document, 'mousemove');
+	    var mouseDowns = Kefir.fromEvents(elem, 'mousedown');
+	    mouseDowns.onValue(preventDefault);
 
-	  var moves = mouseDowns.flatMap(function (downEvent) {
-	    return mouseMoves.takeUntilBy(mouseUps).diff(eventsPositionDiff, downEvent);
-	  });
-	  var rect = elem.getBoundingClientRect();
-	  var currentPosition = { x: 0, //parseInt(rect.left),
-	    y: 0 }; //parseInt(rect.top) };
-	  // console.log(computedStyle);
-	  var position = moves.scan(applyMove, currentPosition);
-	  position.onValue(drag);
+	    var moves = mouseDowns.flatMap(function (downEvent) {
+	      return mouseMoves.takeUntilBy(mouseUps).diff(eventsPositionDiff, downEvent);
+	    });
+	    var rect = elem.getBoundingClientRect();
+	    var style = window.getComputedStyle(elem);
+	    // console.log(style);
+	    var currentPosition = { x: parseInt(rect.left) - parseInt(style.marginLeft),
+	      y: parseInt(rect.top) - parseInt(style.marginTop) };
+	    console.log(currentPosition);
+	    var position = moves.scan(applyMove, currentPosition);
 
-	  elem[stopDragging] = function () {
-	    elem.style.cursor = 'default';
-	    elem.style.userSelect = 'default';
-	    position.offValue(drag);
-	    mouseDowns.offValue(preventDefault);
-	  };
+	    setTimeout(function () {
+	      elem.style.position = "absolute";
+	      position.onValue(drag);
+	    }, timeout);
+
+	    elem[stopDragging] = function () {
+	      elem.style.cursor = 'default';
+	      elem.style.userSelect = 'default';
+	      position.offValue(drag);
+	      mouseDowns.offValue(preventDefault);
+	    };
+	  }, 50);
 	}
 
 	function stopDragging(elem) {
@@ -8654,7 +8663,7 @@ var require$$0 = Object.freeze({
 
 	var draggableHostStyle = ':host {\n  cursor: move;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n  position: relative;\n}';
 
-	var css = ' :host {position: relative; display: inline-table} handle-box {position: relative; display: inline-table}';
+	var css = ' :host {display: inline-table} handle-box {display: inline-table}';
 
 	var HandleBox = define$1("handle-box", {
 	  attached: function attached(elem) {
@@ -8694,6 +8703,10 @@ var require$$0 = Object.freeze({
 	        elem.dispatchEvent(new Event("graph-updated"));
 	      }
 	    }), h('style', css$1)];
+	  },
+	  updated: function updated(elem) {
+	    console.log("updated");
+	    return true;
 	  }
 	});
 
@@ -12260,16 +12273,20 @@ var require$$0 = Object.freeze({
 	}
 
 	// This implementation is based on the L-p unit disk being a square as p -> inf
-	// pRad is the radius of the p-norm unit circle at angle theta
-	var pRad = function pRad(theta, p) {
-	  return Math.pow(Math.pow(Math.cos(theta), p) + Math.pow(Math.sin(theta), p), -1 / p);
+	// pRad is the radius of the p-norm unit circle at angle theta, stretched by
+	// the ratio of 'rectangular radii', see here: https://www.desmos.com/calculator/hzrmdr9j6w
+	var pRad = function pRad(theta, p, rW, rH) {
+	  return Math.pow(Math.pow(rH / rW * Math.cos(theta), p) + Math.pow(Math.sin(theta), p), -1 / p);
 	};
-	// pXY is the cartesian coordinates of the point on the p-norm unit circle at angle theta.
-	var pXY = function pXY(theta, p) {
-	  return new Vec(Math.cos(theta) * pRad(theta, p), Math.sin(theta) * pRad(theta, p));
+	// pXY is the cartesian coordinates of the point on the p-norm unit "circle" at angle theta.
+	// the dimensions are unstretched, somehow only using the longer rectangle-radius is necessary (?)
+	var pXY = function pXY(theta, p, rW, rH) {
+	  return new Vec(rH * Math.cos(theta) * pRad(theta, p, rW, rH), rH * Math.sin(theta) * pRad(theta, p, rW, rH));
 	};
 
-	function nearbyEdgePoints(r1, r2, p1, p2) {
+	function nearbyEdgePoints(r1, r2, p1, p2, phase, margin) {
+	  phase = phase ? phase : Math.PI / 16;
+	  margin = margin ? margin : 0;
 	  if (p1 == undefined) {
 	    p1 = P;
 	  }
@@ -12281,9 +12298,9 @@ var require$$0 = Object.freeze({
 	  var rad1 = rad(r1),
 	      rad2 = rad(r2);
 	  var phi = c2.clone().subtract(c1.clone()).angle();
-	  var edgePt1 = pXY(phi, p1);
-	  var edgePt2 = pXY(phi + Math.PI, p2); //new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
-	  return [c1.clone().add(edgePt1.multiply(rad1)), c2.clone().add(edgePt2.multiply(rad2))];
+	  var edgePt1 = pXY(phi + phase, p1, rad1.x + margin, rad1.y + margin);
+	  var edgePt2 = pXY(phi - phase + Math.PI, p2, rad2.x + margin, rad2.y + margin); //new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
+	  return [c1.clone().add(edgePt1), c2.clone().add(edgePt2)];
 	}
 
 	// For some reason this implementation isn't working:
@@ -22211,6 +22228,8 @@ var require$$0$15 = Object.freeze({
 	var svgElement = Symbol();
 	var edgeData$1 = Symbol();
 	var animateCallback = Symbol();
+	var refreshEdges = Symbol();
+
 	window.edgeData = edgeData$1;
 	window.svgElement = svgElement;
 
@@ -22291,10 +22310,10 @@ var require$$0$15 = Object.freeze({
 	    // var setupSVG = this.setupSVG;
 	    this.setupSVG(elem[svgElement]);
 
-	    var refreshEdges = function refreshEdges(e) {
+	    elem[refreshEdges] = function (e) {
 	      elem[edgeData$1] = _this.edges(elem);
 	    };
-	    elem.parentElement.addEventListener('graph-updated', refreshEdges);
+	    elem.parentElement.addEventListener('graph-updated', elem[refreshEdges]);
 	  },
 	  detached: function detached(elem) {
 	    // console.log("detached",elem)
@@ -22330,22 +22349,27 @@ var require$$0$15 = Object.freeze({
 	    if (nodes.length < 2) {
 	      return [];
 	    }
-	    var combos = [[nodes[0], nodes[1]]];
-	    combos = [];
+	    var edges = [[nodes[0], nodes[1]]];
+	    edges = [];
 	    adj.forEach(function (row, i) {
 	      row.forEach(function (edge, j) {
 	        if (edge == 1) {
-	          combos.push({ source: nodes[i], target: nodes[j], direction: 1 });
+	          edges.push({ source: nodes[i], target: nodes[j], direction: 1 });
 	        }
 	      });
 	    });
 	    // combos = combos.map((c)=> {return {source: c[0], target: c[1], direction: 1}})
-	    console.log(combos);
-	    return combos;
+	    console.log(edges);
+	    return edges;
+	  },
+	  render: function render(elem) {
+	    return [h('div', { style: "display: none" }, h('slot', {
+	      onSlotchange: elem[refreshEdges]
+	    })), h("style", css$2)];
 	  }
 	}));
 
-	var puppyStyle = '\n  div {\n    display: inline-block;\n    background-image: url(http://i.imgur.com/B2YwP9u.gif);\n    background-position: center;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 64px;\n    height: 150px;\n    border: solid deeppink 5px;\n  }\n  puppy-dog {\n    display: inline-block;\n    position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n  :host {\n    display: inline-block;\n    position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n';
+	var puppyStyle = '\n  div {\n    display: inline-block;\n    background-image: url(http://i.imgur.com/B2YwP9u.gif);\n    background-position: center;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 64px;\n    height: 150px;\n    border: solid deeppink 5px;\n  }\n  puppy-dog {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n  :host {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n';
 	define$1("puppy-dog", {
 	  attached: function attached(elem) {
 	    startDragging(elem);

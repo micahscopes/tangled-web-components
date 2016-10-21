@@ -1,5 +1,5 @@
-import {EdgesAllPairs} from './edges-all-pairs'
-import {define} from 'skatejs'
+import {EdgesAllPairs, refreshEdges, css} from './edges-all-pairs'
+import {define, h} from 'skatejs'
 import {select, selectAll} from 'd3-selection'
 import core from 'mathjs/core'
 import matrices from 'mathjs/lib/type/matrix'
@@ -14,17 +14,25 @@ define('edges-adjacency-matrix', EdgesAllPairs.extend({
     var nodes = selectAll(elem.parentElement.children)
          .filter((d,i,nodes)=>{return !nodes[i][edgeData];}).nodes()
     if (nodes.length < 2) { return []; }
-    var combos = [[nodes[0],nodes[1]]]
-    combos = []
+    var edges = [[nodes[0],nodes[1]]]
+    edges = []
     adj.forEach((row,i)=>{
       row.forEach((edge,j)=>{
         if(edge == 1){
-          combos.push({source: nodes[i], target: nodes[j], direction: 1})
+          edges.push({source: nodes[i], target: nodes[j], direction: 1})
         }
       })
     })
     // combos = combos.map((c)=> {return {source: c[0], target: c[1], direction: 1}})
-    console.log(combos)
-    return combos
-  }
+    console.log(edges)
+    return edges
+  },
+  render(elem) {
+    return [
+      h('div',{style: "display: none"}, h('slot', {
+        onSlotchange: elem[refreshEdges]
+      })),
+      h("style",css )
+    ]
+  },
 }))

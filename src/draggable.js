@@ -16,38 +16,47 @@ function applyMove(currentPosition, move) {
 const preventDefault = (event) => { event.preventDefault(); }
 const drag = Symbol()
 
-export function startDragging(elem){
-  // console.log(elem.style.left,elem.style.top)
-  elem.style.cursor = 'move'
-  elem.style.userSelect = 'none'
+export function startDragging(elem,timeout){
+  timeout = timeout ? timeout : 200;
+  setTimeout(function(){
+    // console.log(elem.style.left,elem.style.top)
+    elem.style.cursor = 'move'
+    elem.style.userSelect = 'none'
 
-  var drag = function(pos) {
-    elem.style.top = pos.y + 'px';
-    elem.style.left = pos.x + 'px';
-  }
+    var drag = function(pos) {
+      elem.style.top = pos.y + 'px';
+      elem.style.left = pos.x + 'px';
+    }
 
-  var mouseUps = Kefir.fromEvents(document, 'mouseup');
-  var mouseMoves = Kefir.fromEvents(document, 'mousemove');
-  var mouseDowns = Kefir.fromEvents(elem, 'mousedown');
-  mouseDowns.onValue( preventDefault );
+    var mouseUps = Kefir.fromEvents(document, 'mouseup');
+    var mouseMoves = Kefir.fromEvents(document, 'mousemove');
+    var mouseDowns = Kefir.fromEvents(elem, 'mousedown');
+    mouseDowns.onValue( preventDefault );
 
-  var moves = mouseDowns.flatMap(function(downEvent) {
-    return mouseMoves.takeUntilBy(mouseUps)
-      .diff(eventsPositionDiff, downEvent);
-  });
-  var rect = elem.getBoundingClientRect();
-  var currentPosition = { x: 0, //parseInt(rect.left),
-                      y: 0 }; //parseInt(rect.top) };
-                      // console.log(computedStyle);
-  var position = moves.scan(applyMove, currentPosition);
-  position.onValue(drag);
+    var moves = mouseDowns.flatMap(function(downEvent) {
+      return mouseMoves.takeUntilBy(mouseUps)
+        .diff(eventsPositionDiff, downEvent);
+    });
+    var rect = elem.getBoundingClientRect();
+    var style = window.getComputedStyle(elem);
+    // console.log(style);
+    var currentPosition = { x: parseInt(rect.left)-parseInt(style.marginLeft),
+                        y: parseInt(rect.top)-parseInt(style.marginTop) };
+                        console.log(currentPosition);
+    var position = moves.scan(applyMove, currentPosition);
 
-  elem[stopDragging] = function (){
-    elem.style.cursor = 'default'
-    elem.style.userSelect = 'default'
-    position.offValue(drag);
-    mouseDowns.offValue( preventDefault );
-  }
+    setTimeout(function(){
+      elem.style.position = "absolute";
+      position.onValue(drag);
+    },timeout)
+
+    elem[stopDragging] = function (){
+      elem.style.cursor = 'default'
+      elem.style.userSelect = 'default'
+      position.offValue(drag);
+      mouseDowns.offValue( preventDefault );
+    }
+  },50);
 }
 
 export function stopDragging(elem){

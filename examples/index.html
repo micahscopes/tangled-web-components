@@ -33,11 +33,14 @@
         top:0;
         margin: 50px;
         opacity: 0.4;
+        float: left;
       }
-
-      edges-all-pairs { --color: deeppink; --thickness:2px; }
+      .narrow {
+        width: 50%;
+        border: solid white 1px;
+      }
     </style>
-
+<div class="narrow">
     <graph-container>
     <edges-all-pairs></edges-all-pairs>
     <edges-adjacency-matrix thickness=3 color="white">[[0,0,1],[1,0,0],[0,1,0]]</edges-adjacency-matrix>
@@ -50,7 +53,7 @@
       <puppy-dog id="zoo"></puppy-dog>
 
     </graph-container>
-
+</div>
   <script type="text/javascript" src="../dist/graph-components.js"></script>
   <script src="https://d3js.org/d3.v4.min.js"></script>
   <script>window.specialPuppy = document.querySelector("#special")</script>
