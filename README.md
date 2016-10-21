@@ -2,7 +2,7 @@
 skatejs + d3 + math → graph (as in graph theory) web components.
 
 #### ~ very experimental ~
-
+### [*click to visit gh-pages*](https://micahscopes.github.io/tangled-web-components/)
 As well as a very special and original `puppy-dog` element, a `handle-box` element, a fancy algorithm for calculating the intersection of a line and a rectangle, and some colorful, smudgy images made in krita.
 
 ## Notes
