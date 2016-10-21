@@ -1,8 +1,6 @@
 <!doctype html>
 <html>
   <title>web component dog graph</title>
-  <script type="text/javascript" src="../dist/tangled-web-components.js"></script>
-
   <body>
   <div class="narrow">
       <graph-container>
@@ -29,8 +27,8 @@
         <handle-box>
             <h1> dogs riding scooters </h1>
         </handle-box>
-        <handle-box>
-          <h4 class="next"><a href="balls.html">more...</a></h4>
+        <handle-box class="next">
+          <a href="balls.html">more...</a>
         </handle-box>
       </graph-container>
   </div>
@@ -40,6 +38,7 @@
         opacity: 20%;
         color: white;
         overflow: scroll;
+        font-family: monospace;
       }
 
       handle-box, puppy-dog {
@@ -53,15 +52,19 @@
 
       .next {
         position: inherit;
-        display: inline;
-        margin: 500px;
-        position: static
+        display: block;
+        margin: 20px auto;
+        left: 50px;
+        text-align: center;
+        width: 80%;
       }
       a, a:visited {
+        font-size: 5em;
         color: yellow;
       }
 
     </style>
+    <script type="text/javascript" src="../dist/tangled-web-components.js"></script>
   </body>
 
 </html>

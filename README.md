@@ -1,4 +1,4 @@
-# Graph Components
+# tangled-web-components
 skatejs + d3 + math → graph (as in graph theory) web components.
 
 #### ~ very experimental ~
