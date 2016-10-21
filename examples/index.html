@@ -4,9 +4,9 @@
 
   <body>
     <style>
-      #oso {left: 100px; top: 100px;}
-      #zoo {left: 200px; top: 800px;}
-      #fats {right: 200px; top: 0px;}
+      /*#oso {left: 100px; top: 100px;}
+      #zoo {left: 200px; top: 200px;}
+      #fats {right: 200px; top: 0px;}*/
 
       body {
         background: url(smudgy4.png);
@@ -29,22 +29,25 @@
             100%{left: 300px}
         }
       puppy-dog {
-        position: absolute;
+        left:0;
+        top:0;
         margin: 50px;
         opacity: 0.4;
       }
 
-
-      edges-all-pairs { --color: yellow; --thickness:2px; }
+      edges-all-pairs { --color: deeppink; --thickness:2px; }
     </style>
 
     <graph-container>
-      <edges-adjacency-matrix>[[0,1,0,0],[1,0,0,1],[0,1,0,0],[0,0,0,1]]</edges-adjacency-matrix>
-      <edges-all-pairs></edges-all-pairs>
-      <h1>a dog </h1>
+    <edges-all-pairs></edges-all-pairs>
+    <edges-adjacency-matrix thickness=3 color="white">[[0,0,1],[1,0,0],[0,1,0]]</edges-adjacency-matrix>
+      <handle-box>
+          <h1> dogs riding scooters </h1>
+          <h1>testing</h1>
+      </handle-box>
       <puppy-dog id="oso"></puppy-dog>
+      <puppy-dog id="fat-boy"></puppy-dog>
       <puppy-dog id="zoo"></puppy-dog>
-      <puppy-dog id="fats"></puppy-dog>
 
     </graph-container>
 

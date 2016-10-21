@@ -16,11 +16,17 @@ var math = core.create();
 math.import(matrices)
 
 const css=`
-path {
-  stroke: var(--color,#0f0);
-  stroke-width: var(--thickness,4px);
-  fill:none
-}
+// path {
+//   stroke: var(--color);
+//   // fill: var(--color);
+//   stroke-width: var(--thickness);
+//   fill:none
+// }
+// marker path {
+//   stroke: var(--color);
+//   stroke-width: 2px;
+//   fill: var(--color);
+// }
 svg {
   width: 100%;
   height: 100%;
@@ -32,8 +38,9 @@ svg {
 `
 
 const setupSVG = function(svg){
+  // console.log(svg)
   svg = select(svg)
-  svg.append("g").attr("class", "links")
+  svg.append("svg:g").attr("class", "links")
 
   // define arrow markers for graph links
   var defs = svg.append('svg:defs')
@@ -44,9 +51,11 @@ const setupSVG = function(svg){
     .attr('markerWidth', 5)
     .attr('markerHeight', 5)
     .attr('orient', 'auto')
-    .append('svg:path')
-    .attr('d', 'M0,-5L10,0L0,5')
-    .attr('fill', 'white');
+    .append('svg:path').classed('marker',true)
+    .attr('d', 'M0,-5L10,0L0,5L0,-5')
+    // .style('stroke','var(--color)')
+    // .style('fill','var(--color)')
+    // .style('stroke-width','var(--thickness)')
 
   defs.append('svg:marker')
     .attr('id', 'start-arrow')
@@ -55,9 +64,11 @@ const setupSVG = function(svg){
     .attr('markerWidth', 5)
     .attr('markerHeight', 5)
     .attr('orient', 'auto')
-    .append('svg:path')
-    .attr('d', 'M10,-5L0,0L10,5')
-    .attr('fill', 'white');
+    .append('svg:path').classed('marker',true)
+    .attr('d', 'M10,-5L0,0L10,5L10,-5')
+    // .style('stroke','var(--color)')
+    // .style('fill','var(--color)')
+    // .style('stroke-width','var(--thickness)')
 }
 
 const detached = Symbol();
@@ -68,14 +79,16 @@ const animate = function(elem){
 }
 
 const svgElement = Symbol();
-const edgeData = Symbol()
+const edgeData = Symbol();
 const animateCallback = Symbol();
 window.edgeData = edgeData;
 window.svgElement = svgElement;
 
 const graphAllEdges = {
   props: {
-    fps: { attribute: true, default: 120 }
+    fps: { attribute: true, default: 120 },
+    color: { attribute: true, default: "yellow" },
+    thickness: { attribute: true, default: 2 }
   },
   setupSVG: setupSVG,
   svgEdge(d,i,nodes){
@@ -93,18 +106,29 @@ const graphAllEdges = {
     var edgeLines = select(elem[svgElement]).select('g').selectAll("path")
         .data(elem[edgeData])
     edgeLines.exit().remove();
-    edgeLines.enter().append("path")
+    edgeLines.enter().append("svg:path")
+          .style('fill', (d) => d.color ? d.color : elem.color )
+          .style('stroke', (d) => d.color ? d.color : elem.color )
+          .style('stroke-width', (d) => d.weight ? d.weight*elem.thickness : elem.thickness )
           .style('marker-start', (d) => d.direction <= 0 ? 'url(#start-arrow)' : '')
           .style('marker-end', (d) => d.direction >= 0 ? 'url(#end-arrow)' : '');
     edgeLines.attr("d",this.svgEdge)
+          .style('fill', (d) => d.color ? d.color : elem.color )
+          .style('stroke', (d) => d.color ? d.color : elem.color )
+          .style('stroke-width', (d) => d.weight ? d.weight*elem.thickness : elem.thickness )
           .style('marker-start', (d) => d.direction <= 0 ? 'url(#start-arrow)' : '')
           .style('marker-end', (d) => d.direction >= 0 ? 'url(#end-arrow)' : '');
+
+    var markers = select(elem[svgElement]).select('defs').selectAll('marker').select("path")
+    // console.log(markers.nodes())
+    markers.style('stroke',elem.color)
+        .style('fill',elem.color)
   },
 
   edges(elem){
-    var nodes = select(elem.parentElement).selectAll("*")
+    var nodes = selectAll(elem.parentElement.children)
          .filter((d,i,nodes)=>{return !nodes[i][edgeData];}).nodes()
-         console.log(nodes)
+         console.log("updating edges", nodes)
     if (nodes.length < 2) { return []; }
     var combo = cmb.combination(nodes,2).toArray()
     // console.log(combo.map((c)=> {return {source: c[0], target: c[1], direction: 0}}))
@@ -112,12 +136,17 @@ const graphAllEdges = {
   },
 
   attached(elem) {
+    elem[animateCallback] = ()=>{this.refreshAnimation(elem)}
+
     animate(elem);
     elem[edgeData] = [];
-    console.log(this)
+    // console.log(this)
     elem[svgElement] = document.createElementNS(namespaces.svg,"svg")
+    // var setupSVG = this.setupSVG;
     this.setupSVG(elem[svgElement])
-    elem[animateCallback] = ()=>{this.refreshAnimation(elem)}
+
+    var refreshEdges = (e) => {elem[edgeData] = this.edges(elem);}
+    elem.parentElement.addEventListener('graph-updated', refreshEdges)
   },
 
   detached(elem) {
@@ -127,15 +156,11 @@ const graphAllEdges = {
   },
 
   attributeChanged(elem) {
-    if(this){
-      elem[edgeData] = this.edges(elem);
-    }
   },
 
   render(elem) {
     return [
       h('div',{style: "display: none"}, h('slot', {
-        onSlotchange: (e) => {this.attributeChanged(elem); /* console.log("slot change",e) */}
       })),
 
       h("style",css )

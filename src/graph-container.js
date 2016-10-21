@@ -5,6 +5,8 @@ const animate = function(elem){
   setTimeout( () => { window.requestAnimationFrame( () => {animate(elem)} ) }, 1000/elem.fps );
 }
 
+const css = `graph-container, :host {display: inline-table}`
+
 const GraphContainer = define('graph-container',
  {
    props: {
@@ -18,7 +20,9 @@ const GraphContainer = define('graph-container',
   render(elem) {
     return [
       h('slot', {
+        onSlotchange: (e) => {elem.dispatchEvent(new Event("graph-updated"))}
       }),
+      h('style',css)
     ]
   },
 });

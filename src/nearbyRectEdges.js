@@ -1,8 +1,7 @@
 import Vec from 'victor'
 
 const X = Vec(1,0)
-const P = 200
-
+const P = 100
 // Maybe a more efficient way, but messier to me.
 
 
@@ -20,12 +19,14 @@ var pRad = (theta,p) => Math.pow( Math.pow(Math.cos(theta),p) +
 // pXY is the cartesian coordinates of the point on the p-norm unit circle at angle theta.
 var pXY = (theta,p) => new Vec(Math.cos(theta)*pRad(theta,p),Math.sin(theta)*pRad(theta,p))
 
-export function nearbyEdgePoints(r1,r2){
+export function nearbyEdgePoints(r1,r2,p1,p2){
+  if (p1 == undefined){p1 = P}
+  if (p2 == undefined){p2 = P}
   var c1 = center(r1), c2 = center(r2);
   var rad1 = rad(r1), rad2 = rad(r2);
   var phi = c2.clone().subtract(c1.clone()).angle()
-  var edgePt1 = pXY(phi,P);
-  var edgePt2 = new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
+  var edgePt1 = pXY(phi,p1);
+  var edgePt2 = pXY(phi+Math.PI,p2) //new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
   return([c1.clone().add(edgePt1.multiply(rad1)),
           c2.clone().add(edgePt2.multiply(rad2))
         ])

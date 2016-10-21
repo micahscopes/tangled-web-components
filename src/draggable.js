@@ -36,8 +36,8 @@ export function startDragging(elem){
       .diff(eventsPositionDiff, downEvent);
   });
   var rect = elem.getBoundingClientRect();
-  var currentPosition = { x: parseInt(rect.left),
-                      y: parseInt(rect.top) };
+  var currentPosition = { x: 0, //parseInt(rect.left),
+                      y: 0 }; //parseInt(rect.top) };
                       // console.log(computedStyle);
   var position = moves.scan(applyMove, currentPosition);
   position.onValue(drag);
@@ -60,4 +60,5 @@ export const draggableHostStyle = `:host {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  position: relative;
 }`
