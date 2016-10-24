@@ -12125,19 +12125,14 @@ var require$$0 = Object.freeze({
 	//         ])
 	// }
 
+	var rectCache$1 = Symbol();
+	var cacheBoundingRect = function cacheBoundingRect(el) {
+	  return el[rectCache$1] = el.getBoundingClientRect();
+	};
+
 	var drawEdge = function drawEdge(ctx, edge, thickness) {
-	  var rect1 = edge.source.getBoundingClientRect();
-
-	  // ctx.beginPath()
-	  // ctx.fillStyle = "deeppink"
-	  // ctx.arc(rect1.left,rect1.top,4,0,2*Math.PI);
-	  // ctx.arc(rect1.left+rect1.width,rect1.top,4,0,2*Math.PI);
-	  // ctx.arc(rect1.left+rect1.width,rect1.top+rect1.height,4,0,2*Math.PI);
-	  // ctx.arc(rect1.left,rect1.top+rect1.height,4,0,2*Math.PI);
-	  // ctx.fill()
-	  // ctx.closePath()
-
-	  var rect2 = edge.target.getBoundingClientRect();
+	  var rect1 = edge.source[rectCache$1];
+	  var rect2 = edge.target[rectCache$1];
 	  var pts = nearbyEdgePoints(rect1, rect2, edge.source.round, edge.target.round, undefined, 0);
 
 	  var size = thickness * 1;
@@ -22045,7 +22040,6 @@ var require$$0$15 = Object.freeze({
 	math.import(matrices);
 
 	var css$2 = "\n// path {\n//   stroke: var(--color);\n//   // fill: var(--color);\n//   stroke-width: var(--thickness);\n//   fill:none\n// }\n// marker path {\n//   stroke: var(--color);\n//   stroke-width: 2px;\n//   fill: var(--color);\n// }\ncanvas {\n  // width: 100%;\n  // height: 100%;\n  padding: 0; margin: 0;\n  left:0; top:0;\n  position: fixed;\n  overflow: hidden;\n  z-index: -1;\n}\n\n";
-
 	var _detached = Symbol();
 	var animate$1 = function animate(elem) {
 	  elem.dispatchEvent(new Event('animate'));
@@ -22059,9 +22053,9 @@ var require$$0$15 = Object.freeze({
 
 	var canvas = Symbol();
 	var edgeData$1 = Symbol();
+	var getNodes = Symbol();
 	var animateCallback = Symbol();
 	var refreshEdges = Symbol();
-
 	window.edgeData = edgeData$1;
 	window.canvas = canvas;
 
@@ -22072,6 +22066,7 @@ var require$$0$15 = Object.freeze({
 	    thickness: { attribute: true, default: 2 }
 	  },
 	  refreshAnimation: function refreshAnimation(elem) {
+	    elem[getNodes]().forEach(cacheBoundingRect);
 	    var ctx = elem[canvas].getContext("2d");
 	    if (ctx == undefined) {
 	      return;
@@ -22088,10 +22083,7 @@ var require$$0$15 = Object.freeze({
 	    });
 	  },
 	  edges: function edges(elem) {
-	    var nodes = selectAll(elem.parentElement.children).filter(function (d, i, nodes) {
-	      return !nodes[i][edgeData$1];
-	    }).nodes();
-	    console.log("updating edges", nodes);
+	    var nodes = elem[getNodes]();
 	    if (nodes.length < 2) {
 	      return [];
 	    }
@@ -22109,6 +22101,11 @@ var require$$0$15 = Object.freeze({
 	    };
 
 	    animate$1(elem);
+	    elem[getNodes] = function () {
+	      return selectAll(elem.parentElement.children).filter(function (d, i, nodes) {
+	        return !nodes[i][edgeData$1];
+	      }).nodes();
+	    };
 	    elem[edgeData$1] = [];
 	    // console.log(this)
 	    elem[canvas] = document.createElement("canvas");

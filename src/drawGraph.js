@@ -1,19 +1,12 @@
 import {line,symbol,symbolTriangle as triangle} from 'd3-shape'
 import {nearbyEdgePoints} from "./nearbyRectEdges.js"
 
+export const rectCache = Symbol();
+export const cacheBoundingRect = (el) => el[rectCache] = el.getBoundingClientRect()
+
 export const drawEdge = (ctx,edge,thickness) => {
-  var rect1 = edge.source.getBoundingClientRect();
-
-  // ctx.beginPath()
-  // ctx.fillStyle = "deeppink"
-  // ctx.arc(rect1.left,rect1.top,4,0,2*Math.PI);
-  // ctx.arc(rect1.left+rect1.width,rect1.top,4,0,2*Math.PI);
-  // ctx.arc(rect1.left+rect1.width,rect1.top+rect1.height,4,0,2*Math.PI);
-  // ctx.arc(rect1.left,rect1.top+rect1.height,4,0,2*Math.PI);
-  // ctx.fill()
-  // ctx.closePath()
-
-  var rect2 = edge.target.getBoundingClientRect();
+  var rect1 = edge.source[rectCache];
+  var rect2 = edge.target[rectCache];
   var pts = nearbyEdgePoints(rect1,rect2,edge.source.round,edge.target.round,undefined,0)
 
   var size = thickness*1;

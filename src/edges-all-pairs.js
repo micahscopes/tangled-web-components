@@ -8,7 +8,7 @@ import cmb from "js-combinatorics"
 import { define, h, prop } from 'skatejs';
 import * as skate from 'skatejs';
 import {nearbyEdgePoints} from "./nearbyRectEdges.js"
-import {drawEdge} from './drawGraph.js'
+import {drawEdge, cacheBoundingRect} from './drawGraph.js'
 import core from 'mathjs/core'
 import matrices from 'mathjs/lib/type/matrix'
 
@@ -16,17 +16,6 @@ var math = core.create();
 math.import(matrices)
 
 export const css=`
-// path {
-//   stroke: var(--color);
-//   // fill: var(--color);
-//   stroke-width: var(--thickness);
-//   fill:none
-// }
-// marker path {
-//   stroke: var(--color);
-//   stroke-width: 2px;
-//   fill: var(--color);
-// }
 canvas {
   // width: 100%;
   // height: 100%;
@@ -38,7 +27,6 @@ canvas {
 }
 
 `
-
 const detached = Symbol();
 const animate = function(elem){
   elem.dispatchEvent(new Event('animate'));
@@ -48,8 +36,10 @@ const animate = function(elem){
 
 export const canvas = Symbol();
 export const edgeData = Symbol();
+export const getNodes = Symbol();
 export const animateCallback = Symbol();
 export const refreshEdges = Symbol();
+export const rectCache = Symbol();
 
 window.edgeData = edgeData;
 window.canvas = canvas;
@@ -61,6 +51,7 @@ const graphAllEdges = {
     thickness: { attribute: true, default: 2 }
   },
   refreshAnimation(elem){
+    elem[getNodes]().forEach(cacheBoundingRect);
     var ctx = elem[canvas].getContext("2d");
     if(ctx == undefined){return;}
     ctx.canvas.width  = window.innerWidth;
@@ -74,9 +65,7 @@ const graphAllEdges = {
   },
 
   edges(elem){
-    var nodes = selectAll(elem.parentElement.children)
-         .filter((d,i,nodes)=>{return !nodes[i][edgeData];}).nodes()
-         console.log("updating edges", nodes)
+    var nodes = elem[getNodes]();
     if (nodes.length < 2) { return []; }
     var combo = cmb.combination(nodes,2).toArray()
     // console.log(combo.map((c)=> {return {source: c[0], target: c[1], direction: 0}}))
@@ -87,6 +76,8 @@ const graphAllEdges = {
     elem[animateCallback] = ()=>{this.refreshAnimation(elem)}
 
     animate(elem);
+    elem[getNodes] = () => selectAll(elem.parentElement.children)
+         .filter((d,i,nodes)=>{return !nodes[i][edgeData];}).nodes()
     elem[edgeData] = [];
     // console.log(this)
     elem[canvas] = document.createElement("canvas")
