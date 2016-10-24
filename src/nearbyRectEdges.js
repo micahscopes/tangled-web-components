@@ -29,13 +29,26 @@ export function nearbyEdgePoints(r1,r2,p1,p2,phase,margin){
   var c1 = center(r1), c2 = center(r2);
   var rad1 = rad(r1), rad2 = rad(r2);
   var phi = c2.clone().subtract(c1.clone()).angle()
-  var edgePt1 = pXY(phi+phase,p1,rad1.x+margin,rad1.y+margin);
-  var edgePt2 = pXY(phi-phase+Math.PI,p2,rad2.x+margin,rad2.y+margin) //new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
-  return([c1.clone().add(edgePt1),
-          c2.clone().add(edgePt2)
-        ])
+  var edgePt1 = pXY(phi+phase,p1,rad1.x+margin,rad1.y+margin).add(c1);
+  var edgePt2 = pXY(phi-phase+Math.PI,p2,rad2.x+margin,rad2.y+margin).add(c2) //new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
+  return([edgePt1, edgePt2])
 }
 
+// export function localFrameEdgeGap(r1,r2,p1,p2,phase,margin){
+//   phase = phase ? phase : Math.PI/16;
+//   margin = margin ? margin : 0;
+//   if (p1 == undefined){p1 = P}
+//   if (p2 == undefined){p2 = P}
+//   var c1 = center(r1), c2 = center(r2);
+//   var dist = c2.subtract(c1);
+//   var rad1 = rad(r1), rad2 = rad(r2);
+//   var phi = c2.clone().subtract(c1.clone()).angle()
+//   var edgePt1 = pRad(phi+phase,p1,rad1.x+margin,rad1.y+margin);
+//   var edgePt2 = pRad(phi-phase+Math.PI,p2,rad2.x+margin,rad2.y+margin) //new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
+//   return([c1.clone().add(edgePt1),
+//           c2.clone().add(edgePt2)
+//         ])
+// }
 
 // For some reason this implementation isn't working:
 // var abs = Math.abs
