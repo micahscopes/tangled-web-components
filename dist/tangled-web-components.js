@@ -9544,240 +9544,23 @@ var require$$0 = Object.freeze({
 	  dispatch: selection_dispatch
 	};
 
-	function select (selector) {
-	    return typeof selector === "string" ? new Selection([[document.querySelector(selector)]], [document.documentElement]) : new Selection([[selector]], root);
-	}
-
 	function selectAll (selector) {
 	    return typeof selector === "string" ? new Selection([document.querySelectorAll(selector)], [document.documentElement]) : new Selection([selector == null ? [] : selector], root);
 	}
 
-	var pi = Math.PI;
-	var tau = 2 * pi;
-	var epsilon = 1e-6;
-	var tauEpsilon = tau - epsilon;
-	function Path() {
-	  this._x0 = this._y0 = // start of current subpath
-	  this._x1 = this._y1 = null; // end of current subpath
-	  this._ = [];
-	}
-
-	function path() {
-	  return new Path();
-	}
-
-	Path.prototype = path.prototype = {
-	  constructor: Path,
-	  moveTo: function moveTo(x, y) {
-	    this._.push("M", this._x0 = this._x1 = +x, ",", this._y0 = this._y1 = +y);
-	  },
-	  closePath: function closePath() {
-	    if (this._x1 !== null) {
-	      this._x1 = this._x0, this._y1 = this._y0;
-	      this._.push("Z");
-	    }
-	  },
-	  lineTo: function lineTo(x, y) {
-	    this._.push("L", this._x1 = +x, ",", this._y1 = +y);
-	  },
-	  quadraticCurveTo: function quadraticCurveTo(x1, y1, x, y) {
-	    this._.push("Q", +x1, ",", +y1, ",", this._x1 = +x, ",", this._y1 = +y);
-	  },
-	  bezierCurveTo: function bezierCurveTo(x1, y1, x2, y2, x, y) {
-	    this._.push("C", +x1, ",", +y1, ",", +x2, ",", +y2, ",", this._x1 = +x, ",", this._y1 = +y);
-	  },
-	  arcTo: function arcTo(x1, y1, x2, y2, r) {
-	    x1 = +x1, y1 = +y1, x2 = +x2, y2 = +y2, r = +r;
-	    var x0 = this._x1,
-	        y0 = this._y1,
-	        x21 = x2 - x1,
-	        y21 = y2 - y1,
-	        x01 = x0 - x1,
-	        y01 = y0 - y1,
-	        l01_2 = x01 * x01 + y01 * y01;
-
-	    // Is the radius negative? Error.
-	    if (r < 0) throw new Error("negative radius: " + r);
-
-	    // Is this path empty? Move to (x1,y1).
-	    if (this._x1 === null) {
-	      this._.push("M", this._x1 = x1, ",", this._y1 = y1);
-	    }
-
-	    // Or, is (x1,y1) coincident with (x0,y0)? Do nothing.
-	    else if (!(l01_2 > epsilon)) {}
-
-	      // Or, are (x0,y0), (x1,y1) and (x2,y2) collinear?
-	      // Equivalently, is (x1,y1) coincident with (x2,y2)?
-	      // Or, is the radius zero? Line to (x1,y1).
-	      else if (!(Math.abs(y01 * x21 - y21 * x01) > epsilon) || !r) {
-	          this._.push("L", this._x1 = x1, ",", this._y1 = y1);
-	        }
-
-	        // Otherwise, draw an arc!
-	        else {
-	            var x20 = x2 - x0,
-	                y20 = y2 - y0,
-	                l21_2 = x21 * x21 + y21 * y21,
-	                l20_2 = x20 * x20 + y20 * y20,
-	                l21 = Math.sqrt(l21_2),
-	                l01 = Math.sqrt(l01_2),
-	                l = r * Math.tan((pi - Math.acos((l21_2 + l01_2 - l20_2) / (2 * l21 * l01))) / 2),
-	                t01 = l / l01,
-	                t21 = l / l21;
-
-	            // If the start tangent is not coincident with (x0,y0), line to.
-	            if (Math.abs(t01 - 1) > epsilon) {
-	              this._.push("L", x1 + t01 * x01, ",", y1 + t01 * y01);
-	            }
-
-	            this._.push("A", r, ",", r, ",0,0,", +(y01 * x20 > x01 * y20), ",", this._x1 = x1 + t21 * x21, ",", this._y1 = y1 + t21 * y21);
-	          }
-	  },
-	  arc: function arc(x, y, r, a0, a1, ccw) {
-	    x = +x, y = +y, r = +r;
-	    var dx = r * Math.cos(a0),
-	        dy = r * Math.sin(a0),
-	        x0 = x + dx,
-	        y0 = y + dy,
-	        cw = 1 ^ ccw,
-	        da = ccw ? a0 - a1 : a1 - a0;
-
-	    // Is the radius negative? Error.
-	    if (r < 0) throw new Error("negative radius: " + r);
-
-	    // Is this path empty? Move to (x0,y0).
-	    if (this._x1 === null) {
-	      this._.push("M", x0, ",", y0);
-	    }
-
-	    // Or, is (x0,y0) not coincident with the previous point? Line to (x0,y0).
-	    else if (Math.abs(this._x1 - x0) > epsilon || Math.abs(this._y1 - y0) > epsilon) {
-	        this._.push("L", x0, ",", y0);
-	      }
-
-	    // Is this arc empty? We’re done.
-	    if (!r) return;
-
-	    // Is this a complete circle? Draw two arcs to complete the circle.
-	    if (da > tauEpsilon) {
-	      this._.push("A", r, ",", r, ",0,1,", cw, ",", x - dx, ",", y - dy, "A", r, ",", r, ",0,1,", cw, ",", this._x1 = x0, ",", this._y1 = y0);
-	    }
-
-	    // Otherwise, draw an arc!
-	    else {
-	        if (da < 0) da = da % tau + tau;
-	        this._.push("A", r, ",", r, ",0,", +(da >= pi), ",", cw, ",", this._x1 = x + r * Math.cos(a1), ",", this._y1 = y + r * Math.sin(a1));
-	      }
-	  },
-	  rect: function rect(x, y, w, h) {
-	    this._.push("M", this._x0 = this._x1 = +x, ",", this._y0 = this._y1 = +y, "h", +w, "v", +h, "h", -w, "Z");
-	  },
-	  toString: function toString() {
-	    return this._.join("");
-	  }
-	};
-
-	function constant$1 (x) {
-	  return function constant() {
-	    return x;
-	  };
-	}
-
 	var epsilon$1 = 1e-12;
 
-	function Linear(context) {
-	  this._context = context;
-	}
+	var sqrt3 = Math.sqrt(3);
 
-	Linear.prototype = {
-	  areaStart: function areaStart() {
-	    this._line = 0;
-	  },
-	  areaEnd: function areaEnd() {
-	    this._line = NaN;
-	  },
-	  lineStart: function lineStart() {
-	    this._point = 0;
-	  },
-	  lineEnd: function lineEnd() {
-	    if (this._line || this._line !== 0 && this._point === 1) this._context.closePath();
-	    this._line = 1 - this._line;
-	  },
-	  point: function point(x, y) {
-	    x = +x, y = +y;
-	    switch (this._point) {
-	      case 0:
-	        this._point = 1;this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y);break;
-	      case 1:
-	        this._point = 2; // proceed
-	      default:
-	        this._context.lineTo(x, y);break;
-	    }
+	var triangle = {
+	  draw: function draw(context, size) {
+	    var y = -Math.sqrt(size / (sqrt3 * 3));
+	    context.moveTo(0, y * 2);
+	    context.lineTo(-sqrt3 * y, -y);
+	    context.lineTo(sqrt3 * y, -y);
+	    context.closePath();
 	  }
 	};
-
-	function curveLinear (context) {
-	  return new Linear(context);
-	}
-
-	function x(p) {
-	  return p[0];
-	}
-
-	function y(p) {
-	  return p[1];
-	}
-
-	function line () {
-	  var x$$ = x,
-	      y$$ = y,
-	      defined = constant$1(true),
-	      context = null,
-	      curve = curveLinear,
-	      output = null;
-
-	  function line(data) {
-	    var i,
-	        n = data.length,
-	        d,
-	        defined0 = false,
-	        buffer;
-
-	    if (context == null) output = curve(buffer = path());
-
-	    for (i = 0; i <= n; ++i) {
-	      if (!(i < n && defined(d = data[i], i, data)) === defined0) {
-	        if (defined0 = !defined0) output.lineStart();else output.lineEnd();
-	      }
-	      if (defined0) output.point(+x$$(d, i, data), +y$$(d, i, data));
-	    }
-
-	    if (buffer) return output = null, buffer + "" || null;
-	  }
-
-	  line.x = function (_) {
-	    return arguments.length ? (x$$ = typeof _ === "function" ? _ : constant$1(+_), line) : x$$;
-	  };
-
-	  line.y = function (_) {
-	    return arguments.length ? (y$$ = typeof _ === "function" ? _ : constant$1(+_), line) : y$$;
-	  };
-
-	  line.defined = function (_) {
-	    return arguments.length ? (defined = typeof _ === "function" ? _ : constant$1(!!_), line) : defined;
-	  };
-
-	  line.curve = function (_) {
-	    return arguments.length ? (curve = _, context != null && (output = curve(context)), line) : curve;
-	  };
-
-	  line.context = function (_) {
-	    return arguments.length ? (_ == null ? context = output = null : output = curve(context = _), line) : context;
-	  };
-
-	  return line;
-	}
 
 	function noop$1 () {}
 
@@ -12298,10 +12081,26 @@ var require$$0 = Object.freeze({
 	  var rad1 = rad(r1),
 	      rad2 = rad(r2);
 	  var phi = c2.clone().subtract(c1.clone()).angle();
-	  var edgePt1 = pXY(phi + phase, p1, rad1.x + margin, rad1.y + margin);
-	  var edgePt2 = pXY(phi - phase + Math.PI, p2, rad2.x + margin, rad2.y + margin); //new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
-	  return [c1.clone().add(edgePt1), c2.clone().add(edgePt2)];
+	  var edgePt1 = pXY(phi + phase, p1, rad1.x + margin, rad1.y + margin).add(c1);
+	  var edgePt2 = pXY(phi - phase + Math.PI, p2, rad2.x + margin, rad2.y + margin).add(c2); //new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
+	  return [edgePt1, edgePt2];
 	}
+
+	// export function localFrameEdgeGap(r1,r2,p1,p2,phase,margin){
+	//   phase = phase ? phase : Math.PI/16;
+	//   margin = margin ? margin : 0;
+	//   if (p1 == undefined){p1 = P}
+	//   if (p2 == undefined){p2 = P}
+	//   var c1 = center(r1), c2 = center(r2);
+	//   var dist = c2.subtract(c1);
+	//   var rad1 = rad(r1), rad2 = rad(r2);
+	//   var phi = c2.clone().subtract(c1.clone()).angle()
+	//   var edgePt1 = pRad(phi+phase,p1,rad1.x+margin,rad1.y+margin);
+	//   var edgePt2 = pRad(phi-phase+Math.PI,p2,rad2.x+margin,rad2.y+margin) //new Vec(-edgePt1.x, -edgePt1.y);//.multiplyX(rad1).multiplyY(rad1);
+	//   return([c1.clone().add(edgePt1),
+	//           c2.clone().add(edgePt2)
+	//         ])
+	// }
 
 	// For some reason this implementation isn't working:
 	// var abs = Math.abs
@@ -12325,6 +12124,57 @@ var require$$0 = Object.freeze({
 	//           c2.clone().add(edgePt2.multiply(rad2))
 	//         ])
 	// }
+
+	var drawEdge = function drawEdge(ctx, edge, thickness) {
+	  var rect1 = edge.source.getBoundingClientRect();
+
+	  // ctx.beginPath()
+	  // ctx.fillStyle = "deeppink"
+	  // ctx.arc(rect1.left,rect1.top,4,0,2*Math.PI);
+	  // ctx.arc(rect1.left+rect1.width,rect1.top,4,0,2*Math.PI);
+	  // ctx.arc(rect1.left+rect1.width,rect1.top+rect1.height,4,0,2*Math.PI);
+	  // ctx.arc(rect1.left,rect1.top+rect1.height,4,0,2*Math.PI);
+	  // ctx.fill()
+	  // ctx.closePath()
+
+	  var rect2 = edge.target.getBoundingClientRect();
+	  var pts = nearbyEdgePoints(rect1, rect2, edge.source.round, edge.target.round, undefined, 0);
+
+	  var size = thickness * 1;
+	  var markerBuffer = 1 + 2 * size;
+	  var lineBuffer = markerBuffer + 3;
+	  // var fill = 'magenta'
+	  // var stroke = '#222'
+	  // var strokeWidth = 2
+
+	  // ctx.strokeStyle = "yellow";
+	  // ctx.fillStyle = "black";
+	  // ctx.lineWidth = 2;
+	  var diff = pts[1].clone().subtract(pts[0]);
+	  var len = diff.length();
+
+	  ctx.beginPath();
+	  ctx.save();
+	  ctx.translate(pts[0].x, pts[0].y);
+	  ctx.rotate(Math.atan2(diff.y, diff.x));
+
+	  ctx.save();
+	  ctx.rotate(-Math.PI / 2);
+	  ctx.translate(0, 7 + markerBuffer);
+	  triangle.draw(ctx, 10 * size * size);
+	  ctx.restore();
+
+	  // ctx.moveTo(0,-size/2);
+	  ctx.rect(lineBuffer, -size / 2, len - 2 * lineBuffer, size);
+	  ctx.translate(len, 0);
+	  ctx.rotate(Math.PI / 2);
+	  ctx.translate(0, 7 + markerBuffer);
+	  triangle.draw(ctx, 10 * size * size);
+	  ctx.restore();
+	  ctx.stroke();
+	  ctx.fill();
+	  ctx.closePath();
+	};
 
 	var object = createCommonjsModule(function (module, exports) {
 	  'use strict';
@@ -22194,25 +22044,7 @@ var require$$0$15 = Object.freeze({
 	var math = core$1.create();
 	math.import(matrices);
 
-	var css$2 = "\n// path {\n//   stroke: var(--color);\n//   // fill: var(--color);\n//   stroke-width: var(--thickness);\n//   fill:none\n// }\n// marker path {\n//   stroke: var(--color);\n//   stroke-width: 2px;\n//   fill: var(--color);\n// }\nsvg {\n  width: 100%;\n  height: 100%;\n  left:0; top:0;\n  position: fixed;\n  overflow: hidden;\n  z-index: -1;\n}\n";
-
-	var setupSVG = function setupSVG(svg) {
-	  // console.log(svg)
-	  svg = select(svg);
-	  svg.append("svg:g").attr("class", "links");
-
-	  // define arrow markers for graph links
-	  var defs = svg.append('svg:defs');
-	  defs.append('svg:marker').attr('id', 'end-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 10).attr('markerWidth', 5).attr('markerHeight', 5).attr('orient', 'auto').append('svg:path').classed('marker', true).attr('d', 'M0,-5L10,0L0,5L0,-5');
-	  // .style('stroke','var(--color)')
-	  // .style('fill','var(--color)')
-	  // .style('stroke-width','var(--thickness)')
-
-	  defs.append('svg:marker').attr('id', 'start-arrow').attr('viewBox', '0 -5 10 10').attr('refX', 0).attr('markerWidth', 5).attr('markerHeight', 5).attr('orient', 'auto').append('svg:path').classed('marker', true).attr('d', 'M10,-5L0,0L10,5L10,-5');
-	  // .style('stroke','var(--color)')
-	  // .style('fill','var(--color)')
-	  // .style('stroke-width','var(--thickness)')
-	};
+	var css$2 = "\n// path {\n//   stroke: var(--color);\n//   // fill: var(--color);\n//   stroke-width: var(--thickness);\n//   fill:none\n// }\n// marker path {\n//   stroke: var(--color);\n//   stroke-width: 2px;\n//   fill: var(--color);\n// }\ncanvas {\n  // width: 100%;\n  // height: 100%;\n  padding: 0; margin: 0;\n  left:0; top:0;\n  position: fixed;\n  overflow: hidden;\n  z-index: -1;\n}\n\n";
 
 	var _detached = Symbol();
 	var animate$1 = function animate(elem) {
@@ -22225,13 +22057,13 @@ var require$$0$15 = Object.freeze({
 	  }, 1000 / elem.fps);
 	};
 
-	var svgElement = Symbol();
+	var canvas = Symbol();
 	var edgeData$1 = Symbol();
 	var animateCallback = Symbol();
 	var refreshEdges = Symbol();
 
 	window.edgeData = edgeData$1;
-	window.svgElement = svgElement;
+	window.canvas = canvas;
 
 	var graphAllEdges = {
 	  props: {
@@ -22239,48 +22071,21 @@ var require$$0$15 = Object.freeze({
 	    color: { attribute: true, default: "yellow" },
 	    thickness: { attribute: true, default: 2 }
 	  },
-	  setupSVG: setupSVG,
-	  svgEdge: function svgEdge(d, i, nodes) {
-	    // console.log(d)
-	    var rect1 = d.source.getBoundingClientRect();
-	    var rect2 = d.target.getBoundingClientRect();
-	    var pts = nearbyEdgePoints(rect1, rect2);
-	    return line().x(function (d) {
-	      return d.x;
-	    }).y(function (d) {
-	      return d.y;
-	    })(pts);
-	  },
 	  refreshAnimation: function refreshAnimation(elem) {
-	    // console.log(elem[edgeData])
-	    var edgeLines = select(elem[svgElement]).select('g').selectAll("path").data(elem[edgeData$1]);
-	    edgeLines.exit().remove();
-	    edgeLines.enter().append("svg:path").style('fill', function (d) {
-	      return d.color ? d.color : elem.color;
-	    }).style('stroke', function (d) {
-	      return d.color ? d.color : elem.color;
-	    }).style('stroke-width', function (d) {
-	      return d.weight ? d.weight * elem.thickness : elem.thickness;
-	    }).style('marker-start', function (d) {
-	      return d.direction <= 0 ? 'url(#start-arrow)' : '';
-	    }).style('marker-end', function (d) {
-	      return d.direction >= 0 ? 'url(#end-arrow)' : '';
-	    });
-	    edgeLines.attr("d", this.svgEdge).style('fill', function (d) {
-	      return d.color ? d.color : elem.color;
-	    }).style('stroke', function (d) {
-	      return d.color ? d.color : elem.color;
-	    }).style('stroke-width', function (d) {
-	      return d.weight ? d.weight * elem.thickness : elem.thickness;
-	    }).style('marker-start', function (d) {
-	      return d.direction <= 0 ? 'url(#start-arrow)' : '';
-	    }).style('marker-end', function (d) {
-	      return d.direction >= 0 ? 'url(#end-arrow)' : '';
-	    });
+	    var ctx = elem[canvas].getContext("2d");
+	    if (ctx == undefined) {
+	      return;
+	    }
+	    ctx.canvas.width = window.innerWidth;
+	    ctx.canvas.height = window.innerHeight;
+	    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	    ctx.strokeStyle = elem.color;
+	    ctx.fillStyle = elem.color;
+	    ctx.lineWidth = elem.thickness;
 
-	    var markers = select(elem[svgElement]).select('defs').selectAll('marker').select("path");
-	    // console.log(markers.nodes())
-	    markers.style('stroke', elem.color).style('fill', elem.color);
+	    elem[edgeData$1].forEach(function (edge) {
+	      return drawEdge(ctx, edge, elem.thickness);
+	    });
 	  },
 	  edges: function edges(elem) {
 	    var nodes = selectAll(elem.parentElement.children).filter(function (d, i, nodes) {
@@ -22306,9 +22111,7 @@ var require$$0$15 = Object.freeze({
 	    animate$1(elem);
 	    elem[edgeData$1] = [];
 	    // console.log(this)
-	    elem[svgElement] = document.createElementNS(namespaces.svg, "svg");
-	    // var setupSVG = this.setupSVG;
-	    this.setupSVG(elem[svgElement]);
+	    elem[canvas] = document.createElement("canvas");
 
 	    elem[refreshEdges] = function (e) {
 	      elem[edgeData$1] = _this.edges(elem);
@@ -22325,7 +22128,7 @@ var require$$0$15 = Object.freeze({
 	    return [h('div', { style: "display: none" }, h('slot', {})), h("style", css$2)];
 	  },
 	  rendered: function rendered(elem) {
-	    elem[shadowRoot].appendChild(elem[svgElement]);
+	    elem[shadowRoot].appendChild(elem[canvas]);
 	    console.log("rendered");
 	    elem[edgeData$1] = this.edges(elem);
 	    elem.addEventListener('animate', elem[animateCallback]);

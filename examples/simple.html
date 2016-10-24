@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <title>web component graphs</title>
+
+  <body>
+
+  <div class="narrow">
+      <graph-container>
+      <edges-all-pairs></edges-all-pairs>
+        <puppy-dog id="oso"></puppy-dog>
+        <handle-box>
+            <h1> dogs riding scooters </h1>
+        </handle-box>
+
+      </graph-container>
+  </div>
+
+    <style>
+      body {
+        font-family: sans-serif;
+        background: slateblue;
+        color: white;
+        overflow: scroll;
+      }
+      .next, handle-box, puppy-dog {
+        margin:100px;
+        padding: 20px;
+        border: solid white 1px;
+        display: inline-block;
+        background-color: slateblue;
+        opacity: 0.4;
+      }
+
+      .next {
+        position: fixed;
+        right: 10px;
+        bottom: 10px
+      }
+      a, a:visited {
+        font-size: 3em;
+        color: yellow;
+      }
+    </style>
+    <script type="text/javascript" src="../dist/tangled-web-components.js"></script>
+
+  </body>
+
+</html>
