@@ -8640,7 +8640,7 @@ var require$$0 = Object.freeze({
 	    // console.log(style);
 	    var currentPosition = { x: parseInt(rect.left) - parseInt(style.marginLeft),
 	      y: parseInt(rect.top) - parseInt(style.marginTop) };
-	    console.log(currentPosition);
+	    // console.log(currentPosition);
 	    var position = moves.scan(applyMove, currentPosition);
 
 	    setTimeout(function () {
@@ -10708,7 +10708,7 @@ var require$$0 = Object.freeze({
 	    });
 	});
 
-	var cmb = interopDefault(combinatorics);
+	interopDefault(combinatorics);
 
 	var index$3 = createCommonjsModule(function (module, exports) {
 	  exports = module.exports = Victor;
@@ -12073,9 +12073,16 @@ var require$$0 = Object.freeze({
 	  if (p1 == undefined) {
 	    p1 = P;
 	  }
+	  if (p1 == true) {
+	    p1 = 2;
+	  }
 	  if (p2 == undefined) {
 	    p2 = P;
 	  }
+	  if (p2 == true) {
+	    p2 = 2;
+	  }
+
 	  var c1 = center(r1),
 	      c2 = center(r2);
 	  var rad1 = rad(r1),
@@ -12125,19 +12132,14 @@ var require$$0 = Object.freeze({
 	//         ])
 	// }
 
+	var rectCache$1 = Symbol();
+	var cacheBoundingRect = function cacheBoundingRect(el) {
+	  return el[rectCache$1] = el.getBoundingClientRect();
+	};
+
 	var drawEdge = function drawEdge(ctx, edge, thickness) {
-	  var rect1 = edge.source.getBoundingClientRect();
-
-	  // ctx.beginPath()
-	  // ctx.fillStyle = "deeppink"
-	  // ctx.arc(rect1.left,rect1.top,4,0,2*Math.PI);
-	  // ctx.arc(rect1.left+rect1.width,rect1.top,4,0,2*Math.PI);
-	  // ctx.arc(rect1.left+rect1.width,rect1.top+rect1.height,4,0,2*Math.PI);
-	  // ctx.arc(rect1.left,rect1.top+rect1.height,4,0,2*Math.PI);
-	  // ctx.fill()
-	  // ctx.closePath()
-
-	  var rect2 = edge.target.getBoundingClientRect();
+	  var rect1 = edge.source[rectCache$1];
+	  var rect2 = edge.target[rectCache$1];
 	  var pts = nearbyEdgePoints(rect1, rect2, edge.source.round, edge.target.round, undefined, 0);
 
 	  var size = thickness * 1;
@@ -12158,18 +12160,21 @@ var require$$0 = Object.freeze({
 	  ctx.translate(pts[0].x, pts[0].y);
 	  ctx.rotate(Math.atan2(diff.y, diff.x));
 
-	  ctx.save();
-	  ctx.rotate(-Math.PI / 2);
-	  ctx.translate(0, 7 + markerBuffer);
-	  triangle.draw(ctx, 10 * size * size);
-	  ctx.restore();
-
+	  if (edge.direction <= 0) {
+	    ctx.save();
+	    ctx.rotate(-Math.PI / 2);
+	    ctx.translate(0, 7 + markerBuffer);
+	    triangle.draw(ctx, 5 * size * size + 25);
+	    ctx.restore();
+	  }
 	  // ctx.moveTo(0,-size/2);
 	  ctx.rect(lineBuffer, -size / 2, len - 2 * lineBuffer, size);
-	  ctx.translate(len, 0);
-	  ctx.rotate(Math.PI / 2);
-	  ctx.translate(0, 7 + markerBuffer);
-	  triangle.draw(ctx, 10 * size * size);
+	  if (edge.direction >= 0) {
+	    ctx.translate(len, 0);
+	    ctx.rotate(Math.PI / 2);
+	    ctx.translate(0, 7 + markerBuffer);
+	    triangle.draw(ctx, 5 * size * size + 25);
+	  }
 	  ctx.restore();
 	  ctx.stroke();
 	  ctx.fill();
@@ -22044,8 +22049,7 @@ var require$$0$15 = Object.freeze({
 	var math = core$1.create();
 	math.import(matrices);
 
-	var css$2 = "\n// path {\n//   stroke: var(--color);\n//   // fill: var(--color);\n//   stroke-width: var(--thickness);\n//   fill:none\n// }\n// marker path {\n//   stroke: var(--color);\n//   stroke-width: 2px;\n//   fill: var(--color);\n// }\ncanvas {\n  // width: 100%;\n  // height: 100%;\n  padding: 0; margin: 0;\n  left:0; top:0;\n  position: fixed;\n  overflow: hidden;\n  z-index: -1;\n}\n\n";
-
+	var css$2 = "\ncanvas {\n  // width: 100%;\n  // height: 100%;\n  padding: 0; margin: 0;\n  left:0; top:0;\n  position: fixed;\n  overflow: hidden;\n  z-index: -1;\n}\n\n";
 	var _detached = Symbol();
 	var animate$1 = function animate(elem) {
 	  elem.dispatchEvent(new Event('animate'));
@@ -22059,9 +22063,9 @@ var require$$0$15 = Object.freeze({
 
 	var canvas = Symbol();
 	var edgeData$1 = Symbol();
+	var getNodes = Symbol();
 	var animateCallback = Symbol();
 	var refreshEdges = Symbol();
-
 	window.edgeData = edgeData$1;
 	window.canvas = canvas;
 
@@ -22069,9 +22073,11 @@ var require$$0$15 = Object.freeze({
 	  props: {
 	    fps: { attribute: true, default: 120 },
 	    color: { attribute: true, default: "yellow" },
-	    thickness: { attribute: true, default: 2 }
+	    thickness: { attribute: true, default: 1 }
 	  },
 	  refreshAnimation: function refreshAnimation(elem) {
+	    var nodes = elem[getNodes]();
+	    nodes.forEach(cacheBoundingRect);
 	    var ctx = elem[canvas].getContext("2d");
 	    if (ctx == undefined) {
 	      return;
@@ -22088,18 +22094,25 @@ var require$$0$15 = Object.freeze({
 	    });
 	  },
 	  edges: function edges(elem) {
-	    var nodes = selectAll(elem.parentElement.children).filter(function (d, i, nodes) {
-	      return !nodes[i][edgeData$1];
-	    }).nodes();
-	    console.log("updating edges", nodes);
+	    var nodes = elem[getNodes]();
+	    console.log("number of nodes", nodes.length);
 	    if (nodes.length < 2) {
 	      return [];
 	    }
-	    var combo = cmb.combination(nodes, 2).toArray();
+	    // var combo = cmb.combination(nodes,2).toArray()
 	    // console.log(combo.map((c)=> {return {source: c[0], target: c[1], direction: 0}}))
-	    return combo.map(function (c) {
-	      return { source: c[0], target: c[1], direction: 0 };
+	    var combos = [];
+	    nodes.forEach(function (n) {
+	      nodes.forEach(function (m) {
+	        if (n == m) {
+	          return;
+	        }
+	        combos.push({ source: n, target: m, direction: 1 });
+	      });
 	    });
+	    console.log("number of 2x combinations", combos.length);
+
+	    return combos;
 	  },
 	  attached: function attached(elem) {
 	    var _this = this;
@@ -22109,6 +22122,11 @@ var require$$0$15 = Object.freeze({
 	    };
 
 	    animate$1(elem);
+	    elem[getNodes] = function () {
+	      return selectAll(elem.parentElement.children).filter(function (d, i, nodes) {
+	        return !nodes[i][edgeData$1];
+	      }).nodes();
+	    };
 	    elem[edgeData$1] = [];
 	    // console.log(this)
 	    elem[canvas] = document.createElement("canvas");
@@ -22129,7 +22147,7 @@ var require$$0$15 = Object.freeze({
 	  },
 	  rendered: function rendered(elem) {
 	    elem[shadowRoot].appendChild(elem[canvas]);
-	    console.log("rendered");
+	    // console.log("rendered")
 	    elem[edgeData$1] = this.edges(elem);
 	    elem.addEventListener('animate', elem[animateCallback]);
 	  }
@@ -22182,6 +22200,23 @@ var require$$0$15 = Object.freeze({
 	  },
 	  render: function render(elem) {
 	    return [h("div", ""), h("style", puppyStyle)];
+	  },
+	  rendered: function rendered(elem) {}
+	});
+
+	var puppyStyle$1 = '\n  div {\n    display: inline-block;\n    background-image: url(\'basketball.png\');\n    background-position: center;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 340px;\n    height: 340px;\n  }\n  puppy-dog {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n  :host {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n';
+	define$1("basket-ball", {
+	  props: {
+	    round: { attribute: false, default: true }
+	  },
+	  attached: function attached(elem) {
+	    startDragging(elem);
+	  },
+	  detached: function detached(elem) {
+	    // stopDragging(elem);
+	  },
+	  render: function render(elem) {
+	    return [h("div", ""), h("style", puppyStyle$1)];
 	  },
 	  rendered: function rendered(elem) {}
 	});
