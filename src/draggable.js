@@ -42,7 +42,7 @@ export function startDragging(elem,timeout){
     // console.log(style);
     var currentPosition = { x: parseInt(rect.left)-parseInt(style.marginLeft),
                         y: parseInt(rect.top)-parseInt(style.marginTop) };
-                        console.log(currentPosition);
+                        // console.log(currentPosition);
     var position = moves.scan(applyMove, currentPosition);
 
     setTimeout(function(){

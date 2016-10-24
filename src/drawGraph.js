@@ -27,18 +27,21 @@ export const drawEdge = (ctx,edge,thickness) => {
       ctx.translate(pts[0].x,pts[0].y)
       ctx.rotate(Math.atan2(diff.y,diff.x));
 
-      ctx.save()
-        ctx.rotate(-Math.PI/2)
-        ctx.translate(0,7+markerBuffer)
-        triangle.draw(ctx,10*size*size);
-      ctx.restore()
-
+      if(edge.direction <= 0){
+        ctx.save()
+          ctx.rotate(-Math.PI/2)
+          ctx.translate(0,7+markerBuffer)
+          triangle.draw(ctx,5*size*size+25);
+        ctx.restore()
+      }
       // ctx.moveTo(0,-size/2);
       ctx.rect(lineBuffer,-size/2,len-2*lineBuffer,size);
-      ctx.translate(len,0);
-      ctx.rotate(Math.PI/2);
-      ctx.translate(0,7+markerBuffer);
-      triangle.draw(ctx,10*size*size);
+      if(edge.direction >= 0){
+        ctx.translate(len,0);
+        ctx.rotate(Math.PI/2);
+        ctx.translate(0,7+markerBuffer);
+        triangle.draw(ctx,5*size*size+25);
+      }
     ctx.restore();
     ctx.stroke();
     ctx.fill();

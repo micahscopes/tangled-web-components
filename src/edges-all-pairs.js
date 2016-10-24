@@ -48,10 +48,11 @@ const graphAllEdges = {
   props: {
     fps: { attribute: true, default: 120 },
     color: { attribute: true, default: "yellow" },
-    thickness: { attribute: true, default: 2 }
+    thickness: { attribute: true, default: 1 }
   },
   refreshAnimation(elem){
-    elem[getNodes]().forEach(cacheBoundingRect);
+    var nodes = elem[getNodes]();
+    nodes.forEach(cacheBoundingRect);
     var ctx = elem[canvas].getContext("2d");
     if(ctx == undefined){return;}
     ctx.canvas.width  = window.innerWidth;
@@ -66,10 +67,20 @@ const graphAllEdges = {
 
   edges(elem){
     var nodes = elem[getNodes]();
+    console.log("number of nodes", nodes.length)
     if (nodes.length < 2) { return []; }
-    var combo = cmb.combination(nodes,2).toArray()
+    // var combo = cmb.combination(nodes,2).toArray()
     // console.log(combo.map((c)=> {return {source: c[0], target: c[1], direction: 0}}))
-    return combo.map((c)=> {return {source: c[0], target: c[1], direction: 0}})
+    var combos = []
+    nodes.forEach((n)=>{
+      nodes.forEach((m)=>{
+        if(n==m){ return; }
+        combos.push({source: n, target: m, direction: 1})
+      })
+    })
+    console.log("number of 2x combinations", combos.length)
+
+    return combos
   },
 
   attached(elem) {
@@ -106,7 +117,7 @@ const graphAllEdges = {
 
   rendered(elem){
     elem[skate.symbols.shadowRoot].appendChild(elem[canvas])
-    console.log("rendered")
+    // console.log("rendered")
     elem[edgeData] = this.edges(elem);
     elem.addEventListener('animate',elem[animateCallback])
   }

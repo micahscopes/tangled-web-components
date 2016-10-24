@@ -25,7 +25,10 @@ export function nearbyEdgePoints(r1,r2,p1,p2,phase,margin){
   phase = phase ? phase : Math.PI/16;
   margin = margin ? margin : 0;
   if (p1 == undefined){p1 = P}
+  if (p1 == true){p1 = 2}
   if (p2 == undefined){p2 = P}
+  if (p2 == true){p2 = 2}
+
   var c1 = center(r1), c2 = center(r2);
   var rad1 = rad(r1), rad2 = rad(r2);
   var phi = c2.clone().subtract(c1.clone()).angle()
