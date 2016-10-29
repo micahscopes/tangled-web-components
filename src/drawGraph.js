@@ -62,6 +62,16 @@ export const drawEdge = (ctx,edge,thickness) => {
           triangle.draw(ctx,5*size*size+25);
         }
       ctx.restore();
+
+      if(edge.color){
+        ctx.strokeStyle = edge.color;
+        ctx.fillStyle = edge.color;
+      }
+
+      if(edge.thickness){
+        ctx.lineWidth = edge.thickness;
+      }
+      
       ctx.stroke();
       ctx.fill();
     ctx.closePath();

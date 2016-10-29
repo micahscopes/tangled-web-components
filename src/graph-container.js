@@ -27,7 +27,7 @@ const GraphContainer = define('graph-container',
     ]
   },
   updated(elem){
-    console.log("updated")
+    // console.log("updated")
     return true;
   }
 });

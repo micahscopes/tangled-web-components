@@ -76,7 +76,7 @@ const graphAllEdges = {
 
   edges(elem){
     var nodes = elem[getNodes]();
-    console.log("number of nodes", nodes.length)
+    // console.log("number of nodes", nodes.length)
     if (nodes.length < 2) { return []; }
     // var combo = cmb.combination(nodes,2).toArray()
     // console.log(combo.map((c)=> {return {source: c[0], target: c[1], direction: 0}}))
@@ -87,7 +87,7 @@ const graphAllEdges = {
         combos.push({source: n, target: m, direction: 1})
       })
     })
-    console.log("number of 2x combinations", combos.length)
+    // console.log("number of 2x combinations", combos.length)
 
     return combos
   },
@@ -104,9 +104,9 @@ const graphAllEdges = {
     elem[canvasContext] = elem[canvas].getContext("2d");
 
     elem[refreshEdges] = (e) => {
-      console.log("REFRESHING EDGES")
+      // console.log("REFRESHING EDGES")
       elem[edgeData] = elem[edgeModifier](this.edges(elem));
-      console.log(elem[edgeData])
+      // console.log(elem[edgeData])
     }
     parentGraphContainer(elem).addEventListener('graph-updated', elem[refreshEdges])
   },
@@ -130,7 +130,7 @@ const graphAllEdges = {
   },
 
   rendered(elem){
-    elem[skate.symbols.shadowRoot].appendChild(elem[canvas])
+    elem.shadowRoot.appendChild(elem[canvas])
     // console.log("rendered")
     elem[refreshEdges]();
     elem.addEventListener('animate',elem[animateCallback])

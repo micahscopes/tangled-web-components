@@ -8,6 +8,9 @@
     "watch": "chokidar 'src/**' -c 'npm run build'"
   },
   "dependencies": {
+    "d3-color": "^1.0.1",
+    "d3-interpolate": "^1.1.1",
+    "d3-scale": "^1.0.3",
     "d3-selection": "^1.0.2",
     "d3-shape": "^1.0.3",
     "d3-svg": "^0.2.0",
@@ -17,8 +20,8 @@
     "kefir": "^3.5.2",
     "kefir-observable-selector": "^0.2.1",
     "mathjs": "^3.5.3",
-    "skatejs": "^3.1.0",
-    "skatejs-web-components": "^1.2.1",
+    "skatejs": "^4.0.1",
+    "skatejs-web-components": "^2.0.1",
     "victor": "^1.1.0"
   },
   "devDependencies": {
