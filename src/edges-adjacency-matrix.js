@@ -1,8 +1,9 @@
-import {EdgesAllPairs, refreshEdges, css} from './edges-all-pairs'
+import {EdgesAllPairs, refreshEdges, getNodes, css} from './edges-all-pairs'
 import {define, h} from 'skatejs'
 import {select, selectAll} from 'd3-selection'
 import core from 'mathjs/core'
 import matrices from 'mathjs/lib/type/matrix'
+import {parentGraphContainer} from './graph-container.js'
 
 var math = core.create();
 math.import(matrices)
@@ -11,8 +12,7 @@ define('edges-adjacency-matrix', EdgesAllPairs.extend({
   edges(elem){
     console.log(elem)
     try{ var adj = eval(elem.innerHTML) }catch(e){ }
-    var nodes = selectAll(elem.parentElement.children)
-         .filter((d,i,nodes)=>{return !nodes[i][edgeData];}).nodes()
+    var nodes = elem[getNodes]()
     if (nodes.length < 2) { return []; }
     var edges = [[nodes[0],nodes[1]]]
     edges = []

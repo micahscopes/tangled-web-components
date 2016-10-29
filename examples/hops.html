@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+  <title>web component dog graph</title>
+  <body>
+  <div class="narrow">
+      <graph-container>
+        <edges-modifier-hops hops=4>
+          <edges-adjacency-matrix color="white">
+            [[0,1,0,0,0,0,0,0],
+             [0,0,1,0,0,0,0,0],
+             [0,0,0,1,0,0,0,0],
+             [0,0,0,0,1,0,0,0],
+             [0,0,0,0,0,1,0,0],
+             [0,0,0,0,0,0,1,0],
+             [0,0,0,0,0,0,0,0],
+             [0,0,0,0,0,0,1,0]];
+          </edges-adjacency-matrix>
+        </edges-modifier-hops>
+        <puppy-dog id="oso"></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+        <puppy-dog></puppy-dog>
+      </graph-container>
+
+      <graph-container>
+        <edges-adjacency-matrix thickness="5" color="black">
+              [[0,1],[0,0]]
+        </edges-adjacency-matrix>
+        <handle-box>
+            <h1> dogs riding scooters </h1>
+        </handle-box>
+        <handle-box class="next">
+          <a href="balls.html">more...</a>
+        </handle-box>
+      </graph-container>
+  </div>
+    <style>
+      body {
+        background: url(smudgy4.png);
+        opacity: 20%;
+        color: white;
+        overflow: scroll;
+        font-family: monospace;
+      }
+
+      handle-box, puppy-dog {
+        margin:100px;
+        padding: 20px;
+        border: solid white 1px;
+        display: inline-block;
+        background-color: rgba(30, 30, 255, 0.4);
+        color: white;
+      }
+
+      .next {
+        position: inherit;
+        display: block;
+        margin: 20px auto;
+        left: 50px;
+        text-align: center;
+        width: 80%;
+      }
+      a, a:visited {
+        font-size: 5em;
+        color: yellow;
+      }
+
+    </style>
+    <script type="text/javascript" src="../dist/tangled-web-components.js"></script>
+  </body>
+
+</html>

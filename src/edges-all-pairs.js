@@ -11,6 +11,7 @@ import {nearbyEdgePoints} from "./nearbyRectEdges.js"
 import {drawEdge, cacheBoundingRect} from './drawGraph.js'
 import core from 'mathjs/core'
 import matrices from 'mathjs/lib/type/matrix'
+import {parentGraphContainer} from './graph-container.js'
 
 var math = core.create();
 math.import(matrices)
@@ -28,14 +29,22 @@ canvas {
 
 `
 const detached = Symbol();
-const animate = function(elem){
-  elem.dispatchEvent(new Event('animate'));
-  if (elem[detached]) return;
-  setTimeout( () => { window.requestAnimationFrame( () => {animate(elem)} ) }, 1000/elem.fps );
+const lastRenderTime = Symbol();
+const animate = function(elem,now){
+  if (!elem[lastRenderTime]) { elem[lastRenderTime] = now }
+  if  (elem[lastRenderTime] + 1000/elem.fps <= now)
+      {
+        elem[lastRenderTime] = now;
+        elem.dispatchEvent(new Event('animate'));
+      }
+  if (elem[detached]) {return}
+  else {window.requestAnimationFrame( (now) => {animate(elem,now)} )};
 }
 
 export const canvas = Symbol();
+const canvasContext = Symbol();
 export const edgeData = Symbol();
+export const edgeModifier = Symbol();
 export const getNodes = Symbol();
 export const animateCallback = Symbol();
 export const refreshEdges = Symbol();
@@ -46,14 +55,14 @@ window.canvas = canvas;
 
 const graphAllEdges = {
   props: {
-    fps: { attribute: true, default: 120 },
+    fps: { attribute: true, default: 60 },
     color: { attribute: true, default: "yellow" },
     thickness: { attribute: true, default: 1 }
   },
   refreshAnimation(elem){
     var nodes = elem[getNodes]();
     nodes.forEach(cacheBoundingRect);
-    var ctx = elem[canvas].getContext("2d");
+    var ctx = elem[canvasContext]
     if(ctx == undefined){return;}
     ctx.canvas.width  = window.innerWidth;
     ctx.canvas.height = window.innerHeight;
@@ -85,16 +94,21 @@ const graphAllEdges = {
 
   attached(elem) {
     elem[animateCallback] = ()=>{this.refreshAnimation(elem)}
-
+    elem[edgeModifier] = (edges) => edges;
     animate(elem);
-    elem[getNodes] = () => selectAll(elem.parentElement.children)
+    elem[getNodes] = () => selectAll(parentGraphContainer(elem).children)
          .filter((d,i,nodes)=>{return !nodes[i][edgeData];}).nodes()
     elem[edgeData] = [];
     // console.log(this)
     elem[canvas] = document.createElement("canvas")
+    elem[canvasContext] = elem[canvas].getContext("2d");
 
-    elem[refreshEdges] = (e) => {elem[edgeData] = this.edges(elem);}
-    elem.parentElement.addEventListener('graph-updated', elem[refreshEdges])
+    elem[refreshEdges] = (e) => {
+      console.log("REFRESHING EDGES")
+      elem[edgeData] = elem[edgeModifier](this.edges(elem));
+      console.log(elem[edgeData])
+    }
+    parentGraphContainer(elem).addEventListener('graph-updated', elem[refreshEdges])
   },
 
   detached(elem) {
@@ -118,7 +132,7 @@ const graphAllEdges = {
   rendered(elem){
     elem[skate.symbols.shadowRoot].appendChild(elem[canvas])
     // console.log("rendered")
-    elem[edgeData] = this.edges(elem);
+    elem[refreshEdges]();
     elem.addEventListener('animate',elem[animateCallback])
   }
 };

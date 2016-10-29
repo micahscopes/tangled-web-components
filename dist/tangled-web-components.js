@@ -8678,6 +8678,22 @@ var require$$0 = Object.freeze({
 	  rendered: function rendered(elem) {}
 	});
 
+	// from http://stackoverflow.com/a/38149758/1189799
+
+	var parentSelector = function parentSelector(el, selector, stopSelector) {
+	  var retval = null;
+	  while (el) {
+	    if (el.matches(selector)) {
+	      retval = el;
+	      break;
+	    } else if (stopSelector && el.matches(stopSelector)) {
+	      break;
+	    }
+	    el = el.parentElement;
+	  }
+	  return retval;
+	};
+
 	var animate = function animate(elem) {
 	  elem.dispatchEvent(new Event('animate'));
 	  setTimeout(function () {
@@ -8709,6 +8725,10 @@ var require$$0 = Object.freeze({
 	    return true;
 	  }
 	});
+
+	function parentGraphContainer(elem) {
+	  return parentSelector(elem, 'graph-container');
+	}
 
 	var xhtml = "http://www.w3.org/1999/xhtml";
 
@@ -12133,52 +12153,65 @@ var require$$0 = Object.freeze({
 	// }
 
 	var rectCache$1 = Symbol();
+	var rectInViewport = Symbol();
+	// const skipFrames = 10;
+	// const skip = Symbol();
+	// const rectsEq = (r1,r2) => r1.top == r2.top && r1.bottom == r2.bottom && r1.left == r2.left && r1.right == r2.right
 	var cacheBoundingRect = function cacheBoundingRect(el) {
-	  return el[rectCache$1] = el.getBoundingClientRect();
+	  // if (el[skip] <= skipFrames) {
+	  //   el[skip] += 1
+	  //   return
+	  // }
+	  // var oldRect = el[rectCache]
+	  var rect = el[rectCache$1] = el.getBoundingClientRect();
+	  // if (rectsEq(rect, oldRect)) { el[skip] = 0};
+	  el[rectInViewport] = rect.top >= 0 || rect.left >= 0 || rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) || rect.right <= (window.innerWidth || document.documentElement.clientWidth);
 	};
 
 	var drawEdge = function drawEdge(ctx, edge, thickness) {
-	  var rect1 = edge.source[rectCache$1];
-	  var rect2 = edge.target[rectCache$1];
-	  var pts = nearbyEdgePoints(rect1, rect2, edge.source.round, edge.target.round, undefined, 0);
+	  if (edge.source[rectInViewport] || edge.target[rectInViewport]) {
+	    var R1 = edge.source[rectCache$1];
+	    var R2 = edge.target[rectCache$1];
+	    var pts = nearbyEdgePoints(R1, R2, edge.source.round, edge.target.round, undefined, 0);
 
-	  var size = thickness * 1;
-	  var markerBuffer = 1 + 2 * size;
-	  var lineBuffer = markerBuffer + 3;
-	  // var fill = 'magenta'
-	  // var stroke = '#222'
-	  // var strokeWidth = 2
+	    var size = thickness * 1;
+	    var markerBuffer = 1 + 2 * size;
+	    var lineBuffer = markerBuffer + 3;
+	    // var fill = 'magenta'
+	    // var stroke = '#222'
+	    // var strokeWidth = 2
 
-	  // ctx.strokeStyle = "yellow";
-	  // ctx.fillStyle = "black";
-	  // ctx.lineWidth = 2;
-	  var diff = pts[1].clone().subtract(pts[0]);
-	  var len = diff.length();
+	    // ctx.strokeStyle = "yellow";
+	    // ctx.fillStyle = "black";
+	    // ctx.lineWidth = 2;
+	    var diff = pts[1].clone().subtract(pts[0]);
+	    var len = diff.length();
 
-	  ctx.beginPath();
-	  ctx.save();
-	  ctx.translate(pts[0].x, pts[0].y);
-	  ctx.rotate(Math.atan2(diff.y, diff.x));
-
-	  if (edge.direction <= 0) {
+	    ctx.beginPath();
 	    ctx.save();
-	    ctx.rotate(-Math.PI / 2);
-	    ctx.translate(0, 7 + markerBuffer);
-	    triangle.draw(ctx, 5 * size * size + 25);
+	    ctx.translate(pts[0].x, pts[0].y);
+	    ctx.rotate(Math.atan2(diff.y, diff.x));
+
+	    if (edge.direction <= 0) {
+	      ctx.save();
+	      ctx.rotate(-Math.PI / 2);
+	      ctx.translate(0, 7 + markerBuffer);
+	      triangle.draw(ctx, 5 * size * size + 25);
+	      ctx.restore();
+	    }
+	    // ctx.moveTo(0,-size/2);
+	    ctx.rect(lineBuffer, -size / 2, len - 2 * lineBuffer, size);
+	    if (edge.direction >= 0) {
+	      ctx.translate(len, 0);
+	      ctx.rotate(Math.PI / 2);
+	      ctx.translate(0, 7 + markerBuffer);
+	      triangle.draw(ctx, 5 * size * size + 25);
+	    }
 	    ctx.restore();
+	    ctx.stroke();
+	    ctx.fill();
+	    ctx.closePath();
 	  }
-	  // ctx.moveTo(0,-size/2);
-	  ctx.rect(lineBuffer, -size / 2, len - 2 * lineBuffer, size);
-	  if (edge.direction >= 0) {
-	    ctx.translate(len, 0);
-	    ctx.rotate(Math.PI / 2);
-	    ctx.translate(0, 7 + markerBuffer);
-	    triangle.draw(ctx, 5 * size * size + 25);
-	  }
-	  ctx.restore();
-	  ctx.stroke();
-	  ctx.fill();
-	  ctx.closePath();
 	};
 
 	var object = createCommonjsModule(function (module, exports) {
@@ -22051,18 +22084,28 @@ var require$$0$15 = Object.freeze({
 
 	var css$2 = "\ncanvas {\n  // width: 100%;\n  // height: 100%;\n  padding: 0; margin: 0;\n  left:0; top:0;\n  position: fixed;\n  overflow: hidden;\n  z-index: -1;\n}\n\n";
 	var _detached = Symbol();
-	var animate$1 = function animate(elem) {
-	  elem.dispatchEvent(new Event('animate'));
-	  if (elem[_detached]) return;
-	  setTimeout(function () {
-	    window.requestAnimationFrame(function () {
-	      animate(elem);
+	var lastRenderTime = Symbol();
+	var animate$1 = function animate(elem, now) {
+	  if (!elem[lastRenderTime]) {
+	    elem[lastRenderTime] = now;
+	  }
+	  if (elem[lastRenderTime] + 1000 / elem.fps <= now) {
+	    elem[lastRenderTime] = now;
+	    elem.dispatchEvent(new Event('animate'));
+	  }
+	  if (elem[_detached]) {
+	    return;
+	  } else {
+	    window.requestAnimationFrame(function (now) {
+	      animate(elem, now);
 	    });
-	  }, 1000 / elem.fps);
+	  };
 	};
 
 	var canvas = Symbol();
+	var canvasContext = Symbol();
 	var edgeData$1 = Symbol();
+	var edgeModifier = Symbol();
 	var getNodes = Symbol();
 	var animateCallback = Symbol();
 	var refreshEdges = Symbol();
@@ -22071,14 +22114,14 @@ var require$$0$15 = Object.freeze({
 
 	var graphAllEdges = {
 	  props: {
-	    fps: { attribute: true, default: 120 },
+	    fps: { attribute: true, default: 60 },
 	    color: { attribute: true, default: "yellow" },
 	    thickness: { attribute: true, default: 1 }
 	  },
 	  refreshAnimation: function refreshAnimation(elem) {
 	    var nodes = elem[getNodes]();
 	    nodes.forEach(cacheBoundingRect);
-	    var ctx = elem[canvas].getContext("2d");
+	    var ctx = elem[canvasContext];
 	    if (ctx == undefined) {
 	      return;
 	    }
@@ -22120,21 +22163,26 @@ var require$$0$15 = Object.freeze({
 	    elem[animateCallback] = function () {
 	      _this.refreshAnimation(elem);
 	    };
-
+	    elem[edgeModifier] = function (edges) {
+	      return edges;
+	    };
 	    animate$1(elem);
 	    elem[getNodes] = function () {
-	      return selectAll(elem.parentElement.children).filter(function (d, i, nodes) {
+	      return selectAll(parentGraphContainer(elem).children).filter(function (d, i, nodes) {
 	        return !nodes[i][edgeData$1];
 	      }).nodes();
 	    };
 	    elem[edgeData$1] = [];
 	    // console.log(this)
 	    elem[canvas] = document.createElement("canvas");
+	    elem[canvasContext] = elem[canvas].getContext("2d");
 
 	    elem[refreshEdges] = function (e) {
-	      elem[edgeData$1] = _this.edges(elem);
+	      console.log("REFRESHING EDGES");
+	      elem[edgeData$1] = elem[edgeModifier](_this.edges(elem));
+	      console.log(elem[edgeData$1]);
 	    };
-	    elem.parentElement.addEventListener('graph-updated', elem[refreshEdges]);
+	    parentGraphContainer(elem).addEventListener('graph-updated', elem[refreshEdges]);
 	  },
 	  detached: function detached(elem) {
 	    // console.log("detached",elem)
@@ -22148,7 +22196,7 @@ var require$$0$15 = Object.freeze({
 	  rendered: function rendered(elem) {
 	    elem[shadowRoot].appendChild(elem[canvas]);
 	    // console.log("rendered")
-	    elem[edgeData$1] = this.edges(elem);
+	    elem[refreshEdges]();
 	    elem.addEventListener('animate', elem[animateCallback]);
 	  }
 	};
@@ -22164,9 +22212,7 @@ var require$$0$15 = Object.freeze({
 	    try {
 	      var adj = eval(elem.innerHTML);
 	    } catch (e) {}
-	    var nodes = selectAll(elem.parentElement.children).filter(function (d, i, nodes) {
-	      return !nodes[i][edgeData];
-	    }).nodes();
+	    var nodes = elem[getNodes]();
 	    if (nodes.length < 2) {
 	      return [];
 	    }
@@ -22189,6 +22235,35 @@ var require$$0$15 = Object.freeze({
 	    })), h("style", css$2)];
 	  }
 	}));
+
+	// import core from 'mathjs/core'
+	// import matrices from 'mathjs/lib/type/matrix'
+
+	// var math = core.create();
+	// math.import(matrices)
+
+	var hops = function hops(elem) {
+	  return function (edges) {
+	    return [{ source: 5, target: 2 }];
+	  };
+	};
+
+	define$1('edges-modifier-hops', {
+	  created: function created(elem) {
+	    elem[edgeModifier] = function (edges) {
+	      return edges;
+	    };
+	    elem[edgeData] = true;
+	    var originalEdgeSets = selectAll(elem.children).filter(function (d, i, nodes) {
+	      return nodes[i][edgeModifier];
+	    }).nodes();
+	    console.log(originalEdgeSets);
+	    originalEdgeSets.forEach(function (edgeElem) {
+	      edgeElem[edgeModifier] = hops(edgeElem);
+	      edgeElem[refreshEdges]();
+	    });
+	  }
+	});
 
 	var puppyStyle = '\n  div {\n    display: inline-block;\n    background-image: url(http://i.imgur.com/B2YwP9u.gif);\n    background-position: center;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 100px;\n    height: 150px;\n    border: solid deeppink 5px;\n  }\n  puppy-dog {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n  :host {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n';
 	define$1("puppy-dog", {

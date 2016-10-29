@@ -1,4 +1,5 @@
 import {define, h} from 'skatejs'
+import {parentSelector} from './parentSelector.js'
 
 const animate = function(elem){
   elem.dispatchEvent(new Event('animate'));
@@ -30,5 +31,9 @@ const GraphContainer = define('graph-container',
     return true;
   }
 });
+
+export function parentGraphContainer(elem){
+  return parentSelector(elem,'graph-container')
+}
 
 export default GraphContainer
