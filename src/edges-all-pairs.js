@@ -71,7 +71,7 @@ const graphAllEdges = {
     ctx.fillStyle = elem.color;
     ctx.lineWidth = elem.thickness;
 
-    elem[edgeData].forEach((edge) => drawEdge(ctx,edge,elem.thickness));
+    elem[edgeData].forEach((edge) => drawEdge(ctx,edge,elem));
   },
 
   edges(elem){

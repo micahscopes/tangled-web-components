@@ -22,11 +22,20 @@ export const cacheBoundingRect =  (el) => {
     );
 }
 
-export const drawEdge = (ctx,edge,thickness) => {
+export const drawEdge = (ctx,edge,graph) => {
   if ( edge.source[rectInViewport] || edge.target[rectInViewport] ) {
     var R1 = edge.source[rectCache];
     var R2 = edge.target[rectCache];
     var pts = nearbyEdgePoints(R1,R2,edge.source.round,edge.target.round,undefined,0)
+
+    var color = edge.color ? edge.color : graph.color;
+    var thickness = edge.thickness ? edge.thickness : graph.thickness
+    var segments = edge.segments ? edge.segments : graph.segments
+    segments = segments ? segments : []
+    ctx.setLineDash(segments)
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = thickness;
 
     var size = thickness*1;
     const markerBuffer = 1 + 2*size;
@@ -46,6 +55,11 @@ export const drawEdge = (ctx,edge,thickness) => {
         ctx.translate(pts[0].x,pts[0].y)
         ctx.rotate(Math.atan2(diff.y,diff.x));
 
+        ctx.moveTo(lineBuffer,0)
+        ctx.lineTo(len-2*lineBuffer,0)
+        ctx.stroke();
+    ctx.closePath();
+    ctx.beginPath();
         if(edge.direction <= 0){
           ctx.save()
             ctx.rotate(-Math.PI/2)
@@ -53,8 +67,7 @@ export const drawEdge = (ctx,edge,thickness) => {
             triangle.draw(ctx,5*size*size+25);
           ctx.restore()
         }
-        // ctx.moveTo(0,-size/2);
-        ctx.rect(lineBuffer,-size/2,len-2*lineBuffer,size);
+        // ctx.rect(lineBuffer,-size/2,len-2*lineBuffer,size);
         if(edge.direction >= 0){
           ctx.translate(len,0);
           ctx.rotate(Math.PI/2);
@@ -63,15 +76,7 @@ export const drawEdge = (ctx,edge,thickness) => {
         }
       ctx.restore();
 
-      if(edge.color){
-        ctx.strokeStyle = edge.color;
-        ctx.fillStyle = edge.color;
-      }
-
-      if(edge.thickness){
-        ctx.lineWidth = edge.thickness;
-      }
-      
+      ctx.setLineDash([])
       ctx.stroke();
       ctx.fill();
     ctx.closePath();

@@ -5,7 +5,7 @@
   <div class="narrow">
       <graph-container>
         <edges-modifier-hops hops="2,3">
-          <edges-adjacency-matrix color="white">
+          <edges-adjacency-matrix color="white" thickness=10>
             [[0,1,0,0,0,0,0,0],
              [0,0,1,0,0,0,0,0],
              [0,0,0,1,0,0,0,0],
@@ -16,14 +16,14 @@
              [0,0,0,0,0,0,1,0]];
           </edges-adjacency-matrix>
         </edges-modifier-hops>
-        <puppy-dog id="oso"></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
+        <basket-ball id="oso"></basket-ball>
+        <basket-ball></basket-ball>
+        <basket-ball></basket-ball>
+        <basket-ball></basket-ball>
+        <basket-ball></basket-ball>
+        <basket-ball></basket-ball>
+        <basket-ball></basket-ball>
+        <basket-ball></basket-ball>
       </graph-container>
 
       <graph-container>
@@ -47,8 +47,9 @@
         font-family: monospace;
       }
 
-      handle-box, puppy-dog {
+      handle-box, basket-ball {
         margin:100px;
+        size: 20%;
         padding: 20px;
         border: solid white 1px;
         display: inline-block;

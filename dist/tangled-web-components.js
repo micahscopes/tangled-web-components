@@ -12180,11 +12180,20 @@ var require$$0 = Object.freeze({
 	  el[rectInViewport] = rect.top >= 0 || rect.left >= 0 || rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) || rect.right <= (window.innerWidth || document.documentElement.clientWidth);
 	};
 
-	var drawEdge = function drawEdge(ctx, edge, thickness) {
+	var drawEdge = function drawEdge(ctx, edge, graph) {
 	  if (edge.source[rectInViewport] || edge.target[rectInViewport]) {
 	    var R1 = edge.source[rectCache$1];
 	    var R2 = edge.target[rectCache$1];
 	    var pts = nearbyEdgePoints(R1, R2, edge.source.round, edge.target.round, undefined, 0);
+
+	    var color = edge.color ? edge.color : graph.color;
+	    var thickness = edge.thickness ? edge.thickness : graph.thickness;
+	    var segments = edge.segments ? edge.segments : graph.segments;
+	    segments = segments ? segments : [];
+	    ctx.setLineDash(segments);
+	    ctx.strokeStyle = color;
+	    ctx.fillStyle = color;
+	    ctx.lineWidth = thickness;
 
 	    var size = thickness * 1;
 	    var markerBuffer = 1 + 2 * size;
@@ -12204,6 +12213,11 @@ var require$$0 = Object.freeze({
 	    ctx.translate(pts[0].x, pts[0].y);
 	    ctx.rotate(Math.atan2(diff.y, diff.x));
 
+	    ctx.moveTo(lineBuffer, 0);
+	    ctx.lineTo(len - 2 * lineBuffer, 0);
+	    ctx.stroke();
+	    ctx.closePath();
+	    ctx.beginPath();
 	    if (edge.direction <= 0) {
 	      ctx.save();
 	      ctx.rotate(-Math.PI / 2);
@@ -12211,8 +12225,7 @@ var require$$0 = Object.freeze({
 	      triangle.draw(ctx, 5 * size * size + 25);
 	      ctx.restore();
 	    }
-	    // ctx.moveTo(0,-size/2);
-	    ctx.rect(lineBuffer, -size / 2, len - 2 * lineBuffer, size);
+	    // ctx.rect(lineBuffer,-size/2,len-2*lineBuffer,size);
 	    if (edge.direction >= 0) {
 	      ctx.translate(len, 0);
 	      ctx.rotate(Math.PI / 2);
@@ -12221,15 +12234,7 @@ var require$$0 = Object.freeze({
 	    }
 	    ctx.restore();
 
-	    if (edge.color) {
-	      ctx.strokeStyle = edge.color;
-	      ctx.fillStyle = edge.color;
-	    }
-
-	    if (edge.thickness) {
-	      ctx.lineWidth = edge.thickness;
-	    }
-
+	    ctx.setLineDash([]);
 	    ctx.stroke();
 	    ctx.fill();
 	    ctx.closePath();
@@ -22155,7 +22160,7 @@ var require$$0$15 = Object.freeze({
 	    ctx.lineWidth = elem.thickness;
 
 	    elem[edgeData$1].forEach(function (edge) {
-	      return drawEdge(ctx, edge, elem.thickness);
+	      return drawEdge(ctx, edge, elem);
 	    });
 	  },
 	  edges: function edges(elem) {
@@ -24174,6 +24179,12 @@ var 	t1$1 = new Date();
 
 	// var math = core.create();
 	// math.import(matrices)
+	function repeatAry(ary, times) {
+	  var result = Array();
+	  for (var i = 0; i < times; i++) {
+	    result = result.concat(ary);
+	  }return result;
+	}
 
 	var rainbow = function rainbow(max) {
 	  return function (n) {
@@ -24183,7 +24194,7 @@ var 	t1$1 = new Date();
 	var parseHops = function parseHops(val) {
 	  return JSON.parse("[" + val + "]");
 	};
-	var hops = function hops(elem, modifier, showHops) {
+	var hops = function hops(elem, modifier) {
 	  return function (edges) {
 	    var nodes = elem[getNodes]();
 	    if (nodes.length < 2) {
@@ -24200,25 +24211,32 @@ var 	t1$1 = new Date();
 	    });
 	    var hopMatrix = new FloydWarshall(adj).shortestPaths;
 	    var hops = [];
-	    showHops = showHops ? showHops : [1];
 	    hopMatrix.forEach(function (row, i) {
-	      row.forEach(function (edge, j) {
-	        if (showHops.includes(edge)) {
-	          hops.push({ source: nodes[i], target: nodes[j], direction: 1, color: edge == 1 ? elem.color : colors(edge), thickness: elem.thickness - 0.1 * edge });
+	      row.forEach(function (hop, j) {
+	        if (hop != 1 && modifier.hops.includes(hop)) {
+	          var thickness = elem.thickness * (1 - hop / (nodes.length + 1));
+	          hops.push({ source: nodes[i], target: nodes[j],
+	            // segments: [5,10],
+	            segments: repeatAry([thickness, thickness], hop - 1).concat([thickness, thickness * thickness + 5 * thickness]),
+	            direction: 1, color: colors(hop),
+	            thickness: thickness });
 	        }
 	      });
 	    });
+	    if (modifier.hops.includes(1)) {
+	      hops = hops.concat(edges);
+	    }
 	    return hops;
 	  };
 	};
 
-	var updateHops = function updateHops(elem, showHops) {
+	var updateHops = function updateHops(elem) {
 	  var originalEdgeSets = selectAll(elem.children).filter(function (d, i, nodes) {
 	    return nodes[i][edgeModifier];
 	  }).nodes();
 	  // console.log(originalEdgeSets)
 	  originalEdgeSets.forEach(function (edgeElem) {
-	    edgeElem[edgeModifier] = hops(edgeElem, elem, showHops);
+	    edgeElem[edgeModifier] = hops(edgeElem, elem);
 	    edgeElem[refreshEdges]();
 	  });
 	};
@@ -24227,12 +24245,7 @@ var 	t1$1 = new Date();
 	  props: {
 	    hops: { attribute: true, default: "2",
 	      coerce: function coerce(val) {
-	        console.log("coercing", parseHops(val));var newVal = parseHops(val);return newVal;
-	      },
-	      set: function set(elem, data) {
-	        if (data.newValue != data.oldValue) {
-	          updateHops(elem, data.newValue);
-	        }
+	        var newVal = parseHops(val);return newVal;
 	      }
 	    }
 	  },
@@ -24243,10 +24256,10 @@ var 	t1$1 = new Date();
 	    elem[edgeData] = true;
 	    updateHops(elem);
 	  },
-	  attributeChanged: function attributeChanged(elem) {
-	    // console.log("updating graph hops modifier",elem.hops)
-	    // console.log("or...",elem.getAttribute("hops"))
-	    // updateHops(elem);
+	  updated: function updated(elem) {
+	    console.log("updating graph hops modifier", elem.hops);
+	    console.log("or...", elem.getAttribute("hops"));
+	    updateHops(elem);
 	    // return true
 	  }
 	});
