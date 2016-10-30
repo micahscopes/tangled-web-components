@@ -12214,7 +12214,7 @@ var require$$0 = Object.freeze({
 	    ctx.rotate(Math.atan2(diff.y, diff.x));
 
 	    ctx.moveTo(lineBuffer, 0);
-	    ctx.lineTo(len - 2 * lineBuffer, 0);
+	    ctx.lineTo(len - lineBuffer, 0);
 	    ctx.stroke();
 	    ctx.closePath();
 	    ctx.beginPath();
@@ -22143,7 +22143,7 @@ var require$$0$15 = Object.freeze({
 	  props: {
 	    fps: { attribute: true, default: 60 },
 	    color: { attribute: true, default: "yellow" },
-	    thickness: { attribute: true, default: 1 }
+	    thickness: { attribute: true, default: 2 }
 	  },
 	  refreshAnimation: function refreshAnimation(elem) {
 	    var nodes = elem[getNodes]();
@@ -22237,7 +22237,7 @@ var require$$0$15 = Object.freeze({
 	  edges: function edges(elem) {
 	    // console.log(elem)
 	    try {
-	      var adj = eval(elem.innerHTML);
+	      var adj = JSON.parse(elem.innerHTML);
 	    } catch (e) {}
 	    var nodes = elem[getNodes]();
 	    if (nodes.length < 2) {
@@ -24278,7 +24278,7 @@ var 	t1$1 = new Date();
 	  rendered: function rendered(elem) {}
 	});
 
-	var puppyStyle$1 = '\n  div {\n    display: inline-block;\n    background-image: url(\'basketball.png\');\n    background-position: center;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 340px;\n    height: 340px;\n  }\n  puppy-dog {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n  :host {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n  }\n';
+	var puppyStyle$1 = '\n  div {\n    display: inline-block;\n    background-image: url(\'basketball.png\');\n    background-position: center;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 100%;\n    height: 100%;\n  }\n  puppy-dog {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 340px;\n    height: 340px;\n  }\n  :host {\n    display: inline-block;\n    // position: relative;\n    background-size: 100%;\n    margin: 0;\n    padding: 0;\n    width: 340px;\n    height: 340px;\n  }\n';
 	define$1("basket-ball", {
 	  props: {
 	    round: { attribute: false, default: true }

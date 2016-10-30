@@ -57,7 +57,7 @@ const graphAllEdges = {
   props: {
     fps: { attribute: true, default: 60 },
     color: { attribute: true, default: "yellow" },
-    thickness: { attribute: true, default: 1 }
+    thickness: { attribute: true, default: 2 }
   },
   refreshAnimation(elem){
     var nodes = elem[getNodes]();

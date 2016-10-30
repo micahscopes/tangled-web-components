@@ -4,8 +4,8 @@
   <body>
   <div class="narrow">
       <graph-container>
-        <edges-modifier-hops hops="2,3">
-          <edges-adjacency-matrix color="white" thickness=10>
+        <edges-modifier-hops hops="1,2,3">
+          <edges-adjacency-matrix color="white" thickness=4>
             [[0,1,0,0,0,0,0,0],
              [0,0,1,0,0,0,0,0],
              [0,0,0,1,0,0,0,0],
@@ -13,16 +13,16 @@
              [0,0,0,0,0,1,0,0],
              [0,0,0,0,0,0,1,0],
              [0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,1,0]];
+             [0,0,0,0,0,0,1,0]]
           </edges-adjacency-matrix>
         </edges-modifier-hops>
-        <basket-ball id="oso"></basket-ball>
+        <puppy-dog id="oso"></puppy-dog>
         <basket-ball></basket-ball>
+        <puppy-dog></puppy-dog>
         <basket-ball></basket-ball>
+        <puppy-dog></puppy-dog>
         <basket-ball></basket-ball>
-        <basket-ball></basket-ball>
-        <basket-ball></basket-ball>
-        <basket-ball></basket-ball>
+        <puppy-dog></puppy-dog>
         <basket-ball></basket-ball>
       </graph-container>
 
@@ -49,12 +49,14 @@
 
       handle-box, basket-ball {
         margin:100px;
-        size: 20%;
         padding: 20px;
         border: solid white 1px;
         display: inline-block;
         background-color: rgba(30, 30, 255, 0.4);
         color: white;
+        width: 64px;
+        height: 64px;
+        font-size: 0.5em;
       }
 
       .next {
@@ -66,7 +68,7 @@
         width: 80%;
       }
       a, a:visited {
-        font-size: 5em;
+        font-size: 3em;
         color: yellow;
       }
 

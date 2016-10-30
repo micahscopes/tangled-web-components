@@ -11,7 +11,7 @@ math.import(matrices)
 define('edges-adjacency-matrix', EdgesAllPairs.extend({
   edges(elem){
     // console.log(elem)
-    try{ var adj = eval(elem.innerHTML) }catch(e){ }
+    try{ var adj = JSON.parse(elem.innerHTML) }catch(e){ }
     var nodes = elem[getNodes]()
     if (nodes.length < 2) { return []; }
     var edges = [[nodes[0],nodes[1]]]

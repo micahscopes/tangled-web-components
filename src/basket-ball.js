@@ -9,8 +9,8 @@ var puppyStyle = `
     background-size: 100%;
     margin: 0;
     padding: 0;
-    width: 340px;
-    height: 340px;
+    width: 100%;
+    height: 100%;
   }
   puppy-dog {
     display: inline-block;
@@ -18,6 +18,8 @@ var puppyStyle = `
     background-size: 100%;
     margin: 0;
     padding: 0;
+    width: 340px;
+    height: 340px;
   }
   :host {
     display: inline-block;
@@ -25,6 +27,8 @@ var puppyStyle = `
     background-size: 100%;
     margin: 0;
     padding: 0;
+    width: 340px;
+    height: 340px;
   }
 `
 define("basket-ball",{

@@ -56,7 +56,7 @@ export const drawEdge = (ctx,edge,graph) => {
         ctx.rotate(Math.atan2(diff.y,diff.x));
 
         ctx.moveTo(lineBuffer,0)
-        ctx.lineTo(len-2*lineBuffer,0)
+        ctx.lineTo(len-lineBuffer,0)
         ctx.stroke();
     ctx.closePath();
     ctx.beginPath();
