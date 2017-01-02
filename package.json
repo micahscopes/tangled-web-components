@@ -3,9 +3,14 @@
   "version": "1.0.0",
   "description": "Riot with Rollup",
   "private": true,
+  "main":"dist/tangled-web-components.js",
+  "jsnext:main": "src/main.js",
+  "minified:main": "dist/tangled-web-components.min.js",
   "scripts": {
-    "build": "rollup -c",
-    "watch": "chokidar 'src/**' -c 'npm run build'"
+    "build": "npm-run-all transpile minify",
+    "transpile": "rollup -c rollup.config.js -m ${npm_package_main}.map -f umd -n $npm_package_name $npm_package_jsnext_main -o $npm_package_main",
+    "minify": "uglifyjs $npm_package_main -cm -o $npm_package_minified_main -p relative --in-source-map ${npm_package_main}.map --source-map ${npm_package_minified_main}.map",
+    "watch": "chokidar 'src/**' -c 'rollup -c'"
   },
   "dependencies": {
     "d3-color": "^1.0.1",
@@ -33,7 +38,6 @@
     "rollup-plugin-eslint": "^3.0.0",
     "rollup-plugin-node-resolve": "^1.7.0",
     "rollup-plugin-riot": "^0.4.0",
-    "rollup-plugin-uglify": "^1.0.1",
     "uglify-js": "^2.7.3",
     "webcomponentsjs": "^1.0.2"
   },

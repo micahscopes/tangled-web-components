@@ -1,5 +1,8 @@
-(function () {
-	'use strict';
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(factory());
+}(this, function () { 'use strict';
 
 	var babelHelpers = {};
 	babelHelpers.typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
@@ -24295,4 +24298,5 @@ var 	t1$1 = new Date();
 	  rendered: function rendered(elem) {}
 	});
 
-}());
+}));
+//# sourceMappingURL=tangled-web-components.js.map
