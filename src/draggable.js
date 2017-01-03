@@ -1,6 +1,13 @@
 import Kefir from 'kefir';
 
 function eventsPositionDiff(prevEvent, nextEvent) {
+  //console.log(prevEvent,nextEvent);
+    if(nextEvent.touches) {
+        nextEvent = nextEvent.touches[0];
+    } 
+    if(prevEvent.touches) {
+        prevEvent = prevEvent.touches[0];
+    }
   return {
     x: nextEvent.clientX - prevEvent.clientX,
     y: nextEvent.clientY - prevEvent.clientY
@@ -8,6 +15,7 @@ function eventsPositionDiff(prevEvent, nextEvent) {
 }
 
 function applyMove(currentPosition, move) {
+  //console.log(move);
   return {
     x: currentPosition.x + move.x,
     y: currentPosition.y + move.y
@@ -28,9 +36,9 @@ export function startDragging(elem,timeout){
       elem.style.left = pos.x + 'px';
     }
 
-    var mouseUps = Kefir.fromEvents(document, 'mouseup');
-    var mouseMoves = Kefir.fromEvents(document, 'mousemove');
-    var mouseDowns = Kefir.fromEvents(elem, 'mousedown');
+    var mouseUps = Kefir.fromEvents(document, 'mouseup').merge(Kefir.fromEvents(document,'touchend'));
+    var mouseMoves = Kefir.fromEvents(document, 'mousemove').merge(Kefir.fromEvents(document,'touchmove'));
+    var mouseDowns = Kefir.fromEvents(elem, 'mousedown').merge(Kefir.fromEvents(elem,'touchstart'));
     mouseDowns.onValue( preventDefault );
 
     var moves = mouseDowns.flatMap(function(downEvent) {
