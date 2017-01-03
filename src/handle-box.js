@@ -16,3 +16,5 @@ const HandleBox = define("handle-box",{
     rendered(elem){
     }
 })
+
+export default HandleBox

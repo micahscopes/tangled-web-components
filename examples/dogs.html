@@ -1,30 +1,33 @@
 <!doctype html>
 <html>
   <title>web component dog graph</title>
+  <meta name="viewport" content="width=device-width, initial-scale=0.7">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/agate.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
   <body>
   <div class="narrow">
-      <graph-container>
-      <edges-all-pairs color="white"></edges-all-pairs>
-        <puppy-dog id="oso"></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-        <puppy-dog></puppy-dog>
-      </graph-container>
+<graph-container>
+  <edges-all-pairs color="white" thickness=2></edges-all-pairs>
+  <puppy-dog></puppy-dog>
+  <puppy-dog></puppy-dog>
+  <puppy-dog></puppy-dog>
+  <puppy-dog></puppy-dog>
+  <puppy-dog></puppy-dog>
+  <puppy-dog></puppy-dog>
+  <puppy-dog></puppy-dog>
+  <puppy-dog></puppy-dog>
+</graph-container>
 
       <graph-container>
-        <edges-adjacency-matrix thickness="5" color="black">
+        <edges-adjacency-matrix thickness="5" color="yellow">
               [[0,1],[0,0]]
         </edges-adjacency-matrix>
-        <handle-box>
-            <h1> dogs riding scooters </h1>
-        </handle-box>
-        <handle-box class="next">
+        <detached-box>
+            <pre><code id="example-code" class="html"></code></pre>
+        </detached-box>
+        <detached-box class="next">
           <a href="balls.html">more...</a>
-        </handle-box>
+        </detached-box>
       </graph-container>
   </div>
     <style>
@@ -36,7 +39,7 @@
         font-family: monospace;
       }
 
-      handle-box, puppy-dog {
+      handle-box, detached-box, puppy-dog {
         margin:100px;
         padding: 20px;
         border: solid white 1px;
@@ -59,6 +62,11 @@
       }
 
     </style>
+    <script type="text/javascript">
+    	var code = document.getElementsByTagName("graph-container")[0].outerHTML;
+    	document.getElementById("example-code").appendChild(document.createTextNode(code));
+    	hljs.initHighlightingOnLoad();
+    </script>
     <script type="text/javascript" src="../dist/tangled-web-components.js"></script>
   </body>
 

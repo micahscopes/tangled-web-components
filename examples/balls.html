@@ -1,30 +1,38 @@
 <!doctype html>
 <html>
   <title>basketbal graph</title>
+  <meta name="viewport" content="width=device-width, initial-scale=0.7">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/agate.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
   <body>
-    <div class="narrow">
-        <graph-container>
-          <edges-adjacency-matrix color="white">
-            [[0,1,0,0,0,0,0,0],
-             [0,0,1,0,0,0,0,0],
-             [0,0,0,1,0,0,0,0],
-             [0,0,0,0,1,0,0,0],
-             [0,0,0,0,0,1,0,0],
-             [0,0,0,0,0,0,1,0],
-             [0,0,0,0,0,0,0,0],
-             [0,0,0,0,0,0,1,0]]
-          </edges-adjacency-matrix>
-          <basket-ball id="a"></basket-ball>
-          <basket-ball id="b"></basket-ball>
-          <basket-ball id="c"></basket-ball>
-          <basket-ball id="d"></basket-ball>
-          <basket-ball id="e"></basket-ball>
-          <basket-ball id="f"></basket-ball>
-          <basket-ball id="g"></basket-ball>
-          <puppy-dog></puppy-dog>
-
-        </graph-container>
-    </div>
+<div class="narrow">
+<graph-container>
+  <edges-adjacency-matrix color="white">
+    [[0,1,0,0,0,0,0,0,0],
+     [0,0,1,0,0,0,0,0,0],
+     [0,0,0,1,0,0,0,0,0],
+     [0,0,0,0,1,0,0,0,0],
+     [0,0,0,0,0,1,0,0,0],
+     [0,0,0,0,0,0,1,0,0],
+     [0,0,0,0,0,0,0,0,0],
+     [0,0,0,0,0,0,1,0,0],
+     [0,0,0,0,0,0,0,1,0]]
+  </edges-adjacency-matrix>
+  <basket-ball id="a"></basket-ball>
+  <basket-ball id="b"></basket-ball>
+  <basket-ball id="c"></basket-ball>
+  <basket-ball id="d"></basket-ball>
+  <basket-ball id="e"></basket-ball>
+  <basket-ball id="f"></basket-ball>
+  <basket-ball id="g"></basket-ball>
+  <puppy-dog></puppy-dog>
+  <detached-box>
+    <pre><code id="example-code" class="html">
+      <!-- the code for this example -->
+    </code></pre>
+  </detached-box>
+</graph-container>
+</div>
 
 
   <style>
@@ -33,6 +41,7 @@
       color: white;
       overflow: scroll;
     }
+
     @keyframes wobble {
           0% {left: 0px}
           /*90%{left: 390px}*/
@@ -52,11 +61,31 @@
       clear: both;
     }
     puppy-dog {
-      float: right;
-      clear: right;
-      margin:200px;
+      float: left;
+      clear: both;
+      margin: 50px;
     }
+    detached-box {
+      margin: 150px 200px;
+      padding: 20px;
+      border: solid white 1px;
+      display: inline-block;
+      background-color: rgba(30, 30, 255, 0.4);
+      color: white;
+    }
+    body { width: 800px}
+    #example-code {
+      max-width: 400px;
+    }
+
   </style>
+  <script type="text/javascript">
+    var code = document.getElementsByTagName("graph-container")[0].outerHTML;
+    var example = document.getElementById("example-code")
+    example.removeChild(example.childNodes[0])
+    document.getElementById("example-code").appendChild(document.createTextNode(code));
+    hljs.initHighlightingOnLoad();
+  </script>
   <script type="text/javascript" src="../dist/tangled-web-components.js"></script>
   </body>
 

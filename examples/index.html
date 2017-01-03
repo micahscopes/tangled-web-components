@@ -1,23 +1,36 @@
 <!doctype html>
 <html>
   <title>web component graphs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=0.7">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/agate.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
 
-  <body>
+<body>
 
   <div class="narrow">
-      <graph-container>
-      <edges-all-pairs></edges-all-pairs>
-      <edges-adjacency-matrix thickness=5 color="deeppink">[[0,0,1],[1,0,0],[0,1,0]]</edges-adjacency-matrix>
-        <puppy-dog id="oso"></puppy-dog>
-        <puppy-dog id="fido"></puppy-dog>
-        <puppy-dog id="zoo"></puppy-dog>
-        <handle-box>
-            <h1> dogs riding scooters </h1>
-        </handle-box>
 
-        <h4 class="next"><a href="dogs.html">next... 	&#9758;</a></h4>
+<graph-container>
+  <edges-all-pairs></edges-all-pairs>
+  <edges-adjacency-matrix thickness=5 color="deeppink">
+    [ [0,0,1],
+      [1,0,0],
+      [0,1,0] ]
+  </edges-adjacency-matrix>
+  <puppy-dog></puppy-dog>
+  <puppy-dog></puppy-dog>
+  <puppy-dog></puppy-dog>
+</graph-container>
 
-      </graph-container>
+<graph-container>
+  <edges-adjacency-matrix thickness=5 color="white">[[0,1],[0,0]]</edges-adjacency-matrix>
+  <detached-box id="example-code-container">
+    <h1> dogs riding scooters </h1>
+    <pre><code id="example-code" class="html"></code></pre>
+  </detached-box>
+  <detached-box class="next"><a href="dogs.html">next...    &#9758;</a></detached-box>
+
+</graph-container>
+
   </div>
 
     <style>
@@ -28,7 +41,7 @@
         overflow: scroll;
       }
 
-      .next, handle-box, puppy-dog {
+      handle-box, puppy-dog, detached-box {
         margin:100px;
         padding: 20px;
         border: solid white 1px;
@@ -36,18 +49,21 @@
         background-color: slateblue;
       }
 
-      .next {
-        position: fixed;
-        right: 10px;
-        bottom: 10px
+      #example-code-container, pre, code {
+      	z-index: -5;
+        font-weight: bold;
       }
       a, a:visited {
         font-size: 3em;
         color: yellow;
       }
     </style>
+    <script type="text/javascript">
+	var code = document.getElementsByTagName("graph-container")[0].outerHTML;
+	document.getElementById("example-code").appendChild(document.createTextNode(code));
+	hljs.initHighlightingOnLoad();
+    </script>
     <script type="text/javascript" src="../dist/tangled-web-components.js"></script>
-
   </body>
 
 </html>
