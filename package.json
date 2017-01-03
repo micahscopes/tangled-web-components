@@ -25,8 +25,8 @@
     "kefir": "^3.5.2",
     "kefir-observable-selector": "^0.2.1",
     "mathjs": "^3.5.3",
-    "skatejs": "4.0.7",
-    "skatejs-web-components": "^5.0.0",
+    "skatejs": "4.1.0",
+    "skatejs-web-components": "^2.0.0",
     "victor": "^1.1.0"
   },
   "devDependencies": {
