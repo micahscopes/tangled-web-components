@@ -1,6 +1,6 @@
 {
   "name": "tangled-web-components",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Graphs and other stuff with Web Components + d3.js",
   "private": true,
   "main":"dist/tangled-web-components.js",
