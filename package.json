@@ -1,7 +1,7 @@
 {
-  "name": "riot-rollup-example",
+  "name": "tangled-web-components",
   "version": "1.0.0",
-  "description": "Riot with Rollup",
+  "description": "Graphs and other stuff with Web Components + d3.js",
   "private": true,
   "main":"dist/tangled-web-components.js",
   "jsnext:main": "src/main.js",
