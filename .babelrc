@@ -1,3 +1,17 @@
 {
-  "presets": [ "es2015-rollup" ]
+  "presets": [
+    [
+      "es2015",
+      {
+        "modules": false
+      },
+    ],
+    [
+        "es2016",
+    ]
+  ],
+  "plugins": [
+    "external-helpers"
+  ]
 }
+

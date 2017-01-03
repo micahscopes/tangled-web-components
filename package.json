@@ -25,21 +25,21 @@
     "kefir": "^3.5.2",
     "kefir-observable-selector": "^0.2.1",
     "mathjs": "^3.5.3",
-    "skatejs": "^4.0.1",
-    "skatejs-web-components": "^2.0.1",
+    "skatejs": "4.0.7",
+    "skatejs-web-components": "^5.0.0",
     "victor": "^1.1.0"
   },
   "devDependencies": {
-    "babel-preset-es2015-rollup": "^1.1.1",
+    "babel-plugin-external-helpers": "^6.18.0",
+    "babel-preset-es2016": "^6.16.0",
+    "babel-preset-latest": "^6.16.0",
     "chokidar-cli": "^1.2.0",
     "rollup": "^0.31.2",
-    "rollup-plugin-babel": "2.4.0",
+    "rollup-plugin-babel": "^2.4.0",
     "rollup-plugin-commonjs": "^3.0.0",
     "rollup-plugin-eslint": "^3.0.0",
     "rollup-plugin-node-resolve": "^1.7.0",
-    "rollup-plugin-riot": "^0.4.0",
-    "uglify-js": "^2.7.3",
-    "webcomponentsjs": "^1.0.2"
+    "uglify-js": "^2.7.3"
   },
   "license": "MIT"
 }

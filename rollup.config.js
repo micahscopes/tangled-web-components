@@ -6,6 +6,9 @@ import commonjs from 'rollup-plugin-commonjs';
 
 export default {
   entry: 'src/main.js',
+  acorn: {
+    allowReserved: true
+  },
   dest: 'dist/tangled-web-components.js',
   format: 'iife',
   // sourceMap: 'inline',
