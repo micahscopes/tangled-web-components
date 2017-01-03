@@ -4,94 +4,11 @@
 	(factory());
 }(this, function () { 'use strict';
 
-	var babelHelpers = {};
-	babelHelpers.typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-	  return typeof obj;
-	} : function (obj) {
-	  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-	};
-
-	babelHelpers.classCallCheck = function (instance, Constructor) {
-	  if (!(instance instanceof Constructor)) {
-	    throw new TypeError("Cannot call a class as a function");
-	  }
-	};
-
-	babelHelpers.createClass = function () {
-	  function defineProperties(target, props) {
-	    for (var i = 0; i < props.length; i++) {
-	      var descriptor = props[i];
-	      descriptor.enumerable = descriptor.enumerable || false;
-	      descriptor.configurable = true;
-	      if ("value" in descriptor) descriptor.writable = true;
-	      Object.defineProperty(target, descriptor.key, descriptor);
-	    }
-	  }
-
-	  return function (Constructor, protoProps, staticProps) {
-	    if (protoProps) defineProperties(Constructor.prototype, protoProps);
-	    if (staticProps) defineProperties(Constructor, staticProps);
-	    return Constructor;
-	  };
-	}();
-
-	babelHelpers.defineProperty = function (obj, key, value) {
-	  if (key in obj) {
-	    Object.defineProperty(obj, key, {
-	      value: value,
-	      enumerable: true,
-	      configurable: true,
-	      writable: true
-	    });
-	  } else {
-	    obj[key] = value;
-	  }
-
-	  return obj;
-	};
-
-	babelHelpers.inherits = function (subClass, superClass) {
-	  if (typeof superClass !== "function" && superClass !== null) {
-	    throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
-	  }
-
-	  subClass.prototype = Object.create(superClass && superClass.prototype, {
-	    constructor: {
-	      value: subClass,
-	      enumerable: false,
-	      writable: true,
-	      configurable: true
-	    }
-	  });
-	  if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
-	};
-
-	babelHelpers.possibleConstructorReturn = function (self, call) {
-	  if (!self) {
-	    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-	  }
-
-	  return call && (typeof call === "object" || typeof call === "function") ? call : self;
-	};
-
-	babelHelpers.toConsumableArray = function (arr) {
-	  if (Array.isArray(arr)) {
-	    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-	    return arr2;
-	  } else {
-	    return Array.from(arr);
-	  }
-	};
-
-	babelHelpers;
-
 	var _window = window;
-	var HTMLElement$1 = _window.HTMLElement;
-	var MutationObserver$1 = _window.MutationObserver;
-	var natigator = _window.natigator;
-	var _navigator = navigator;
-	var userAgent = _navigator.userAgent;
+	var HTMLElement = _window.HTMLElement;
+	var MutationObserver = _window.MutationObserver;
+	var navigator$1 = _window.navigator;
+	var userAgent = navigator$1.userAgent;
 
 	var safari = userAgent.indexOf('Safari/60') !== -1;
 	var safariVersion = safari && userAgent.match(/Version\/([^\s]+)/)[1];
@@ -102,12 +19,12 @@
 
 	// Workaround for https://bugs.webkit.org/show_bug.cgi?id=160331
 	function fixSafari() {
-	  var oldAttachShadow = HTMLElement$1.prototype.attachShadow;
+	  var oldAttachShadow = HTMLElement.prototype.attachShadow;
 
 	  // We observe a shadow root, but only need to know if the target that was mutated is a <style>
 	  // element as this is the only scenario where styles aren't recalculated.
 	  var moOpts = { childList: true, subtree: true };
-	  var mo = new MutationObserver$1(function (muts) {
+	  var mo = new MutationObserver(function (muts) {
 	    muts.forEach(function (mut) {
 	      var target = mut.target;
 
@@ -133,7 +50,7 @@
 	  }
 
 	  // We have to define a property because Safari won't take the override if it is set directly.
-	  Object.defineProperty(HTMLElement$1.prototype, 'attachShadow', {
+	  Object.defineProperty(HTMLElement.prototype, 'attachShadow', {
 	    // Ensure polyfills can override it (hoping they call it back).
 	    configurable: true,
 	    enumerable: true,
@@ -195,283 +112,7 @@
 	}
 
 	var div = document.createElement('div');
-	var shadowDomV0 = !!div.createShadowRoot;
-	var shadowDomV1 = !!div.attachShadow;
-
-	var $shadowRoot = '__shadowRoot';
-
-	var v0 = (function () {
-	  // Returns the assigned nodes (unflattened) for a <content> node.
-	  var getAssignedNodes = function getAssignedNodes(node) {
-	    var slot = node.getAttribute('name');
-
-	    var host = node;
-	    while (host) {
-	      var sr = host[$shadowRoot];
-	      if (sr && sr.contains(node)) {
-	        break;
-	      }
-	      host = host.parentNode;
-	    }
-
-	    if (!host) {
-	      return [];
-	    }
-
-	    var chs = host.childNodes;
-	    var chsLen = chs.length;
-	    var filtered = [];
-
-	    for (var a = 0; a < chsLen; a++) {
-	      var ch = chs[a];
-	      var chSlot = ch.getAttribute ? ch.getAttribute('slot') : null;
-	      if (slot === chSlot) {
-	        filtered.push(ch);
-	      }
-	    }
-
-	    return filtered;
-	  };
-
-	  var _HTMLElement$prototyp = HTMLElement.prototype;
-	  var getAttribute = _HTMLElement$prototyp.getAttribute;
-	  var setAttribute = _HTMLElement$prototyp.setAttribute;
-
-	  var elementInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-	  var shadowRootInnerHTML = Object.getOwnPropertyDescriptor(ShadowRoot.prototype, 'innerHTML');
-
-	  // We do this so creating a <slot> actually creates a <content>.
-	  var filterTagName = function filterTagName(name) {
-	    return name === 'slot' ? 'content' : name;
-	  };
-	  var createElement = document.createElement.bind(document);
-	  var createElementNS = document.createElementNS.bind(document);
-	  document.createElement = function (name) {
-	    for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-	      args[_key - 1] = arguments[_key];
-	    }
-
-	    return createElement.apply(undefined, [filterTagName(name)].concat(args));
-	  };
-	  document.createElementNS = function (uri, name) {
-	    for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
-	      args[_key2 - 2] = arguments[_key2];
-	    }
-
-	    return createElementNS.apply(undefined, [uri, filterTagName(name)].concat(args));
-	  };
-
-	  // Override innerHTML to turn slot nodes into content nodes.
-	  function replaceSlotsWithContents(node) {
-	    var tree = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT);
-	    var repl = [];
-
-	    // Walk the tree and record nodes that need replacing.
-	    while (tree.nextNode()) {
-	      var currentNode = tree.currentNode;
-
-	      if (currentNode.tagName === 'SLOT') {
-	        repl.push(currentNode);
-	      }
-	    }
-
-	    repl.forEach(function (fake) {
-	      var name = fake.getAttribute('name');
-	      var real = document.createElement('slot');
-	      if (name) {
-	        real.setAttribute('name', name);
-	      }
-
-	      fake.parentNode.replaceChild(real, fake);
-	      while (fake.hasChildNodes()) {
-	        real.appendChild(fake.firstChild);
-	      }
-	    });
-	  }
-	  Object.defineProperty(Element.prototype, 'innerHTML', {
-	    configurable: true,
-	    get: elementInnerHTML.get,
-	    set: function set(html) {
-	      elementInnerHTML.set.call(this, html);
-	      replaceSlotsWithContents(this);
-	    }
-	  });
-	  Object.defineProperty(ShadowRoot.prototype, 'innerHTML', {
-	    configurable: true,
-	    get: shadowRootInnerHTML.get,
-	    set: function set(html) {
-	      shadowRootInnerHTML.set.call(this, html);
-	      replaceSlotsWithContents(this);
-	    }
-	  });
-
-	  // Node
-	  // ----
-
-	  Object.defineProperty(Node.prototype, 'assignedSlot', {
-	    get: function get() {
-	      var parentNode = this.parentNode;
-
-	      if (parentNode) {
-	        var shadowRoot = parentNode.shadowRoot;
-
-	        // If { mode } is "closed", always return `null`.
-
-	        if (!shadowRoot) {
-	          return null;
-	        }
-
-	        var contents = shadowRoot.querySelectorAll('content');
-	        for (var a = 0; a < contents.length; a++) {
-	          var content = contents[a];
-	          if (content.assignedNodes().indexOf(this) > -1) {
-	            return content;
-	          }
-	        }
-	      }
-	      return null;
-	    }
-	  });
-
-	  // Just proxy createShadowRoot() because there's no such thing as closed
-	  // shadow trees in v0.
-	  HTMLElement.prototype.attachShadow = function attachShadow() {
-	    var _this = this;
-
-	    var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-	    var mode = _ref.mode;
-
-	    // In v1 you must specify a mode.
-	    if (mode !== 'closed' && mode !== 'open') {
-	      throw new Error('You must specify { mode } as "open" or "closed" to attachShadow().');
-	    }
-
-	    // Proxy native v0.
-	    var sr = this.createShadowRoot();
-
-	    // In v0 it always defines the shadowRoot property so we must undefine it.
-	    if (mode === 'closed') {
-	      Object.defineProperty(this, 'shadowRoot', {
-	        configurable: true,
-	        get: function get() {
-	          return null;
-	        }
-	      });
-	    }
-
-	    // For some reason this wasn't being reported as set, but it seems to work
-	    // in dev tools.
-	    Object.defineProperty(sr, 'parentNode', {
-	      get: function get() {
-	        return _this;
-	      }
-	    });
-
-	    // Add a MutationObserver to trigger slot change events when the element
-	    // is mutated. We only need to listen to the childList because we only care
-	    // about light DOM.
-	    var mo = new MutationObserver(function (muts) {
-	      var root = _this[$shadowRoot];
-	      muts.forEach(function (mut) {
-	        var addedNodes = mut.addedNodes;
-	        var removedNodes = mut.removedNodes;
-
-	        var slots = {};
-	        var recordSlots = function recordSlots(node) {
-	          return slots[node.getAttribute && node.getAttribute('slot') || '__default'] = true;
-	        };
-
-	        if (addedNodes) {
-	          var addedNodesLen = addedNodes.length;
-	          for (var a = 0; a < addedNodesLen; a++) {
-	            recordSlots(addedNodes[a]);
-	          }
-	        }
-
-	        if (removedNodes) {
-	          var removedNodesLen = removedNodes.length;
-	          for (var _a = 0; _a < removedNodesLen; _a++) {
-	            recordSlots(removedNodes[_a]);
-	          }
-	        }
-
-	        Object.keys(slots).forEach(function (slot) {
-	          var node = slot === '__default' ? root.querySelector('content:not([name])') || root.querySelector('content[name=""]') : root.querySelector('content[name="' + slot + '"]');
-
-	          if (node) {
-	            node.dispatchEvent(new CustomEvent('slotchange', {
-	              bubbles: false,
-	              cancelable: false
-	            }));
-	          }
-	        });
-	      });
-	    });
-	    mo.observe(this, { childList: true });
-
-	    return this[$shadowRoot] = sr;
-	  };
-
-	  // Make like the <slot> name property.
-	  Object.defineProperty(HTMLContentElement.prototype, 'name', {
-	    get: function get() {
-	      return this.getAttribute('name');
-	    },
-	    set: function set(name) {
-	      return this.setAttribute('name', name);
-	    }
-	  });
-
-	  // Make like the element slot property.
-	  Object.defineProperty(HTMLElement.prototype, 'slot', {
-	    get: function get() {
-	      return this.getAttribute('slot');
-	    },
-	    set: function set(name) {
-	      return this.setAttribute('slot', name);
-	    }
-	  });
-
-	  // By default, getDistributedNodes() returns a flattened tree (no <slot>
-	  // nodes). That means we get native { deep } but we have to manually do the
-	  // opposite.
-	  HTMLContentElement.prototype.assignedNodes = function assignedNodes() {
-	    var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-	    var deep = _ref2.deep;
-
-	    var cnodes = [];
-	    var dnodes = deep ? this.getDistributedNodes() : getAssignedNodes(this);
-
-	    // Regardless of how we get the nodes, we must ensure we're only given text
-	    // nodes or element nodes.
-	    for (var a = 0; a < dnodes.length; a++) {
-	      var dnode = dnodes[a];
-	      var dtype = dnode.nodeType;
-	      if (dtype === Node.ELEMENT_NODE || dtype === Node.TEXT_NODE) {
-	        cnodes.push(dnode);
-	      }
-	    }
-	    return cnodes;
-	  };
-
-	  HTMLContentElement.prototype.getAttribute = function overriddenGetAttribute(name) {
-	    if (name === 'name') {
-	      var select = getAttribute.call(this, 'select');
-	      return select ? select.match(/\[slot=['"]?(.*?)['"]?\]/)[1] : null;
-	    }
-	    return getAttribute.call(this, name);
-	  };
-
-	  HTMLContentElement.prototype.setAttribute = function overriddenSetAttribute(name, value) {
-	    if (name === 'name') {
-	      name = 'select';
-	      value = '[slot=\'' + value + '\']';
-	    }
-	    return setAttribute.call(this, name, value);
-	  };
-	});
+	var shadowDomV1 = !!div.attachShadow; // eslint-disable-line import/prefer-default-export
 
 	var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {}
 
@@ -554,239 +195,700 @@ var require$$0 = Object.freeze({
 
 	var debounce = interopDefault(index);
 
-	var weakmap = createCommonjsModule(function (module, exports) {
-	  /* (The MIT License)
+	var weakMap = createCommonjsModule(function (module) {
+	  // Copyright (C) 2011 Google Inc.
+	  //
+	  // Licensed under the Apache License, Version 2.0 (the "License");
+	  // you may not use this file except in compliance with the License.
+	  // You may obtain a copy of the License at
+	  //
+	  // http://www.apache.org/licenses/LICENSE-2.0
+	  //
+	  // Unless required by applicable law or agreed to in writing, software
+	  // distributed under the License is distributed on an "AS IS" BASIS,
+	  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	  // See the License for the specific language governing permissions and
+	  // limitations under the License.
+
+	  /**
+	   * @fileoverview Install a leaky WeakMap emulation on platforms that
+	   * don't provide a built-in one.
 	   *
-	   * Copyright (c) 2012 Brandon Benvie <http://bbenvie.com>
+	   * <p>Assumes that an ES5 platform where, if {@code WeakMap} is
+	   * already present, then it conforms to the anticipated ES6
+	   * specification. To run this file on an ES5 or almost ES5
+	   * implementation where the {@code WeakMap} specification does not
+	   * quite conform, run <code>repairES5.js</code> first.
 	   *
-	   * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
-	   * associated documentation files (the 'Software'), to deal in the Software without restriction,
-	   * including without limitation the rights to use, copy, modify, merge, publish, distribute,
-	   * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
-	   * furnished to do so, subject to the following conditions:
+	   * <p>Even though WeakMapModule is not global, the linter thinks it
+	   * is, which is why it is in the overrides list below.
 	   *
-	   * The above copyright notice and this permission notice shall be included with all copies or
-	   * substantial portions of the Software.
+	   * <p>NOTE: Before using this WeakMap emulation in a non-SES
+	   * environment, see the note below about hiddenRecord.
 	   *
-	   * THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-	   * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-	   * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  CLAIM,
-	   * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-	   * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+	   * @author Mark S. Miller
+	   * @requires crypto, ArrayBuffer, Uint8Array, navigator, console
+	   * @overrides WeakMap, ses, Proxy
+	   * @overrides WeakMapModule
 	   */
 
-	  // Original WeakMap implementation by Gozala @ https://gist.github.com/1269991
-	  // Updated and bugfixed by Raynos @ https://gist.github.com/1638059
-	  // Expanded by Benvie @ https://github.com/Benvie/harmony-collections
+	  /**
+	   * This {@code WeakMap} emulation is observably equivalent to the
+	   * ES-Harmony WeakMap, but with leakier garbage collection properties.
+	   *
+	   * <p>As with true WeakMaps, in this emulation, a key does not
+	   * retain maps indexed by that key and (crucially) a map does not
+	   * retain the keys it indexes. A map by itself also does not retain
+	   * the values associated with that map.
+	   *
+	   * <p>However, the values associated with a key in some map are
+	   * retained so long as that key is retained and those associations are
+	   * not overridden. For example, when used to support membranes, all
+	   * values exported from a given membrane will live for the lifetime
+	   * they would have had in the absence of an interposed membrane. Even
+	   * when the membrane is revoked, all objects that would have been
+	   * reachable in the absence of revocation will still be reachable, as
+	   * far as the GC can tell, even though they will no longer be relevant
+	   * to ongoing computation.
+	   *
+	   * <p>The API implemented here is approximately the API as implemented
+	   * in FF6.0a1 and agreed to by MarkM, Andreas Gal, and Dave Herman,
+	   * rather than the offially approved proposal page. TODO(erights):
+	   * upgrade the ecmascript WeakMap proposal page to explain this API
+	   * change and present to EcmaScript committee for their approval.
+	   *
+	   * <p>The first difference between the emulation here and that in
+	   * FF6.0a1 is the presence of non enumerable {@code get___, has___,
+	   * set___, and delete___} methods on WeakMap instances to represent
+	   * what would be the hidden internal properties of a primitive
+	   * implementation. Whereas the FF6.0a1 WeakMap.prototype methods
+	   * require their {@code this} to be a genuine WeakMap instance (i.e.,
+	   * an object of {@code [[Class]]} "WeakMap}), since there is nothing
+	   * unforgeable about the pseudo-internal method names used here,
+	   * nothing prevents these emulated prototype methods from being
+	   * applied to non-WeakMaps with pseudo-internal methods of the same
+	   * names.
+	   *
+	   * <p>Another difference is that our emulated {@code
+	   * WeakMap.prototype} is not itself a WeakMap. A problem with the
+	   * current FF6.0a1 API is that WeakMap.prototype is itself a WeakMap
+	   * providing ambient mutability and an ambient communications
+	   * channel. Thus, if a WeakMap is already present and has this
+	   * problem, repairES5.js wraps it in a safe wrappper in order to
+	   * prevent access to this channel. (See
+	   * PATCH_MUTABLE_FROZEN_WEAKMAP_PROTO in repairES5.js).
+	   */
 
-	  void function (global, undefined_, undefined) {
-	    var getProps = Object.getOwnPropertyNames,
-	        defProp = Object.defineProperty,
-	        toSource = Function.prototype.toString,
-	        create = Object.create,
-	        hasOwn = Object.prototype.hasOwnProperty,
-	        funcName = /^\n?function\s?(\w*)?_?\(/;
+	  /**
+	   * If this is a full <a href=
+	   * "http://code.google.com/p/es-lab/wiki/SecureableES5"
+	   * >secureable ES5</a> platform and the ES-Harmony {@code WeakMap} is
+	   * absent, install an approximate emulation.
+	   *
+	   * <p>If WeakMap is present but cannot store some objects, use our approximate
+	   * emulation as a wrapper.
+	   *
+	   * <p>If this is almost a secureable ES5 platform, then WeakMap.js
+	   * should be run after repairES5.js.
+	   *
+	   * <p>See {@code WeakMap} for documentation of the garbage collection
+	   * properties of this WeakMap emulation.
+	   */
+	  (function WeakMapModule() {
+	    "use strict";
 
-	    function define(object, key, value) {
-	      if (typeof key === 'function') {
-	        value = key;
-	        key = nameOf(value).replace(/_$/, '');
-	      }
-	      return defProp(object, key, { configurable: true, writable: true, value: value });
+	    if (typeof ses !== 'undefined' && ses.ok && !ses.ok()) {
+	      // already too broken, so give up
+	      return;
 	    }
 
-	    function nameOf(func) {
-	      return typeof func !== 'function' ? '' : 'name' in func ? func.name : toSource.call(func).match(funcName)[1];
+	    /**
+	     * In some cases (current Firefox), we must make a choice betweeen a
+	     * WeakMap which is capable of using all varieties of host objects as
+	     * keys and one which is capable of safely using proxies as keys. See
+	     * comments below about HostWeakMap and DoubleWeakMap for details.
+	     *
+	     * This function (which is a global, not exposed to guests) marks a
+	     * WeakMap as permitted to do what is necessary to index all host
+	     * objects, at the cost of making it unsafe for proxies.
+	     *
+	     * Do not apply this function to anything which is not a genuine
+	     * fresh WeakMap.
+	     */
+	    function weakMapPermitHostObjects(map) {
+	      // identity of function used as a secret -- good enough and cheap
+	      if (map.permitHostObjects___) {
+	        map.permitHostObjects___(weakMapPermitHostObjects);
+	      }
+	    }
+	    if (typeof ses !== 'undefined') {
+	      ses.weakMapPermitHostObjects = weakMapPermitHostObjects;
 	    }
 
-	    // ############
-	    // ### Data ###
-	    // ############
+	    // IE 11 has no Proxy but has a broken WeakMap such that we need to patch
+	    // it using DoubleWeakMap; this flag tells DoubleWeakMap so.
+	    var doubleWeakMapCheckSilentFailure = false;
 
-	    var Data = function () {
-	      var dataDesc = { value: { writable: true, value: undefined } },
-	          datalock = 'return function(k){if(k===s)return l}',
-	          uids = create(null),
-	          createUID = function createUID() {
-	        var key = Math.random().toString(36).slice(2);
-	        return key in uids ? createUID() : uids[key] = key;
-	      },
-	          globalID = createUID(),
-	          storage = function storage(obj) {
-	        if (hasOwn.call(obj, globalID)) return obj[globalID];
+	    // Check if there is already a good-enough WeakMap implementation, and if so
+	    // exit without replacing it.
+	    if (typeof WeakMap === 'function') {
+	      var HostWeakMap = WeakMap;
+	      // There is a WeakMap -- is it good enough?
+	      if (typeof navigator !== 'undefined' && /Firefox/.test(navigator.userAgent)) {
+	        // We're now *assuming not*, because as of this writing (2013-05-06)
+	        // Firefox's WeakMaps have a miscellany of objects they won't accept, and
+	        // we don't want to make an exhaustive list, and testing for just one
+	        // will be a problem if that one is fixed alone (as they did for Event).
 
-	        if (!Object.isExtensible(obj)) throw new TypeError("Object must be extensible");
+	        // If there is a platform that we *can* reliably test on, here's how to
+	        // do it:
+	        //  var problematic = ... ;
+	        //  var testHostMap = new HostWeakMap();
+	        //  try {
+	        //    testHostMap.set(problematic, 1);  // Firefox 20 will throw here
+	        //    if (testHostMap.get(problematic) === 1) {
+	        //      return;
+	        //    }
+	        //  } catch (e) {}
 
-	        var store = create(null);
-	        defProp(obj, globalID, { value: store });
-	        return store;
-	      };
-
-	      // common per-object storage area made visible by patching getOwnPropertyNames'
-	      define(Object, function getOwnPropertyNames(obj) {
-	        var props = getProps(obj);
-	        if (hasOwn.call(obj, globalID)) props.splice(props.indexOf(globalID), 1);
-	        return props;
-	      });
-
-	      function Data() {
-	        var puid = createUID(),
-	            secret = {};
-
-	        this.unlock = function (obj) {
-	          var store = storage(obj);
-	          if (hasOwn.call(store, puid)) return store[puid](secret);
-
-	          var data = create(null, dataDesc);
-	          defProp(store, puid, {
-	            value: new Function('s', 'l', datalock)(secret, data)
-	          });
-	          return data;
-	        };
-	      }
-
-	      define(Data.prototype, function get(o) {
-	        return this.unlock(o).value;
-	      });
-	      define(Data.prototype, function set(o, v) {
-	        this.unlock(o).value = v;
-	      });
-
-	      return Data;
-	    }();
-
-	    var WM = function (data) {
-	      var validate = function validate(key) {
-	        if (key == null || (typeof key === 'undefined' ? 'undefined' : babelHelpers.typeof(key)) !== 'object' && typeof key !== 'function') throw new TypeError("Invalid WeakMap key");
-	      };
-
-	      var wrap = function wrap(collection, value) {
-	        var store = data.unlock(collection);
-	        if (store.value) throw new TypeError("Object is already a WeakMap");
-	        store.value = value;
-	      };
-
-	      var unwrap = function unwrap(collection) {
-	        var storage = data.unlock(collection).value;
-	        if (!storage) throw new TypeError("WeakMap is not generic");
-	        return storage;
-	      };
-
-	      var initialize = function initialize(weakmap, iterable) {
-	        if (iterable !== null && (typeof iterable === 'undefined' ? 'undefined' : babelHelpers.typeof(iterable)) === 'object' && typeof iterable.forEach === 'function') {
-	          iterable.forEach(function (item, i) {
-	            if (item instanceof Array && item.length === 2) set.call(weakmap, iterable[i][0], iterable[i][1]);
-	          });
+	      } else {
+	        // IE 11 bug: WeakMaps silently fail to store frozen objects.
+	        var testMap = new HostWeakMap();
+	        var testObject = Object.freeze({});
+	        testMap.set(testObject, 1);
+	        if (testMap.get(testObject) !== 1) {
+	          doubleWeakMapCheckSilentFailure = true;
+	          // Fall through to installing our WeakMap.
+	        } else {
+	          module.exports = WeakMap;
+	          return;
 	        }
-	      };
+	      }
+	    }
 
-	      function WeakMap(iterable) {
-	        if (this === global || this == null || this === WeakMap.prototype) return new WeakMap(iterable);
+	    var hop = Object.prototype.hasOwnProperty;
+	    var gopn = Object.getOwnPropertyNames;
+	    var defProp = Object.defineProperty;
+	    var isExtensible = Object.isExtensible;
 
-	        wrap(this, new Data());
-	        initialize(this, iterable);
+	    /**
+	     * Security depends on HIDDEN_NAME being both <i>unguessable</i> and
+	     * <i>undiscoverable</i> by untrusted code.
+	     *
+	     * <p>Given the known weaknesses of Math.random() on existing
+	     * browsers, it does not generate unguessability we can be confident
+	     * of.
+	     *
+	     * <p>It is the monkey patching logic in this file that is intended
+	     * to ensure undiscoverability. The basic idea is that there are
+	     * three fundamental means of discovering properties of an object:
+	     * The for/in loop, Object.keys(), and Object.getOwnPropertyNames(),
+	     * as well as some proposed ES6 extensions that appear on our
+	     * whitelist. The first two only discover enumerable properties, and
+	     * we only use HIDDEN_NAME to name a non-enumerable property, so the
+	     * only remaining threat should be getOwnPropertyNames and some
+	     * proposed ES6 extensions that appear on our whitelist. We monkey
+	     * patch them to remove HIDDEN_NAME from the list of properties they
+	     * returns.
+	     *
+	     * <p>TODO(erights): On a platform with built-in Proxies, proxies
+	     * could be used to trap and thereby discover the HIDDEN_NAME, so we
+	     * need to monkey patch Proxy.create, Proxy.createFunction, etc, in
+	     * order to wrap the provided handler with the real handler which
+	     * filters out all traps using HIDDEN_NAME.
+	     *
+	     * <p>TODO(erights): Revisit Mike Stay's suggestion that we use an
+	     * encapsulated function at a not-necessarily-secret name, which
+	     * uses the Stiegler shared-state rights amplification pattern to
+	     * reveal the associated value only to the WeakMap in which this key
+	     * is associated with that value. Since only the key retains the
+	     * function, the function can also remember the key without causing
+	     * leakage of the key, so this doesn't violate our general gc
+	     * goals. In addition, because the name need not be a guarded
+	     * secret, we could efficiently handle cross-frame frozen keys.
+	     */
+	    var HIDDEN_NAME_PREFIX = 'weakmap:';
+	    var HIDDEN_NAME = HIDDEN_NAME_PREFIX + 'ident:' + Math.random() + '___';
+
+	    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function' && typeof ArrayBuffer === 'function' && typeof Uint8Array === 'function') {
+	      var ab = new ArrayBuffer(25);
+	      var u8s = new Uint8Array(ab);
+	      crypto.getRandomValues(u8s);
+	      HIDDEN_NAME = HIDDEN_NAME_PREFIX + 'rand:' + Array.prototype.map.call(u8s, function (u8) {
+	        return (u8 % 36).toString(36);
+	      }).join('') + '___';
+	    }
+
+	    function isNotHiddenName(name) {
+	      return !(name.substr(0, HIDDEN_NAME_PREFIX.length) == HIDDEN_NAME_PREFIX && name.substr(name.length - 3) === '___');
+	    }
+
+	    /**
+	     * Monkey patch getOwnPropertyNames to avoid revealing the
+	     * HIDDEN_NAME.
+	     *
+	     * <p>The ES5.1 spec requires each name to appear only once, but as
+	     * of this writing, this requirement is controversial for ES6, so we
+	     * made this code robust against this case. If the resulting extra
+	     * search turns out to be expensive, we can probably relax this once
+	     * ES6 is adequately supported on all major browsers, iff no browser
+	     * versions we support at that time have relaxed this constraint
+	     * without providing built-in ES6 WeakMaps.
+	     */
+	    defProp(Object, 'getOwnPropertyNames', {
+	      value: function fakeGetOwnPropertyNames(obj) {
+	        return gopn(obj).filter(isNotHiddenName);
+	      }
+	    });
+
+	    /**
+	     * getPropertyNames is not in ES5 but it is proposed for ES6 and
+	     * does appear in our whitelist, so we need to clean it too.
+	     */
+	    if ('getPropertyNames' in Object) {
+	      var originalGetPropertyNames = Object.getPropertyNames;
+	      defProp(Object, 'getPropertyNames', {
+	        value: function fakeGetPropertyNames(obj) {
+	          return originalGetPropertyNames(obj).filter(isNotHiddenName);
+	        }
+	      });
+	    }
+
+	    /**
+	     * <p>To treat objects as identity-keys with reasonable efficiency
+	     * on ES5 by itself (i.e., without any object-keyed collections), we
+	     * need to add a hidden property to such key objects when we
+	     * can. This raises several issues:
+	     * <ul>
+	     * <li>Arranging to add this property to objects before we lose the
+	     *     chance, and
+	     * <li>Hiding the existence of this new property from most
+	     *     JavaScript code.
+	     * <li>Preventing <i>certification theft</i>, where one object is
+	     *     created falsely claiming to be the key of an association
+	     *     actually keyed by another object.
+	     * <li>Preventing <i>value theft</i>, where untrusted code with
+	     *     access to a key object but not a weak map nevertheless
+	     *     obtains access to the value associated with that key in that
+	     *     weak map.
+	     * </ul>
+	     * We do so by
+	     * <ul>
+	     * <li>Making the name of the hidden property unguessable, so "[]"
+	     *     indexing, which we cannot intercept, cannot be used to access
+	     *     a property without knowing the name.
+	     * <li>Making the hidden property non-enumerable, so we need not
+	     *     worry about for-in loops or {@code Object.keys},
+	     * <li>monkey patching those reflective methods that would
+	     *     prevent extensions, to add this hidden property first,
+	     * <li>monkey patching those methods that would reveal this
+	     *     hidden property.
+	     * </ul>
+	     * Unfortunately, because of same-origin iframes, we cannot reliably
+	     * add this hidden property before an object becomes
+	     * non-extensible. Instead, if we encounter a non-extensible object
+	     * without a hidden record that we can detect (whether or not it has
+	     * a hidden record stored under a name secret to us), then we just
+	     * use the key object itself to represent its identity in a brute
+	     * force leaky map stored in the weak map, losing all the advantages
+	     * of weakness for these.
+	     */
+	    function getHiddenRecord(key) {
+	      if (key !== Object(key)) {
+	        throw new TypeError('Not an object: ' + key);
+	      }
+	      var hiddenRecord = key[HIDDEN_NAME];
+	      if (hiddenRecord && hiddenRecord.key === key) {
+	        return hiddenRecord;
+	      }
+	      if (!isExtensible(key)) {
+	        // Weak map must brute force, as explained in doc-comment above.
+	        return void 0;
 	      }
 
-	      function get(key) {
-	        validate(key);
-	        var value = unwrap(this).get(key);
-	        return value === undefined_ ? undefined : value;
-	      }
+	      // The hiddenRecord and the key point directly at each other, via
+	      // the "key" and HIDDEN_NAME properties respectively. The key
+	      // field is for quickly verifying that this hidden record is an
+	      // own property, not a hidden record from up the prototype chain.
+	      //
+	      // NOTE: Because this WeakMap emulation is meant only for systems like
+	      // SES where Object.prototype is frozen without any numeric
+	      // properties, it is ok to use an object literal for the hiddenRecord.
+	      // This has two advantages:
+	      // * It is much faster in a performance critical place
+	      // * It avoids relying on Object.create(null), which had been
+	      //   problematic on Chrome 28.0.1480.0. See
+	      //   https://code.google.com/p/google-caja/issues/detail?id=1687
+	      hiddenRecord = { key: key };
 
-	      function set(key, value) {
-	        validate(key);
-	        // store a token for explicit undefined so that "has" works correctly
-	        unwrap(this).set(key, value === undefined ? undefined_ : value);
-	      }
+	      // When using this WeakMap emulation on platforms where
+	      // Object.prototype might not be frozen and Object.create(null) is
+	      // reliable, use the following two commented out lines instead.
+	      // hiddenRecord = Object.create(null);
+	      // hiddenRecord.key = key;
 
-	      function has(key) {
-	        validate(key);
-	        return unwrap(this).get(key) !== undefined;
-	      }
-
-	      function delete_(key) {
-	        validate(key);
-	        var data = unwrap(this),
-	            had = data.get(key) !== undefined;
-	        data.set(key, undefined);
-	        return had;
-	      }
-
-	      function toString() {
-	        unwrap(this);
-	        return '[object WeakMap]';
-	      }
+	      // Please contact us if you need this to work on platforms where
+	      // Object.prototype might not be frozen and
+	      // Object.create(null) might not be reliable.
 
 	      try {
-	        var src = ('return ' + delete_).replace('e_', '\\u0065'),
-	            del = new Function('unwrap', 'validate', src)(unwrap, validate);
-	      } catch (e) {
-	        var del = delete_;
+	        defProp(key, HIDDEN_NAME, {
+	          value: hiddenRecord,
+	          writable: false,
+	          enumerable: false,
+	          configurable: false
+	        });
+	        return hiddenRecord;
+	      } catch (error) {
+	        // Under some circumstances, isExtensible seems to misreport whether
+	        // the HIDDEN_NAME can be defined.
+	        // The circumstances have not been isolated, but at least affect
+	        // Node.js v0.10.26 on TravisCI / Linux, but not the same version of
+	        // Node.js on OS X.
+	        return void 0;
+	      }
+	    }
+
+	    /**
+	     * Monkey patch operations that would make their argument
+	     * non-extensible.
+	     *
+	     * <p>The monkey patched versions throw a TypeError if their
+	     * argument is not an object, so it should only be done to functions
+	     * that should throw a TypeError anyway if their argument is not an
+	     * object.
+	     */
+	    (function () {
+	      var oldFreeze = Object.freeze;
+	      defProp(Object, 'freeze', {
+	        value: function identifyingFreeze(obj) {
+	          getHiddenRecord(obj);
+	          return oldFreeze(obj);
+	        }
+	      });
+	      var oldSeal = Object.seal;
+	      defProp(Object, 'seal', {
+	        value: function identifyingSeal(obj) {
+	          getHiddenRecord(obj);
+	          return oldSeal(obj);
+	        }
+	      });
+	      var oldPreventExtensions = Object.preventExtensions;
+	      defProp(Object, 'preventExtensions', {
+	        value: function identifyingPreventExtensions(obj) {
+	          getHiddenRecord(obj);
+	          return oldPreventExtensions(obj);
+	        }
+	      });
+	    })();
+
+	    function constFunc(func) {
+	      func.prototype = null;
+	      return Object.freeze(func);
+	    }
+
+	    var calledAsFunctionWarningDone = false;
+	    function calledAsFunctionWarning() {
+	      // Future ES6 WeakMap is currently (2013-09-10) expected to reject WeakMap()
+	      // but we used to permit it and do it ourselves, so warn only.
+	      if (!calledAsFunctionWarningDone && typeof console !== 'undefined') {
+	        calledAsFunctionWarningDone = true;
+	        console.warn('WeakMap should be invoked as new WeakMap(), not ' + 'WeakMap(). This will be an error in the future.');
+	      }
+	    }
+
+	    var nextId = 0;
+
+	    var OurWeakMap = function OurWeakMap() {
+	      if (!(this instanceof OurWeakMap)) {
+	        // approximate test for new ...()
+	        calledAsFunctionWarning();
 	      }
 
-	      var src = ('' + Object).split('Object');
-	      var stringifier = function toString() {
-	        return src[0] + nameOf(this) + src[1];
-	      };
+	      // We are currently (12/25/2012) never encountering any prematurely
+	      // non-extensible keys.
+	      var keys = []; // brute force for prematurely non-extensible keys.
+	      var values = []; // brute force for corresponding values.
+	      var id = nextId++;
 
-	      define(stringifier, stringifier);
-
-	      var prep = { __proto__: [] } instanceof Array ? function (f) {
-	        f.__proto__ = stringifier;
-	      } : function (f) {
-	        define(f, stringifier);
-	      };
-
-	      prep(WeakMap);
-
-	      [toString, get, set, has, del].forEach(function (method) {
-	        define(WeakMap.prototype, method);
-	        prep(method);
-	      });
-
-	      return WeakMap;
-	    }(new Data());
-
-	    var defaultCreator = Object.create ? function () {
-	      return Object.create(null);
-	    } : function () {
-	      return {};
-	    };
-
-	    function createStorage(creator) {
-	      var weakmap = new WM();
-	      creator || (creator = defaultCreator);
-
-	      function storage(object, value) {
-	        if (value || arguments.length === 2) {
-	          weakmap.set(object, value);
+	      function get___(key, opt_default) {
+	        var index;
+	        var hiddenRecord = getHiddenRecord(key);
+	        if (hiddenRecord) {
+	          return id in hiddenRecord ? hiddenRecord[id] : opt_default;
 	        } else {
-	          value = weakmap.get(object);
-	          if (value === undefined) {
-	            value = creator(object);
-	            weakmap.set(object, value);
+	          index = keys.indexOf(key);
+	          return index >= 0 ? values[index] : opt_default;
+	        }
+	      }
+
+	      function has___(key) {
+	        var hiddenRecord = getHiddenRecord(key);
+	        if (hiddenRecord) {
+	          return id in hiddenRecord;
+	        } else {
+	          return keys.indexOf(key) >= 0;
+	        }
+	      }
+
+	      function set___(key, value) {
+	        var index;
+	        var hiddenRecord = getHiddenRecord(key);
+	        if (hiddenRecord) {
+	          hiddenRecord[id] = value;
+	        } else {
+	          index = keys.indexOf(key);
+	          if (index >= 0) {
+	            values[index] = value;
+	          } else {
+	            // Since some browsers preemptively terminate slow turns but
+	            // then continue computing with presumably corrupted heap
+	            // state, we here defensively get keys.length first and then
+	            // use it to update both the values and keys arrays, keeping
+	            // them in sync.
+	            index = keys.length;
+	            values[index] = value;
+	            // If we crash here, values will be one longer than keys.
+	            keys[index] = key;
 	          }
 	        }
-	        return value;
+	        return this;
 	      }
 
-	      return storage;
-	    }
+	      function delete___(key) {
+	        var hiddenRecord = getHiddenRecord(key);
+	        var index, lastIndex;
+	        if (hiddenRecord) {
+	          return id in hiddenRecord && delete hiddenRecord[id];
+	        } else {
+	          index = keys.indexOf(key);
+	          if (index < 0) {
+	            return false;
+	          }
+	          // Since some browsers preemptively terminate slow turns but
+	          // then continue computing with potentially corrupted heap
+	          // state, we here defensively get keys.length first and then use
+	          // it to update both the keys and the values array, keeping
+	          // them in sync. We update the two with an order of assignments,
+	          // such that any prefix of these assignments will preserve the
+	          // key/value correspondence, either before or after the delete.
+	          // Note that this needs to work correctly when index === lastIndex.
+	          lastIndex = keys.length - 1;
+	          keys[index] = void 0;
+	          // If we crash here, there's a void 0 in the keys array, but
+	          // no operation will cause a "keys.indexOf(void 0)", since
+	          // getHiddenRecord(void 0) will always throw an error first.
+	          values[index] = values[lastIndex];
+	          // If we crash here, values[index] cannot be found here,
+	          // because keys[index] is void 0.
+	          keys[index] = keys[lastIndex];
+	          // If index === lastIndex and we crash here, then keys[index]
+	          // is still void 0, since the aliasing killed the previous key.
+	          keys.length = lastIndex;
+	          // If we crash here, keys will be one shorter than values.
+	          values.length = lastIndex;
+	          return true;
+	        }
+	      }
 
-	    if (typeof module !== 'undefined') {
-	      module.exports = WM;
-	    } else if (typeof exports !== 'undefined') {
-	      exports.WeakMap = WM;
-	    } else if (!('WeakMap' in global)) {
-	      global.WeakMap = WM;
-	    }
+	      return Object.create(OurWeakMap.prototype, {
+	        get___: { value: constFunc(get___) },
+	        has___: { value: constFunc(has___) },
+	        set___: { value: constFunc(set___) },
+	        delete___: { value: constFunc(delete___) }
+	      });
+	    };
 
-	    WM.createStorage = createStorage;
-	    if (global.WeakMap) global.WeakMap.createStorage = createStorage;
-	  }((0, eval)('this'));
+	    OurWeakMap.prototype = Object.create(Object.prototype, {
+	      get: {
+	        /**
+	         * Return the value most recently associated with key, or
+	         * opt_default if none.
+	         */
+	        value: function get(key, opt_default) {
+	          return this.get___(key, opt_default);
+	        },
+	        writable: true,
+	        configurable: true
+	      },
+
+	      has: {
+	        /**
+	         * Is there a value associated with key in this WeakMap?
+	         */
+	        value: function has(key) {
+	          return this.has___(key);
+	        },
+	        writable: true,
+	        configurable: true
+	      },
+
+	      set: {
+	        /**
+	         * Associate value with key in this WeakMap, overwriting any
+	         * previous association if present.
+	         */
+	        value: function set(key, value) {
+	          return this.set___(key, value);
+	        },
+	        writable: true,
+	        configurable: true
+	      },
+
+	      'delete': {
+	        /**
+	         * Remove any association for key in this WeakMap, returning
+	         * whether there was one.
+	         *
+	         * <p>Note that the boolean return here does not work like the
+	         * {@code delete} operator. The {@code delete} operator returns
+	         * whether the deletion succeeds at bringing about a state in
+	         * which the deleted property is absent. The {@code delete}
+	         * operator therefore returns true if the property was already
+	         * absent, whereas this {@code delete} method returns false if
+	         * the association was already absent.
+	         */
+	        value: function remove(key) {
+	          return this.delete___(key);
+	        },
+	        writable: true,
+	        configurable: true
+	      }
+	    });
+
+	    if (typeof HostWeakMap === 'function') {
+	      (function () {
+	        // If we got here, then the platform has a WeakMap but we are concerned
+	        // that it may refuse to store some key types. Therefore, make a map
+	        // implementation which makes use of both as possible.
+
+	        // In this mode we are always using double maps, so we are not proxy-safe.
+	        // This combination does not occur in any known browser, but we had best
+	        // be safe.
+	        if (doubleWeakMapCheckSilentFailure && typeof Proxy !== 'undefined') {
+	          Proxy = undefined;
+	        }
+
+	        function DoubleWeakMap() {
+	          if (!(this instanceof OurWeakMap)) {
+	            // approximate test for new ...()
+	            calledAsFunctionWarning();
+	          }
+
+	          // Preferable, truly weak map.
+	          var hmap = new HostWeakMap();
+
+	          // Our hidden-property-based pseudo-weak-map. Lazily initialized in the
+	          // 'set' implementation; thus we can avoid performing extra lookups if
+	          // we know all entries actually stored are entered in 'hmap'.
+	          var omap = undefined;
+
+	          // Hidden-property maps are not compatible with proxies because proxies
+	          // can observe the hidden name and either accidentally expose it or fail
+	          // to allow the hidden property to be set. Therefore, we do not allow
+	          // arbitrary WeakMaps to switch to using hidden properties, but only
+	          // those which need the ability, and unprivileged code is not allowed
+	          // to set the flag.
+	          //
+	          // (Except in doubleWeakMapCheckSilentFailure mode in which case we
+	          // disable proxies.)
+	          var enableSwitching = false;
+
+	          function dget(key, opt_default) {
+	            if (omap) {
+	              return hmap.has(key) ? hmap.get(key) : omap.get___(key, opt_default);
+	            } else {
+	              return hmap.get(key, opt_default);
+	            }
+	          }
+
+	          function dhas(key) {
+	            return hmap.has(key) || (omap ? omap.has___(key) : false);
+	          }
+
+	          var dset;
+	          if (doubleWeakMapCheckSilentFailure) {
+	            dset = function dset(key, value) {
+	              hmap.set(key, value);
+	              if (!hmap.has(key)) {
+	                if (!omap) {
+	                  omap = new OurWeakMap();
+	                }
+	                omap.set(key, value);
+	              }
+	              return this;
+	            };
+	          } else {
+	            dset = function dset(key, value) {
+	              if (enableSwitching) {
+	                try {
+	                  hmap.set(key, value);
+	                } catch (e) {
+	                  if (!omap) {
+	                    omap = new OurWeakMap();
+	                  }
+	                  omap.set___(key, value);
+	                }
+	              } else {
+	                hmap.set(key, value);
+	              }
+	              return this;
+	            };
+	          }
+
+	          function ddelete(key) {
+	            var result = !!hmap['delete'](key);
+	            if (omap) {
+	              return omap.delete___(key) || result;
+	            }
+	            return result;
+	          }
+
+	          return Object.create(OurWeakMap.prototype, {
+	            get___: { value: constFunc(dget) },
+	            has___: { value: constFunc(dhas) },
+	            set___: { value: constFunc(dset) },
+	            delete___: { value: constFunc(ddelete) },
+	            permitHostObjects___: { value: constFunc(function (token) {
+	                if (token === weakMapPermitHostObjects) {
+	                  enableSwitching = true;
+	                } else {
+	                  throw new Error('bogus call to permitHostObjects___');
+	                }
+	              }) }
+	          });
+	        }
+	        DoubleWeakMap.prototype = OurWeakMap.prototype;
+	        module.exports = DoubleWeakMap;
+
+	        // define .constructor to hide OurWeakMap ctor
+	        Object.defineProperty(WeakMap.prototype, 'constructor', {
+	          value: WeakMap,
+	          enumerable: false, // as default .constructor is
+	          configurable: true,
+	          writable: true
+	        });
+	      })();
+	    } else {
+	      // There is no host WeakMap, so we must use the emulation.
+
+	      // Emulated WeakMaps are incompatible with native proxies (because proxies
+	      // can observe the hidden name), so we must disable Proxy usage (in
+	      // ArrayLike and Domado, currently).
+	      if (typeof Proxy !== 'undefined') {
+	        Proxy = undefined;
+	      }
+
+	      module.exports = OurWeakMap;
+	    }
+	  })();
 	});
 
-	var WeakMap = interopDefault(weakmap);
+	var WeakMap$1 = interopDefault(weakMap);
+
+	var _window$2 = window;
+	var DocumentFragment$1 = _window$2.DocumentFragment;
+
 
 	function eachChildNode(node, func) {
 	  if (!node) {
@@ -819,7 +921,7 @@ var require$$0 = Object.freeze({
 	 *        func may optionally append the node elsewhere, in the case of a document fragment
 	 */
 	function eachNodeOrFragmentNodes(node, func) {
-	  if (node instanceof DocumentFragment) {
+	  if (node instanceof DocumentFragment$1) {
 	    var chs = node.childNodes;
 	    var chsLen = chs.length;
 
@@ -833,6 +935,9 @@ var require$$0 = Object.freeze({
 	  }
 	}
 
+	var _window$4 = window;
+	var Node$1 = _window$4.Node;
+
 	var div$1 = document.createElement('div');
 
 	function getPrototype(obj, key) {
@@ -845,7 +950,7 @@ var require$$0 = Object.freeze({
 	  return descriptor;
 	}
 	function getPropertyDescriptor (obj, key) {
-	  if (obj instanceof Node) {
+	  if (obj instanceof Node$1) {
 	    obj = div$1;
 	  }
 	  var proto = getPrototype(obj, key);
@@ -874,7 +979,10 @@ var require$$0 = Object.freeze({
 	  }
 	}
 
-	var nativeParentNode = getPropertyDescriptor(Element.prototype, 'innerHTML');
+	var _window$3 = window;
+	var Element$1 = _window$3.Element;
+
+	var nativeParentNode = getPropertyDescriptor(Element$1.prototype, 'innerHTML');
 
 	var canPatchNativeAccessors = !!nativeParentNode;
 
@@ -907,16 +1015,16 @@ var require$$0 = Object.freeze({
 	  return node.tagName === 'SLOT';
 	}
 
+	var _window$5 = window;
+	var Node$2 = _window$5.Node;
+
+
 	function findSlots(root) {
 	  var slots = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 	  var childNodes = root.childNodes;
 
 
-	  if (shadowDomV0 && !shadowDomV1) {
-	    return [].concat(babelHelpers.toConsumableArray(root.querySelectorAll('content')));
-	  }
-
-	  if (!childNodes || [Node.ELEMENT_NODE, Node.DOCUMENT_FRAGMENT_NODE].indexOf(root.nodeType) === -1) {
+	  if (!childNodes || [Node$2.ELEMENT_NODE, Node$2.DOCUMENT_FRAGMENT_NODE].indexOf(root.nodeType) === -1) {
 	    return slots;
 	  }
 
@@ -935,6 +1043,10 @@ var require$$0 = Object.freeze({
 	  return slots;
 	}
 
+	function isFragmentNode (node) {
+	  return node instanceof DocumentFragment;
+	}
+
 	function isRootNode (node) {
 	  return node.tagName === '_SHADOW_ROOT_';
 	}
@@ -942,6 +1054,15 @@ var require$$0 = Object.freeze({
 	var pseudoArrayToArray = (function (pseudoArray) {
 	  return Array.prototype.slice.call(pseudoArray);
 	});
+
+	var _window$1 = window;
+	var Comment = _window$1.Comment;
+	var CustomEvent$2 = _window$1.CustomEvent;
+	var DOMParser = _window$1.DOMParser;
+	var HTMLElement$1 = _window$1.HTMLElement;
+	var Node = _window$1.Node;
+	var SVGElement = _window$1.SVGElement;
+	var Text = _window$1.Text;
 
 	var arrProto = Array.prototype;
 	var forEach = arrProto.forEach;
@@ -968,6 +1089,9 @@ var require$$0 = Object.freeze({
 	// Some properties that should not be overridden in the Comment prototype.
 	var doNotOverridePropertiesInCommNodes = ['textContent'];
 
+	// Some properties that should be overridden in the DocumentFragment prototype.
+	var overridePropertiesInFragNodes = ['appendChild', 'insertBefore', 'removeChild'];
+
 	// Some new properties that should be defined in the Comment prototype.
 	var defineInCommNodes = [];
 
@@ -975,15 +1099,15 @@ var require$$0 = Object.freeze({
 	var slottedNodeTypes = [Node.ELEMENT_NODE, Node.TEXT_NODE];
 
 	// Private data stores.
-	var assignedToSlotMap = new WeakMap();
-	var hostToModeMap = new WeakMap();
-	var hostToRootMap = new WeakMap();
-	var nodeToChildNodesMap = new WeakMap();
-	var nodeToParentNodeMap = new WeakMap();
-	var nodeToSlotMap = new WeakMap();
-	var rootToHostMap = new WeakMap();
-	var rootToSlotMap = new WeakMap();
-	var slotToRootMap = new WeakMap();
+	var assignedToSlotMap = new WeakMap$1();
+	var hostToModeMap = new WeakMap$1();
+	var hostToRootMap = new WeakMap$1();
+	var nodeToChildNodesMap = new WeakMap$1();
+	var nodeToParentNodeMap = new WeakMap$1();
+	var nodeToSlotMap = new WeakMap$1();
+	var rootToHostMap = new WeakMap$1();
+	var rootToSlotMap = new WeakMap$1();
+	var slotToRootMap = new WeakMap$1();
 
 	// Unfortunately manual DOM parsing is because of WebKit.
 	var parser = new DOMParser();
@@ -1043,6 +1167,10 @@ var require$$0 = Object.freeze({
 
 	  if (isRootNode(node)) {
 	    return 'root';
+	  }
+
+	  if (isFragmentNode(node)) {
+	    return 'fragment';
 	  }
 
 	  return 'node';
@@ -1152,10 +1280,13 @@ var require$$0 = Object.freeze({
 	      staticProp(eachNode, 'parentNode', host);
 	    }
 
-	    if (index > -1) {
-	      arrProto.splice.call(host.childNodes, index + eachIndex, 0, eachNode);
-	    } else {
-	      arrProto.push.call(host.childNodes, eachNode);
+	    // When childNodes is artificial, do manual house keeping.
+	    if (Array.isArray(host.childNodes)) {
+	      if (index > -1) {
+	        arrProto.splice.call(host.childNodes, index + eachIndex, 0, eachNode);
+	      } else {
+	        arrProto.push.call(host.childNodes, eachNode);
+	      }
 	    }
 	  });
 	}
@@ -1311,7 +1442,8 @@ var require$$0 = Object.freeze({
 	  var rootNode = getRootNode(host);
 
 	  // Ensure childNodes is patched so we can manually update it for WebKit.
-	  if (!canPatchNativeAccessors && !Array.isArray(host.childNodes)) {
+	  // Fragment has minimal patching and expects .childNodes to remain native.
+	  if (!canPatchNativeAccessors && !Array.isArray(host.childNodes) && nodeType !== 'fragment') {
 	    staticProp(host, 'childNodes', pseudoArrayToArray(host.childNodes));
 	  }
 
@@ -1337,25 +1469,16 @@ var require$$0 = Object.freeze({
 	    parentNode.removeChild(newNode);
 	  }
 
-	  if (nodeType === 'node') {
-	    if (canPatchNativeAccessors) {
-	      nodeToParentNodeMap.set(newNode, host);
-	      return host.__insertBefore(newNode, refNode !== undefined ? refNode : null);
-	    }
-
-	    return addNodeToNode(host, newNode, refNode);
-	  }
-
-	  if (nodeType === 'slot') {
-	    return addNodeToSlot(host, newNode, refNode);
-	  }
-
-	  if (nodeType === 'host') {
-	    return addNodeToHost(host, newNode, refNode);
-	  }
-
-	  if (nodeType === 'root') {
-	    return addNodeToRoot(host, newNode, refNode);
+	  switch (nodeType) {
+	    case 'fragment':
+	    case 'node':
+	      return addNodeToNode(host, newNode, refNode);
+	    case 'slot':
+	      return addNodeToSlot(host, newNode, refNode);
+	    case 'host':
+	      return addNodeToHost(host, newNode, refNode);
+	    case 'root':
+	      return addNodeToRoot(host, newNode, refNode);
 	  }
 	}
 
@@ -1400,7 +1523,7 @@ var require$$0 = Object.freeze({
 	  ____triggerSlotChangeEvent: {
 	    value: debounce(function callback() {
 	      if (this.____slotChangeListeners) {
-	        this.dispatchEvent(new CustomEvent('slotchange', {
+	        this.dispatchEvent(new CustomEvent$2('slotchange', {
 	          bubbles: false,
 	          cancelable: false
 	        }));
@@ -1625,7 +1748,6 @@ var require$$0 = Object.freeze({
 	  insertBefore: {
 	    value: function value(newNode, refNode) {
 	      appendChildOrInsertBefore(this, newNode, refNode);
-
 	      return newNode;
 	    }
 	  },
@@ -1748,6 +1870,7 @@ var require$$0 = Object.freeze({
 	      var nodeType = getNodeType(this);
 
 	      switch (nodeType) {
+	        case 'fragment':
 	        case 'node':
 	          if (canPatchNativeAccessors) {
 	            nodeToParentNodeMap.set(refNode, null);
@@ -1849,11 +1972,13 @@ var require$$0 = Object.freeze({
 
 	var v1 = (function () {
 	  var commProto = Comment.prototype;
-	  var elementProto = HTMLElement.prototype;
-	  var svgProto = SVGElement.prototype;
+	  var elementProto = HTMLElement$1.prototype;
+	  var fragmentProto = DocumentFragment.prototype;
+	  var svgProto = SVGElement && SVGElement.prototype;
 	  var textProto = Text.prototype;
 	  var textNode = document.createTextNode('');
 	  var commNode = document.createComment('');
+	  var fragment = document.createDocumentFragment();
 
 	  Object.keys(members).forEach(function (memberName) {
 	    var memberProperty = members[memberName];
@@ -1871,18 +1996,28 @@ var require$$0 = Object.freeze({
 	    // Polyfill as much as we can and work around WebKit in other areas.
 	    if (canPatchNativeAccessors || polyfillAtRuntime.indexOf(memberName) === -1) {
 	      var nativeDescriptor = getPropertyDescriptor(elementProto, memberName);
+	      var nativeFragDescriptor = getPropertyDescriptor(fragmentProto, memberName);
 	      var nativeTextDescriptor = getPropertyDescriptor(textProto, memberName);
 	      var nativeCommDescriptor = getPropertyDescriptor(commProto, memberName);
 	      var shouldOverrideInTextNode = memberName in textNode && doNotOverridePropertiesInTextNodes.indexOf(memberName) === -1 || ~defineInTextNodes.indexOf(memberName);
 	      var shouldOverrideInCommentNode = memberName in commNode && doNotOverridePropertiesInCommNodes.indexOf(memberName) === -1 || ~defineInCommNodes.indexOf(memberName);
+	      var shouldOverrideInFragment = memberName in fragment && ~overridePropertiesInFragNodes.indexOf(memberName);
 	      var nativeMemberName = '__' + memberName;
 
 	      Object.defineProperty(elementProto, memberName, memberProperty);
-	      Object.defineProperty(svgProto, memberName, memberProperty);
+	      svgProto && Object.defineProperty(svgProto, memberName, memberProperty);
 
 	      if (nativeDescriptor) {
 	        Object.defineProperty(elementProto, nativeMemberName, nativeDescriptor);
-	        Object.defineProperty(svgProto, nativeMemberName, nativeDescriptor);
+	        svgProto && Object.defineProperty(svgProto, nativeMemberName, nativeDescriptor);
+	      }
+
+	      if (shouldOverrideInFragment) {
+	        Object.defineProperty(fragmentProto, memberName, memberProperty);
+	      }
+
+	      if (shouldOverrideInFragment && nativeFragDescriptor) {
+	        Object.defineProperty(fragmentProto, nativeMemberName, nativeFragDescriptor);
 	      }
 
 	      if (shouldOverrideInTextNode) {
@@ -1906,8 +2041,6 @@ var require$$0 = Object.freeze({
 
 	if (shadowDomV1) {
 	  // then we should probably not be loading this
-	} else if (shadowDomV0) {
-	  v0();
 	} else {
 	  v1();
 	}
@@ -2930,13 +3063,213 @@ var require$$0 = Object.freeze({
 
 	var $connected = '____skate_connected';
 	var $created = '____skate_created';
+
+	// DEPRECATED
+	//
+	// This is the only "symbol" that must stay a string. This is because it is
+	// relied upon across several versions. We should remove it, but ensure that
+	// it's considered a breaking change that whatever version removes it cannot
+	// be passed to vdom functions as tag names.
 	var $name = '____skate_name';
+
 	var $props = '____skate_props';
 	var $ref = '____skate_ref';
 	var $renderer = '____skate_renderer';
 	var $rendering = '____skate_rendering';
 	var $rendererDebounced = '____skate_rendererDebounced';
 	var $updated = '____skate_updated';
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+	  return typeof obj;
+	} : function (obj) {
+	  return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+	};
+
+	var asyncGenerator = function () {
+	  function AwaitValue(value) {
+	    this.value = value;
+	  }
+
+	  function AsyncGenerator(gen) {
+	    var front, back;
+
+	    function send(key, arg) {
+	      return new Promise(function (resolve, reject) {
+	        var request = {
+	          key: key,
+	          arg: arg,
+	          resolve: resolve,
+	          reject: reject,
+	          next: null
+	        };
+
+	        if (back) {
+	          back = back.next = request;
+	        } else {
+	          front = back = request;
+	          resume(key, arg);
+	        }
+	      });
+	    }
+
+	    function resume(key, arg) {
+	      try {
+	        var result = gen[key](arg);
+	        var value = result.value;
+
+	        if (value instanceof AwaitValue) {
+	          Promise.resolve(value.value).then(function (arg) {
+	            resume("next", arg);
+	          }, function (arg) {
+	            resume("throw", arg);
+	          });
+	        } else {
+	          settle(result.done ? "return" : "normal", result.value);
+	        }
+	      } catch (err) {
+	        settle("throw", err);
+	      }
+	    }
+
+	    function settle(type, value) {
+	      switch (type) {
+	        case "return":
+	          front.resolve({
+	            value: value,
+	            done: true
+	          });
+	          break;
+
+	        case "throw":
+	          front.reject(value);
+	          break;
+
+	        default:
+	          front.resolve({
+	            value: value,
+	            done: false
+	          });
+	          break;
+	      }
+
+	      front = front.next;
+
+	      if (front) {
+	        resume(front.key, front.arg);
+	      } else {
+	        back = null;
+	      }
+	    }
+
+	    this._invoke = send;
+
+	    if (typeof gen.return !== "function") {
+	      this.return = undefined;
+	    }
+	  }
+
+	  if (typeof Symbol === "function" && Symbol.asyncIterator) {
+	    AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
+	      return this;
+	    };
+	  }
+
+	  AsyncGenerator.prototype.next = function (arg) {
+	    return this._invoke("next", arg);
+	  };
+
+	  AsyncGenerator.prototype.throw = function (arg) {
+	    return this._invoke("throw", arg);
+	  };
+
+	  AsyncGenerator.prototype.return = function (arg) {
+	    return this._invoke("return", arg);
+	  };
+
+	  return {
+	    wrap: function (fn) {
+	      return function () {
+	        return new AsyncGenerator(fn.apply(this, arguments));
+	      };
+	    },
+	    await: function (value) {
+	      return new AwaitValue(value);
+	    }
+	  };
+	}();
+
+	var classCallCheck = function (instance, Constructor) {
+	  if (!(instance instanceof Constructor)) {
+	    throw new TypeError("Cannot call a class as a function");
+	  }
+	};
+
+	var createClass = function () {
+	  function defineProperties(target, props) {
+	    for (var i = 0; i < props.length; i++) {
+	      var descriptor = props[i];
+	      descriptor.enumerable = descriptor.enumerable || false;
+	      descriptor.configurable = true;
+	      if ("value" in descriptor) descriptor.writable = true;
+	      Object.defineProperty(target, descriptor.key, descriptor);
+	    }
+	  }
+
+	  return function (Constructor, protoProps, staticProps) {
+	    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+	    if (staticProps) defineProperties(Constructor, staticProps);
+	    return Constructor;
+	  };
+	}();
+
+	var defineProperty = function (obj, key, value) {
+	  if (key in obj) {
+	    Object.defineProperty(obj, key, {
+	      value: value,
+	      enumerable: true,
+	      configurable: true,
+	      writable: true
+	    });
+	  } else {
+	    obj[key] = value;
+	  }
+
+	  return obj;
+	};
+
+	var inherits = function (subClass, superClass) {
+	  if (typeof superClass !== "function" && superClass !== null) {
+	    throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+	  }
+
+	  subClass.prototype = Object.create(superClass && superClass.prototype, {
+	    constructor: {
+	      value: subClass,
+	      enumerable: false,
+	      writable: true,
+	      configurable: true
+	    }
+	  });
+	  if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+	};
+
+	var possibleConstructorReturn = function (self, call) {
+	  if (!self) {
+	    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+	  }
+
+	  return call && (typeof call === "object" || typeof call === "function") ? call : self;
+	};
+
+	var toConsumableArray = function (arr) {
+	  if (Array.isArray(arr)) {
+	    for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+	    return arr2;
+	  } else {
+	    return Array.from(arr);
+	  }
+	};
 
 	var incrementalDomCjs = createCommonjsModule(function (module, exports) {
 	  /**
@@ -3199,7 +3532,7 @@ var require$$0 = Object.freeze({
 	   *     attribute.
 	   */
 	  var applyAttributeTyped = function applyAttributeTyped(el, name, value) {
-	    var type = typeof value === 'undefined' ? 'undefined' : babelHelpers.typeof(value);
+	    var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
 
 	    if (type === 'object' || type === 'function') {
 	      applyProp(el, name, value);
@@ -4046,8 +4379,16 @@ var require$$0 = Object.freeze({
 	  };
 	}
 
-	var _window$1 = window;
-	var customElements = _window$1.customElements;
+	var index$3 = createCommonjsModule(function (module) {
+	  'use strict';
+
+	  module.exports = (typeof self === 'undefined' ? 'undefined' : _typeof(self)) === 'object' && self.self === self && self || _typeof(commonjsGlobal) === 'object' && commonjsGlobal.global === commonjsGlobal && commonjsGlobal || commonjsGlobal;
+	});
+
+	var root = interopDefault(index$3);
+
+	var customElements = root.customElements;
+	var HTMLElement$2 = root.HTMLElement;
 
 	var applyDefault = attributes[symbols.default];
 
@@ -4079,20 +4420,25 @@ var require$$0 = Object.freeze({
 	    events = elem[$currentEventHandlers] = {};
 	  }
 
-	  var oldFunc = events[ename];
-
-	  // Remove old listener so they don't double up.
-	  if (oldFunc) {
-	    elem.removeEventListener(ename, oldFunc);
+	  // Undefined indicates that there is no listener yet.
+	  if (typeof events[ename] === 'undefined') {
+	    // We only add a single listener once. Originally this was a workaround for
+	    // the Webcomponents ShadyDOM polyfill not removing listeners, but it's
+	    // also a simpler model for binding / unbinding events because you only
+	    // have a single handler you need to worry about and a single place where
+	    // you only store one event handler
+	    elem.addEventListener(ename, function (e) {
+	      if (events[ename]) {
+	        events[ename].call(this, e);
+	      }
+	    });
 	  }
 
-	  // Bind new listener.
-	  if (newFunc) {
-	    elem.addEventListener(ename, events[ename] = newFunc);
-	  }
+	  // Not undefined indicates that we have set a listener, so default to null.
+	  events[ename] = typeof newFunc === 'function' ? newFunc : null;
 	}
 
-	var attributesContext = propContext(attributes, babelHelpers.defineProperty({
+	var attributesContext = propContext(attributes, defineProperty({
 	  // Attributes that shouldn't be applied to the DOM.
 	  key: noop,
 	  statics: noop,
@@ -4118,7 +4464,7 @@ var require$$0 = Object.freeze({
 	    }
 	  }
 	}, symbols.default, function (elem, name, value) {
-	  var _ref = customElements.get(elem.tagName) || {
+	  var _ref = customElements.get(elem.localName) || {
 	    props: {},
 	    prototype: {}
 	  };
@@ -4171,18 +4517,27 @@ var require$$0 = Object.freeze({
 	  applyDefault(elem, name, value);
 	}));
 
-	function resolveTagName(tname) {
-	  // If the tag name is a function, a Skate constructor or a standard function
-	  // is supported.
-	  //
-	  // - If a Skate constructor, the tag name is extracted from that.
-	  // - If a standard function, it is used as a helper.
-	  if (typeof tname === 'function') {
-	    return tname[$name] || tname;
+	function resolveTagName(name) {
+	  // We return falsy values as some wrapped IDOM functions allow empty values.
+	  if (!name) {
+	    return name;
 	  }
 
-	  // All other tag names are just passed through.
-	  return tname;
+	  // We try and return the cached tag name, if one exists.
+	  if (name[$name]) {
+	    return name[$name];
+	  }
+
+	  // If it's a custom element, we get the tag name by constructing it and
+	  // caching it.
+	  if (name.prototype instanceof HTMLElement$2) {
+	    // eslint-disable-next-line
+	    var elem = new name();
+	    return name[$name] = elem.localName;
+	  }
+
+	  // Pass all other values through so IDOM gets what it's expecting.
+	  return name;
 	}
 
 	// Incremental DOM's elementOpen is where the hooks in `attributes` are applied,
@@ -4197,7 +4552,7 @@ var require$$0 = Object.freeze({
 	}
 
 	function elementOpenEnd() {
-	  var node = newElementOpen.apply(undefined, babelHelpers.toConsumableArray(overrideArgs)); // eslint-disable-line no-use-before-define
+	  var node = newElementOpen.apply(undefined, toConsumableArray(overrideArgs)); // eslint-disable-line no-use-before-define
 	  overrideArgs = null;
 	  return node;
 	}
@@ -4306,7 +4661,7 @@ var require$$0 = Object.freeze({
 	  delete tname[$stackCurrentHelperProps];
 	  var elemOrFn = tname(props, function () {
 	    return chren.forEach(function (args) {
-	      return args[0].apply(args, babelHelpers.toConsumableArray(args[1]));
+	      return args[0].apply(args, toConsumableArray(args[1]));
 	    });
 	  });
 	  return typeof elemOrFn === 'function' ? elemOrFn() : elemOrFn;
@@ -4333,7 +4688,7 @@ var require$$0 = Object.freeze({
 	// Convenience function for declaring an Incremental DOM element using
 	// hyperscript-style syntax.
 	function element(tname, attrs) {
-	  var atype = typeof attrs === 'undefined' ? 'undefined' : babelHelpers.typeof(attrs);
+	  var atype = typeof attrs === 'undefined' ? 'undefined' : _typeof(attrs);
 
 	  // If attributes are a function, then they should be treated as children.
 
@@ -4367,7 +4722,7 @@ var require$$0 = Object.freeze({
 	  newElementOpenEnd(tname);
 
 	  chren.forEach(function (ch) {
-	    var ctype = typeof ch === 'undefined' ? 'undefined' : babelHelpers.typeof(ch);
+	    var ctype = typeof ch === 'undefined' ? 'undefined' : _typeof(ch);
 	    if (ctype === 'function') {
 	      ch();
 	    } else if (ctype === 'string' || ctype === 'number') {
@@ -4409,11 +4764,22 @@ var require$$0 = Object.freeze({
 	  });
 	}
 
+	function createSymbol(description) {
+	  return typeof Symbol === 'function' ? Symbol(description) : description;
+	}
+
 	function data (element) {
 	  var namespace = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
 
 	  var data = element.__SKATE_DATA || (element.__SKATE_DATA = {});
 	  return namespace && (data[namespace] || (data[namespace] = {})) || data; // eslint-disable-line no-mixed-operators
+	}
+
+	function dashCase (str) {
+	  return str.split(/([A-Z])/).reduce(function (one, two, idx) {
+	    var dash = !one || idx % 2 === 0 ? '' : '-';
+	    return '' + one + dash + two.toLowerCase();
+	  });
 	}
 
 	var nativeHints = ['native code', '[object MutationObserverConstructor]' // for mobile safari iOS 9.0
@@ -4426,8 +4792,7 @@ var require$$0 = Object.freeze({
 	  });
 	});
 
-	var _window$3 = window;
-	var MutationObserver$2 = _window$3.MutationObserver;
+	var MutationObserver$1 = root.MutationObserver;
 
 
 	function microtaskDebounce(cbFunc) {
@@ -4435,8 +4800,8 @@ var require$$0 = Object.freeze({
 	  var i = 0;
 	  var cbArgs = [];
 	  var elem = document.createElement('span');
-	  var observer = new MutationObserver$2(function () {
-	    cbFunc.apply(undefined, babelHelpers.toConsumableArray(cbArgs));
+	  var observer = new MutationObserver$1(function () {
+	    cbFunc.apply(undefined, toConsumableArray(cbArgs));
 	    scheduled = false;
 	    cbArgs = null;
 	  });
@@ -4476,12 +4841,12 @@ var require$$0 = Object.freeze({
 	      scheduled = true;
 	      setTimeout(function () {
 	        scheduled = false;
-	        cbFunc.apply(undefined, babelHelpers.toConsumableArray(cbArgs));
+	        cbFunc.apply(undefined, toConsumableArray(cbArgs));
 	      }, 1);
 	    }
 	  };
 	}
-	var debounce$1 = native(MutationObserver$2) ? microtaskDebounce : taskDebounce;
+	var debounce$1 = native(MutationObserver$1) ? microtaskDebounce : taskDebounce;
 
 	function getOwnPropertyDescriptors () {
 	  var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -4492,7 +4857,7 @@ var require$$0 = Object.freeze({
 	  }, {});
 	}
 
-	function get(elem) {
+	function get$1(elem) {
 	  var props = {};
 	  keys(elem.constructor.props).forEach(function (key) {
 	    props[key] = elem[key];
@@ -4501,15 +4866,15 @@ var require$$0 = Object.freeze({
 	  return props;
 	}
 
-	function set(elem, newProps) {
+	function set$1(elem, newProps) {
 	  assign(elem, newProps);
-	  if (elem.constructor[$renderer]) {
-	    elem.constructor[$renderer](elem);
+	  if (elem[$renderer]) {
+	    elem[$renderer]();
 	  }
 	}
 
 	function props (elem, newProps) {
-	  return typeof newProps === 'undefined' ? get(elem) : set(elem, newProps);
+	  return typeof newProps === 'undefined' ? get$1(elem) : set$1(elem, newProps);
 	}
 
 	function getDefaultValue(elem, name, opts) {
@@ -4581,289 +4946,6 @@ var require$$0 = Object.freeze({
 	      syncExistingProp(elem, prop, propName, attributeName, propData);
 	    }
 	  }
-	}
-
-	var _window$2 = window;
-	var HTMLElement$2 = _window$2.HTMLElement;
-
-
-	function callConstructor(elem) {
-	  var elemData = data(elem);
-	  var readyCallbacks = elemData.readyCallbacks;
-	  var constructor = elem.constructor;
-
-	  // Ensures that this can never be called twice.
-
-	  if (elem[$created]) {
-	    return;
-	  }
-
-	  elem[$created] = true;
-
-	  // Set up a renderer that is debounced for property sets to call directly.
-	  elem[$rendererDebounced] = debounce$1(constructor[$renderer].bind(constructor));
-
-	  // Set up property lifecycle.
-	  if (constructor.props && constructor[$props]) {
-	    constructor[$props](elem);
-	  }
-
-	  // Props should be set up before calling this.
-	  if (typeof constructor.created === 'function') {
-	    constructor.created(elem);
-	  }
-
-	  // Created should be set before invoking the ready listeners.
-	  if (readyCallbacks) {
-	    readyCallbacks.forEach(function (cb) {
-	      return cb(elem);
-	    });
-	    delete elemData.readyCallbacks;
-	  }
-	}
-
-	function syncPropsToAttrs(elem) {
-	  var props = elem.constructor.props;
-	  Object.keys(props).forEach(function (propName) {
-	    var prop = props[propName];
-	    syncPropToAttr(elem, prop, propName, true);
-	  });
-	}
-
-	function callConnected(elem) {
-	  var constructor = elem.constructor;
-
-
-	  syncPropsToAttrs(elem);
-
-	  elem[$connected] = true;
-	  elem[$rendererDebounced](elem);
-
-	  if (typeof constructor.attached === 'function') {
-	    constructor.attached(elem);
-	  }
-
-	  elem.setAttribute('defined', '');
-	}
-
-	function callDisconnected(elem) {
-	  var constructor = elem.constructor;
-
-
-	  elem[$connected] = false;
-
-	  if (typeof constructor.detached === 'function') {
-	    constructor.detached(elem);
-	  }
-	}
-
-	// Custom Elements v1
-	function Component() {
-	  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-	    args[_key] = arguments[_key];
-	  }
-
-	  var elem = (typeof Reflect === 'undefined' ? 'undefined' : babelHelpers.typeof(Reflect)) === 'object' ? Reflect.construct(HTMLElement$2, args, this.constructor) : HTMLElement$2.call(this, args[0]);
-	  callConstructor(elem);
-	  return elem;
-	}
-
-	// Custom Elements v1
-	Component.observedAttributes = [];
-
-	// Skate
-	Component.props = {};
-
-	// Skate
-	Component.extend = function extend() {
-	  var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	  var Base = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this;
-
-	  // Create class for the user.
-	  var Ctor = function (_Base) {
-	    babelHelpers.inherits(Ctor, _Base);
-
-	    function Ctor() {
-	      babelHelpers.classCallCheck(this, Ctor);
-	      return babelHelpers.possibleConstructorReturn(this, (Ctor.__proto__ || Object.getPrototypeOf(Ctor)).apply(this, arguments));
-	    }
-
-	    return Ctor;
-	  }(Base);
-
-	  // Pass on statics from the Base if not supported (IE 9 and 10).
-
-
-	  if (!Ctor.observedAttributes) {
-	    var staticOpts = getOwnPropertyDescriptors(Base);
-	    delete staticOpts.length;
-	    delete staticOpts.prototype;
-	    Object.defineProperties(Ctor, staticOpts);
-	  }
-
-	  // For inheriting from the object literal.
-	  var opts = getOwnPropertyDescriptors(definition);
-	  var prot = getOwnPropertyDescriptors(definition.prototype);
-
-	  // Prototype is non configurable (but is writable).
-	  delete opts.prototype;
-
-	  // Pass on static and instance members from the definition.
-	  Object.defineProperties(Ctor, opts);
-	  Object.defineProperties(Ctor.prototype, prot);
-
-	  return Ctor;
-	};
-
-	// Skate
-	//
-	// Incremental DOM renderer.
-	Component.renderer = function renderer(_ref) {
-	  var elem = _ref.elem;
-	  var render = _ref.render;
-	  var shadowRoot = _ref.shadowRoot;
-
-	  patchInner(shadowRoot, function () {
-	    var possibleFn = render(elem);
-	    if (typeof possibleFn === 'function') {
-	      possibleFn();
-	    } else if (Array.isArray(possibleFn)) {
-	      possibleFn.forEach(function (fn) {
-	        if (typeof fn === 'function') {
-	          fn();
-	        }
-	      });
-	    }
-	  });
-	};
-
-	// Skate
-	//
-	// This is a default implementation that does strict equality copmarison on
-	// previous props and next props. It synchronously renders on the first prop
-	// that is different and returns immediately.
-	Component.updated = function updated(elem, prev) {
-	  if (!prev) {
-	    return true;
-	  }
-	  // use get all keys so that we check Symbols as well as regular props
-	  // using a for loop so we can break early
-	  var allKeys = keys(prev);
-	  for (var i = 0; i < allKeys.length; i += 1) {
-	    if (prev[allKeys[i]] !== elem[allKeys[i]]) {
-	      return true;
-	    }
-	  }
-	  return false;
-	};
-
-	// Skate
-	//
-	// Calls the user-defined updated() lifecycle callback.
-	Component[$updated] = function _updated(elem) {
-	  if (typeof this.updated === 'function') {
-	    var prev = elem[$props];
-	    elem[$props] = props(elem);
-	    return this.updated(elem, prev);
-	  }
-	  return true;
-	};
-
-	// Skate
-	//
-	// Goes through the user-defined render lifecycle.
-	Component[$renderer] = function _renderer(elem) {
-	  if (elem[$rendering] || !elem[$connected]) {
-	    return;
-	  }
-
-	  // Flag as rendering. This prevents anything from trying to render - or
-	  // queueing a render - while there is a pending render.
-	  elem[$rendering] = true;
-
-	  var shouldRender = this[$updated](elem);
-
-	  // Even though this would ideally be checked in the updated() callback,
-	  // it may not be, so we ensure that there is a point in proceeding.
-	  if (!this.render || !this.renderer) {
-	    elem[$rendering] = false;
-	    return;
-	  }
-
-	  if (shouldRender) {
-	    if (!elem.shadowRoot) {
-	      elem.attachShadow({ mode: 'open' });
-	    }
-
-	    this.renderer({
-	      elem: elem,
-	      render: this.render,
-	      shadowRoot: elem.shadowRoot
-	    });
-
-	    if (typeof this.rendered === 'function') {
-	      this.rendered(elem);
-	    }
-	  }
-
-	  elem[$rendering] = false;
-	};
-
-	Component.prototype = Object.create(HTMLElement$2.prototype, {
-	  // Custom Elements v1
-	  connectedCallback: {
-	    configurable: true,
-	    value: function value() {
-	      callConnected(this);
-	    }
-	  },
-
-	  // Custom Elements v1
-	  disconnectedCallback: {
-	    configurable: true,
-	    value: function value() {
-	      callDisconnected(this);
-	    }
-	  },
-
-	  // Custom Elements v1
-	  attributeChangedCallback: {
-	    configurable: true,
-	    value: function value(name, oldValue, newValue) {
-	      var attributeChanged = this.constructor.attributeChanged;
-
-	      var propertyName = data(this, 'attributeLinks')[name];
-
-	      if (propertyName) {
-	        var propData = data(this, 'props')[propertyName];
-
-	        // This ensures a property set doesn't cause the attribute changed
-	        // handler to run again once we set this flag. This only ever has a
-	        // chance to run when you set an attribute, it then sets a property and
-	        // then that causes the attribute to be set again.
-	        if (propData.syncingAttribute) {
-	          propData.syncingAttribute = false;
-	        } else {
-	          // Sync up the property.
-	          var propOpts = this.constructor.props[propertyName];
-	          propData.settingAttribute = true;
-	          var newPropVal = newValue !== null && propOpts.deserialize ? propOpts.deserialize(newValue) : newValue;
-	          this[propertyName] = newPropVal;
-	        }
-	      }
-
-	      if (attributeChanged) {
-	        attributeChanged(this, { name: name, newValue: newValue, oldValue: oldValue });
-	      }
-	    }
-	  }
-	});
-
-	function dashCase (str) {
-	  return str.split(/([A-Z])/).reduce(function (one, two, idx) {
-	    var dash = !one || idx % 2 === 0 ? '' : '-';
-	    return '' + one + dash + two.toLowerCase();
-	  });
 	}
 
 	function createNativePropertyDefinition(name, opts) {
@@ -4961,11 +5043,35 @@ var require$$0 = Object.freeze({
 	  };
 	}
 
+	var HTMLElement$3 = root.HTMLElement || function () {
+	  function _class() {
+	    classCallCheck(this, _class);
+	  }
+
+	  return _class;
+	}();
+	var _prevName = createSymbol('prevName');
+	var _prevOldValue = createSymbol('prevOldValue');
+	var _prevNewValue = createSymbol('prevNewValue');
+
+	function preventDoubleCalling(elem, name, oldValue, newValue) {
+	  return name === elem[_prevName] && oldValue === elem[_prevOldValue] && newValue === elem[_prevNewValue];
+	}
+
+	function syncPropsToAttrs(elem) {
+	  var props = elem.constructor.props;
+	  Object.keys(props).forEach(function (propName) {
+	    var prop = props[propName];
+	    syncPropToAttr(elem, prop, propName, true);
+	  });
+	}
+
+	// TODO remove when not catering to Safari < 10.
+	//
 	// Ensures that definitions passed as part of the constructor are functions
 	// that return property definitions used on the element.
 	function ensurePropertyFunctions(Ctor) {
 	  var props = Ctor.props;
-
 	  return keys(props).reduce(function (descriptors, descriptorName) {
 	    descriptors[descriptorName] = props[descriptorName];
 	    if (typeof descriptors[descriptorName] !== 'function') {
@@ -4975,8 +5081,9 @@ var require$$0 = Object.freeze({
 	  }, {});
 	}
 
-	// Ensures the property definitions are transformed to objects that can be used
-	// to create properties on the element.
+	// TODO remove when not catering to Safari < 10.
+	//
+	// This can probably be simplified into createInitProps().
 	function ensurePropertyDefinitions(Ctor) {
 	  var props = ensurePropertyFunctions(Ctor);
 	  return keys(props).reduce(function (descriptors, descriptorName) {
@@ -4985,42 +5092,9 @@ var require$$0 = Object.freeze({
 	  }, {});
 	}
 
-	// Ensures linked properties that have linked attributes are pre-formatted to
-	// the attribute name in which they are linked.
-	function formatLinkedAttributes(Ctor) {
-	  var observedAttributes = Ctor.observedAttributes;
-	  var props = Ctor.props;
-
-
-	  if (!props) {
-	    return;
-	  }
-
-	  keys(props).forEach(function (name) {
-	    var prop = props[name];
-	    var attr = prop.attribute;
-	    if (attr) {
-	      // Ensure the property is updated.
-	      var linkedAttr = prop.attribute = attr === true ? dashCase(name) : attr;
-
-	      // Automatically observe the attribute since they're linked from the
-	      // attributeChangedCallback.
-	      if (observedAttributes.indexOf(linkedAttr) === -1) {
-	        observedAttributes.push(linkedAttr);
-	      }
-	    }
-	  });
-
-	  // Merge observed attributes.
-	  Object.defineProperty(Ctor, 'observedAttributes', {
-	    configurable: true,
-	    enumerable: true,
-	    get: function get() {
-	      return observedAttributes;
-	    }
-	  });
-	}
-
+	// TODO refactor when not catering to Safari < 10.
+	//
+	// We should be able to simplify this where all we do is Object.defineProperty().
 	function createInitProps(Ctor) {
 	  var props = ensurePropertyDefinitions(Ctor);
 
@@ -5033,6 +5107,15 @@ var require$$0 = Object.freeze({
 	      var prop = props[name];
 	      prop.created(elem);
 
+	      // We check here before defining to see if the prop was specified prior
+	      // to upgrading.
+	      var hasPropBeforeUpgrading = name in elem;
+
+	      // This is saved prior to defining so that we can set it after it it was
+	      // defined prior to upgrading. We don't want to invoke the getter if we
+	      // don't need to, so we only get the value if we need to re-sync.
+	      var valueBeforeUpgrading = hasPropBeforeUpgrading && elem[name];
+
 	      // https://bugs.webkit.org/show_bug.cgi?id=49739
 	      //
 	      // When Webkit fixes that bug so that native property accessors can be
@@ -5040,43 +5123,436 @@ var require$$0 = Object.freeze({
 	      // from having to do if for every instance as all other browsers support
 	      // this.
 	      Object.defineProperty(elem, name, prop);
+
+	      // DEPRECATED
+	      //
+	      // We'll be removing get / set callbacks on properties. Use the
+	      // updatedCallback() instead.
+	      //
+	      // We re-set the prop if it was specified prior to upgrading because we
+	      // need to ensure set() is triggered both in polyfilled environments and
+	      // in native where the definition may be registerd after elements it
+	      // represents have already been created.
+	      if (hasPropBeforeUpgrading) {
+	        elem[name] = valueBeforeUpgrading;
+	      }
 	    });
 	  };
 	}
 
-	function generateUniqueName(name) {
+	var _class2 = function (_HTMLElement) {
+	  inherits(_class2, _HTMLElement);
+	  createClass(_class2, null, [{
+	    key: 'observedAttributes',
+	    get: function get() {
+	      var props = this.props;
+
+	      return Object.keys(props).map(function (key) {
+	        var attribute = props[key].attribute;
+
+	        return attribute === true ? dashCase(key) : attribute;
+	      }).filter(Boolean);
+	    },
+	    set: function set(value) {
+	      Object.defineProperty(this, 'observedAttributes', { configurable: true, value: value });
+	    }
+	  }, {
+	    key: 'props',
+	    get: function get() {
+	      return {};
+	    },
+	    set: function set(value) {
+	      Object.defineProperty(this, 'props', { configurable: true, value: value });
+	    }
+	  }]);
+
+	  function _class2() {
+	    classCallCheck(this, _class2);
+
+	    var _this = possibleConstructorReturn(this, (_class2.__proto__ || Object.getPrototypeOf(_class2)).call(this));
+
+	    var constructor = _this.constructor;
+
+	    // Used for the ready() function so it knows when it can call its callback.
+
+	    _this[$created] = true;
+
+	    // TODO refactor to not cater to Safari < 10. This means we can depend on
+	    // built-in property descriptors.
+	    if (!constructor[$props]) {
+	      constructor[$props] = createInitProps(constructor);
+	    }
+
+	    // Set up a renderer that is debounced for property sets to call directly.
+	    _this[$rendererDebounced] = debounce$1(_this[$renderer].bind(_this));
+
+	    // Set up property lifecycle.
+	    if (constructor.props && constructor[$props]) {
+	      constructor[$props](_this);
+	    }
+
+	    // DEPRECATED
+	    //
+	    // static render()
+	    if (!_this.renderCallback && constructor.render) {
+	      _this.renderCallback = constructor.render.bind(constructor, _this);
+	    }
+
+	    // DEPRECATED
+	    //
+	    // static created()
+	    //
+	    // Props should be set up before calling this.
+	    if (typeof constructor.created === 'function') {
+	      constructor.created(_this);
+	    }
+
+	    // DEPRECATED
+	    //
+	    // Feature has rarely been used.
+	    //
+	    // Created should be set before invoking the ready listeners.
+	    var elemData = data(_this);
+	    var readyCallbacks = elemData.readyCallbacks;
+	    if (readyCallbacks) {
+	      readyCallbacks.forEach(function (cb) {
+	        return cb(_this);
+	      });
+	      delete elemData.readyCallbacks;
+	    }
+	    return _this;
+	  }
+
+	  // Custom Elements v1
+
+
+	  createClass(_class2, [{
+	    key: 'connectedCallback',
+	    value: function connectedCallback() {
+	      var constructor = this.constructor;
+
+	      // DEPRECATED
+	      //
+	      // No more reflecting back to attributes in favour of one-way reflection.
+
+	      syncPropsToAttrs(this);
+
+	      // Used to check whether or not the component can render.
+	      this[$connected] = true;
+
+	      // Render!
+	      this[$rendererDebounced]();
+
+	      // DEPRECATED
+	      //
+	      // static attached()
+	      if (typeof constructor.attached === 'function') {
+	        constructor.attached(this);
+	      }
+
+	      // DEPRECATED
+	      //
+	      // We can remove this once all browsers support :defined.
+	      this.setAttribute('defined', '');
+	    }
+
+	    // Custom Elements v1
+
+	  }, {
+	    key: 'disconnectedCallback',
+	    value: function disconnectedCallback() {
+	      var constructor = this.constructor;
+
+	      // Ensures the component can't be rendered while disconnected.
+
+	      this[$connected] = false;
+
+	      // DEPRECATED
+	      //
+	      // static detached()
+	      if (typeof constructor.detached === 'function') {
+	        constructor.detached(this);
+	      }
+	    }
+
+	    // Custom Elements v1
+
+	  }, {
+	    key: 'attributeChangedCallback',
+	    value: function attributeChangedCallback(name, oldValue, newValue) {
+	      // Polyfill calls this twice.
+	      if (preventDoubleCalling(this, name, oldValue, newValue)) {
+	        return;
+	      }
+
+	      // Set data so we can prevent double calling if the polyfill.
+	      this[_prevName] = name;
+	      this[_prevOldValue] = oldValue;
+	      this[_prevNewValue] = newValue;
+
+	      var attributeChanged = this.constructor.attributeChanged;
+
+	      var propertyName = data(this, 'attributeLinks')[name];
+
+	      if (propertyName) {
+	        var propData = data(this, 'props')[propertyName];
+
+	        // This ensures a property set doesn't cause the attribute changed
+	        // handler to run again once we set this flag. This only ever has a
+	        // chance to run when you set an attribute, it then sets a property and
+	        // then that causes the attribute to be set again.
+	        if (propData.syncingAttribute) {
+	          propData.syncingAttribute = false;
+	        } else {
+	          // Sync up the property.
+	          var propOpts = this.constructor.props[propertyName];
+	          propData.settingAttribute = true;
+	          var newPropVal = newValue !== null && propOpts.deserialize ? propOpts.deserialize(newValue) : newValue;
+	          this[propertyName] = newPropVal;
+	        }
+	      }
+
+	      if (attributeChanged) {
+	        attributeChanged(this, { name: name, newValue: newValue, oldValue: oldValue });
+	      }
+	    }
+
+	    // Skate
+	    //
+	    // Maps to the static updated() callback. That logic should be moved here
+	    // when that is finally removed.
+
+	  }, {
+	    key: 'updatedCallback',
+	    value: function updatedCallback(prev) {
+	      return this.constructor.updated(this, prev);
+	    }
+
+	    // Skate
+	    //
+	    // Maps to the static rendered() callback. That logic should be moved here
+	    // when that is finally removed.
+
+	  }, {
+	    key: 'renderedCallback',
+	    value: function renderedCallback() {
+	      return this.constructor.rendered(this);
+	    }
+
+	    // Skate
+	    //
+	    // Maps to the static renderer() callback. That logic should be moved here
+	    // when that is finally removed.
+
+	  }, {
+	    key: 'rendererCallback',
+	    value: function rendererCallback() {
+	      return this.constructor.renderer(this);
+	    }
+
+	    // Skate
+	    //
+	    // Invokes the complete render lifecycle.
+
+	  }, {
+	    key: $renderer,
+	    value: function value() {
+	      if (this[$rendering] || !this[$connected]) {
+	        return;
+	      }
+
+	      // Flag as rendering. This prevents anything from trying to render - or
+	      // queueing a render - while there is a pending render.
+	      this[$rendering] = true;
+
+	      if (this[$updated]() && typeof this.renderCallback === 'function') {
+	        this.rendererCallback();
+	        this.renderedCallback();
+	      }
+
+	      this[$rendering] = false;
+	    }
+
+	    // Skate
+	    //
+	    // Calls the user-defined updated() lifecycle callback.
+
+	  }, {
+	    key: $updated,
+	    value: function value() {
+	      var prev = this[$props];
+	      this[$props] = props(this);
+	      return this.updatedCallback(prev);
+	    }
+
+	    // Skate
+
+	  }], [{
+	    key: 'extend',
+	    value: function extend() {
+	      var definition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	      var Base = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this;
+
+	      // Create class for the user.
+	      var Ctor = function (_Base) {
+	        inherits(Ctor, _Base);
+
+	        function Ctor() {
+	          classCallCheck(this, Ctor);
+	          return possibleConstructorReturn(this, (Ctor.__proto__ || Object.getPrototypeOf(Ctor)).apply(this, arguments));
+	        }
+
+	        return Ctor;
+	      }(Base);
+
+	      // Pass on statics from the Base if not supported (IE 9 and 10).
+
+
+	      if (!Ctor.observedAttributes) {
+	        var staticOpts = getOwnPropertyDescriptors(Base);
+	        delete staticOpts.length;
+	        delete staticOpts.prototype;
+	        Object.defineProperties(Ctor, staticOpts);
+	      }
+
+	      // For inheriting from the object literal.
+	      var opts = getOwnPropertyDescriptors(definition);
+	      var prot = getOwnPropertyDescriptors(definition.prototype);
+
+	      // Prototype is non configurable (but is writable).
+	      delete opts.prototype;
+
+	      // Pass on static and instance members from the definition.
+	      Object.defineProperties(Ctor, opts);
+	      Object.defineProperties(Ctor.prototype, prot);
+
+	      return Ctor;
+	    }
+
+	    // Skate
+	    //
+	    // DEPRECATED
+	    //
+	    // Move this to rendererCallback() before removing.
+
+	  }, {
+	    key: 'updated',
+	    value: function updated(elem, prev) {
+	      if (!prev) {
+	        return true;
+	      }
+
+	      // use get all keys so that we check Symbols as well as regular props
+	      // using a for loop so we can break early
+	      var allKeys = keys(prev);
+	      for (var i = 0; i < allKeys.length; i += 1) {
+	        if (prev[allKeys[i]] !== elem[allKeys[i]]) {
+	          return true;
+	        }
+	      }
+
+	      return false;
+	    }
+
+	    // Skate
+	    //
+	    // DEPRECATED
+	    //
+	    // Move this to rendererCallback() before removing.
+
+	  }, {
+	    key: 'rendered',
+	    value: function rendered() {}
+
+	    // Skate
+	    //
+	    // DEPRECATED
+	    //
+	    // Move this to rendererCallback() before removing.
+
+	  }, {
+	    key: 'renderer',
+	    value: function renderer(elem) {
+	      if (!elem.shadowRoot) {
+	        elem.attachShadow({ mode: 'open' });
+	      }
+	      patchInner(elem.shadowRoot, function () {
+	        var possibleFn = elem.renderCallback();
+	        if (typeof possibleFn === 'function') {
+	          possibleFn();
+	        } else if (Array.isArray(possibleFn)) {
+	          possibleFn.forEach(function (fn) {
+	            if (typeof fn === 'function') {
+	              fn();
+	            }
+	          });
+	        }
+	      });
+	    }
+	  }]);
+	  return _class2;
+	}(HTMLElement$3);
+
+	function uniqueId(prefix) {
 	  // http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript/2117523#2117523
 	  var rand = 'xxxxxxxx'.replace(/[xy]/g, function (c) {
 	    var r = Math.random() * 16 | 0;
-	    var v = c === 'x' ? r : r & 0x3 | 0x8; // eslint-disable-line no-mixed-operators
+	    // eslint-disable-next-line no-mixed-operators
+	    var v = c === 'x' ? r : r & 0x3 | 0x8;
 	    return v.toString(16);
 	  });
-
-	  return name + '-' + rand;
+	  return (prefix || 'x') + '-' + rand;
 	}
 
-	function prepareForRegistration(name, Ctor) {
-	  Ctor[$name] = name;
-	  Ctor[$props] = createInitProps(Ctor);
-	}
+	function define$1 () {
+	  var customElements = root.customElements;
 
-	function define$1 (name, opts) {
-	  if (opts === undefined) {
-	    throw new Error('You have to define options to register a component ' + name);
+	  for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	    args[_key] = arguments[_key];
 	  }
-	  var Ctor = (typeof opts === 'undefined' ? 'undefined' : babelHelpers.typeof(opts)) === 'object' ? Component.extend(opts) : opts;
-	  formatLinkedAttributes(Ctor);
 
-	  if (!window.customElements) {
+	  var name = args[0];
+	  var Ctor = args[1];
+
+
+	  if (!customElements) {
 	    throw new Error('Skate requires native custom element support or a polyfill.');
 	  }
 
-	  var uniqueName = name;
-	  if (window.customElements.get(name)) {
-	    uniqueName = generateUniqueName(name);
+	  // Support passing an anonymous definition.
+	  if (args.length === 1) {
+	    // We are checking string for now, but once we remove the ability to pass
+	    // an object literal, we can change this to check "function" and invert the
+	    // blocks of logic.
+	    if (typeof name === 'string') {
+	      throw new Error('When passing only one argument to define(), it must be a custom element constructor.');
+	    } else {
+	      Ctor = name;
+	      name = uniqueId();
+	    }
 	  }
-	  prepareForRegistration(uniqueName, Ctor);
-	  window.customElements.define(uniqueName, Ctor, Ctor.extends ? { extends: Ctor.extends } : null);
+
+	  // Ensure there's no conflicts.
+	  if (customElements.get(name)) {
+	    name = uniqueId(name);
+	  }
+
+	  // DEPRECATED
+	  //
+	  // Object literals.
+	  if ((typeof Ctor === 'undefined' ? 'undefined' : _typeof(Ctor)) === 'object') {
+	    Ctor = _class2.extend(Ctor);
+	  }
+
+	  // This allows us to check this before instantiating the custom element to
+	  // find its name from the constructor in the vdom module, thus improving
+	  // performance but still falling back to a robust method.
+	  Ctor[$name] = name;
+
+	  // Sipmle define. Not supporting customised built-ins yet.
+	  customElements.define(name, Ctor);
+
+	  // The spec doesn't return but this allows for a simpler, more concise API.
 	  return Ctor;
 	}
 
@@ -5089,17 +5565,17 @@ var require$$0 = Object.freeze({
 	    }
 	  }
 	  return TheEvent;
-	}(window.Event);
+	}(root.Event);
 
 	var h = builder();
 
 	var kefir = createCommonjsModule(function (module, exports) {
-		/*! Kefir.js v3.6.0
+		/*! Kefir.js v3.7.0
 	  *  https://github.com/rpominov/kefir
 	  */
 
 		(function (global, factory) {
-			(typeof exports === 'undefined' ? 'undefined' : babelHelpers.typeof(exports)) === 'object' && typeof module !== 'undefined' ? factory(exports) : typeof define === 'function' && define.amd ? define(['exports'], factory) : factory(global.Kefir = global.Kefir || {});
+			(typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) === 'object' && typeof module !== 'undefined' ? factory(exports) : typeof define === 'function' && define.amd ? define(['exports'], factory) : factory(global.Kefir = global.Kefir || {});
 		})(commonjsGlobal, function (exports) {
 			'use strict';
 
@@ -6234,7 +6710,7 @@ var require$$0 = Object.freeze({
 				};
 			});
 
-			var require$$0$1 = ponyfill && (typeof ponyfill === 'undefined' ? 'undefined' : babelHelpers.typeof(ponyfill)) === 'object' && 'default' in ponyfill ? ponyfill['default'] : ponyfill;
+			var require$$0$1 = ponyfill && (typeof ponyfill === 'undefined' ? 'undefined' : _typeof(ponyfill)) === 'object' && 'default' in ponyfill ? ponyfill['default'] : ponyfill;
 
 			var index$1 = createCommonjsModule(function (module, exports) {
 				'use strict';
@@ -6263,13 +6739,13 @@ var require$$0 = Object.freeze({
 				exports['default'] = result;
 			});
 
-			var require$$0 = index$1 && (typeof index$1 === 'undefined' ? 'undefined' : babelHelpers.typeof(index$1)) === 'object' && 'default' in index$1 ? index$1['default'] : index$1;
+			var require$$0 = index$1 && (typeof index$1 === 'undefined' ? 'undefined' : _typeof(index$1)) === 'object' && 'default' in index$1 ? index$1['default'] : index$1;
 
 			var index = createCommonjsModule(function (module) {
 				module.exports = require$$0;
 			});
 
-			var $$observable = index && (typeof index === 'undefined' ? 'undefined' : babelHelpers.typeof(index)) === 'object' && 'default' in index ? index['default'] : index;
+			var $$observable = index && (typeof index === 'undefined' ? 'undefined' : _typeof(index)) === 'object' && 'default' in index ? index['default'] : index;
 
 			function fromESObservable(_observable) {
 				var observable = _observable[$$observable] ? _observable[$$observable]() : _observable;
@@ -6346,6 +6822,15 @@ var require$$0 = Object.freeze({
 				return new ESObservable(this);
 			}
 
+			function collect(source, keys, values) {
+				for (var prop in source) {
+					if (source.hasOwnProperty(prop)) {
+						keys.push(prop);
+						values.push(source[prop]);
+					}
+				}
+			}
+
 			function defaultErrorsCombinator(errors) {
 				var latestError = void 0;
 				for (var i = 0; i < errors.length; i++) {
@@ -6364,9 +6849,7 @@ var require$$0 = Object.freeze({
 				Stream.call(this);
 				this._activeCount = active.length;
 				this._sources = concat(active, passive);
-				this._combinator = combinator ? spread(combinator, this._sources.length) : function (x) {
-					return x;
-				};
+				this._combinator = combinator;
 				this._aliveCount = 0;
 				this._latestValues = new Array(this._sources.length);
 				this._latestErrors = new Array(this._sources.length);
@@ -6495,15 +6978,53 @@ var require$$0 = Object.freeze({
 				}
 			});
 
-			function combine(active) {
+			function combineAsArray(active) {
 				var passive = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
 				var combinator = arguments[2];
 
+				if (!Array.isArray(passive)) {
+					throw new Error('Combine can only combine active and passive collections of the same type.');
+				}
+
+				combinator = combinator ? spread(combinator, active.length + passive.length) : function (x) {
+					return x;
+				};
+				return active.length === 0 ? never() : new Combine(active, passive, combinator);
+			}
+
+			function combineAsObject(active) {
+				var passive = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+				var combinator = arguments[2];
+
+				if ((typeof passive === 'undefined' ? 'undefined' : _typeof(passive)) !== 'object' || Array.isArray(passive)) {
+					throw new Error('Combine can only combine active and passive collections of the same type.');
+				}
+
+				var keys = [],
+				    activeObservables = [],
+				    passiveObservables = [];
+
+				collect(active, keys, activeObservables);
+				collect(passive, keys, passiveObservables);
+
+				var objectify = function objectify(values) {
+					var event = {};
+					for (var i = values.length - 1; 0 <= i; i--) {
+						event[keys[i]] = values[i];
+					}
+					return combinator ? combinator(event) : event;
+				};
+
+				return activeObservables.length === 0 ? never() : new Combine(activeObservables, passiveObservables, objectify);
+			}
+
+			function combine(active, passive, combinator) {
 				if (typeof passive === 'function') {
 					combinator = passive;
-					passive = [];
+					passive = undefined;
 				}
-				return active.length === 0 ? never() : new Combine(active, passive, combinator);
+
+				return Array.isArray(active) ? combineAsArray(active, passive, combinator) : combineAsObject(active, passive, combinator);
 			}
 
 			var Observable$1 = {
@@ -9586,7 +10107,7 @@ var require$$0 = Object.freeze({
 	  return this.each((typeof params === "function" ? dispatchFunction : dispatchConstant)(type, params));
 	}
 
-	var root = [null];
+	var root$1 = [null];
 
 	function Selection(groups, parents) {
 	  this._groups = groups;
@@ -9594,7 +10115,7 @@ var require$$0 = Object.freeze({
 	}
 
 	function selection() {
-	  return new Selection([[document.documentElement]], root);
+	  return new Selection([[document.documentElement]], root$1);
 	}
 
 	Selection.prototype = selection.prototype = {
@@ -9631,7 +10152,7 @@ var require$$0 = Object.freeze({
 	};
 
 	function selectAll (selector) {
-	    return typeof selector === "string" ? new Selection([document.querySelectorAll(selector)], [document.documentElement]) : new Selection([selector == null ? [] : selector], root);
+	    return typeof selector === "string" ? new Selection([document.querySelectorAll(selector)], [document.documentElement]) : new Selection([selector == null ? [] : selector], root$1);
 	}
 
 	var epsilon$1 = 1e-12;
@@ -10275,7 +10796,7 @@ var require$$0 = Object.freeze({
 	    (function (root, factory) {
 	        if (typeof define === 'function' && define.amd) {
 	            define([], factory);
-	        } else if ((typeof exports === 'undefined' ? 'undefined' : babelHelpers.typeof(exports)) === 'object') {
+	        } else if ((typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) === 'object') {
 	            module.exports = factory();
 	        } else {
 	            root.Combinatorics = factory();
@@ -10796,7 +11317,7 @@ var require$$0 = Object.freeze({
 
 	interopDefault(combinatorics);
 
-	var index$3 = createCommonjsModule(function (module, exports) {
+	var index$4 = createCommonjsModule(function (module, exports) {
 	  exports = module.exports = Victor;
 
 	  /**
@@ -12127,7 +12648,7 @@ var require$$0 = Object.freeze({
 	  }
 	});
 
-	var Vec = interopDefault(index$3);
+	var Vec = interopDefault(index$4);
 
 	var X = Vec(1, 0);
 	var P = 100;
@@ -12311,7 +12832,7 @@ var require$$0 = Object.freeze({
 	   */
 
 	  exports.clone = function clone(x) {
-	    var type = typeof x === 'undefined' ? 'undefined' : babelHelpers.typeof(x);
+	    var type = typeof x === 'undefined' ? 'undefined' : _typeof(x);
 
 	    // immutable primitive types
 	    if (type === 'number' || type === 'string' || type === 'boolean' || x === null || x === undefined) {
@@ -12437,7 +12958,7 @@ var require$$0 = Object.freeze({
 	      }
 	      return true;
 	    } else {
-	      return (typeof a === 'undefined' ? 'undefined' : babelHelpers.typeof(a)) === (typeof b === 'undefined' ? 'undefined' : babelHelpers.typeof(b)) && a == b;
+	      return (typeof a === 'undefined' ? 'undefined' : _typeof(a)) === (typeof b === 'undefined' ? 'undefined' : _typeof(b)) && a == b;
 	    }
 	  };
 
@@ -12545,7 +13066,9 @@ var require$$0 = Object.freeze({
 	var extend = object.extend;
 	var clone = object.clone;
 
-var require$$1 = Object.freeze({
+
+
+	var require$$1 = Object.freeze({
 	  default: object$1,
 	  isFactory: isFactory,
 	  traverse: traverse,
@@ -12571,7 +13094,7 @@ var require$$1 = Object.freeze({
 	    if (typeof define === 'function' && define.amd) {
 	      // AMD. Register as an anonymous module.
 	      define([], factory);
-	    } else if ((typeof exports === 'undefined' ? 'undefined' : babelHelpers.typeof(exports)) === 'object') {
+	    } else if ((typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) === 'object') {
 	      // OldNode. Does not work with strict CommonJS, but
 	      // only CommonJS-like environments that support module.exports,
 	      // like OldNode.
@@ -12852,8 +13375,9 @@ var require$$1 = Object.freeze({
 
 	      /**
 	       * Test whether this parameters types overlap an other parameters types.
+	       * Will not match ['any'] with ['number']
 	       * @param {Param} other
-	       * @return {boolean} Returns true when there are conflicting types
+	       * @return {boolean} Returns true when there are overlapping types
 	       */
 	      Param.prototype.overlapping = function (other) {
 	        for (var i = 0; i < this.types.length; i++) {
@@ -12862,6 +13386,16 @@ var require$$1 = Object.freeze({
 	          }
 	        }
 	        return false;
+	      };
+
+	      /**
+	       * Test whether this parameters types matches an other parameters types.
+	       * When any of the two parameters contains `any`, true is returned
+	       * @param {Param} other
+	       * @return {boolean} Returns true when there are matching types
+	       */
+	      Param.prototype.matches = function (other) {
+	        return this.anyType || other.anyType || this.overlapping(other);
 	      };
 
 	      /**
@@ -12942,9 +13476,14 @@ var require$$1 = Object.freeze({
 	        }
 
 	        this.params = new Array(_params.length);
+	        this.anyType = false;
+	        this.varArgs = false;
 	        for (var i = 0; i < _params.length; i++) {
 	          var param = new Param(_params[i]);
 	          this.params[i] = param;
+	          if (param.anyType) {
+	            this.anyType = true;
+	          }
 	          if (i === _params.length - 1) {
 	            // the last argument
 	            this.varArgs = param.varArgs;
@@ -13098,6 +13637,30 @@ var require$$1 = Object.freeze({
 	      };
 
 	      /**
+	       * Test whether the path of this signature matches a given path.
+	       * @param {Param[]} params
+	       */
+	      Signature.prototype.paramsStartWith = function (params) {
+	        if (params.length === 0) {
+	          return true;
+	        }
+
+	        var aLast = last(this.params);
+	        var bLast = last(params);
+
+	        for (var i = 0; i < params.length; i++) {
+	          var a = this.params[i] || (aLast.varArgs ? aLast : null);
+	          var b = params[i] || (bLast.varArgs ? bLast : null);
+
+	          if (!a || !b || !a.matches(b)) {
+	            return false;
+	          }
+	        }
+
+	        return true;
+	      };
+
+	      /**
 	       * Generate the code to invoke this signature
 	       * @param {Refs} refs
 	       * @param {string} prefix
@@ -13140,23 +13703,24 @@ var require$$1 = Object.freeze({
 	       * @param {Param[]} path
 	       * @param {Signature} [signature]
 	       * @param {Node[]} childs
+	       * @param {boolean} [fallThrough=false]
 	       * @constructor
 	       */
-	      function Node(path, signature, childs) {
+	      function Node(path, signature, childs, fallThrough) {
 	        this.path = path || [];
 	        this.param = path[path.length - 1] || null;
 	        this.signature = signature || null;
 	        this.childs = childs || [];
+	        this.fallThrough = fallThrough || false;
 	      }
 
 	      /**
 	       * Generate code for this group of signatures
 	       * @param {Refs} refs
 	       * @param {string} prefix
-	       * @param {Node | undefined} [anyType]  Sibling of this node with any type parameter
 	       * @returns {string} Returns the code as string
 	       */
-	      Node.prototype.toCode = function (refs, prefix, anyType) {
+	      Node.prototype.toCode = function (refs, prefix) {
 	        // TODO: split this function in multiple functions, it's too large
 	        var code = [];
 
@@ -13221,20 +13785,20 @@ var require$$1 = Object.freeze({
 	            if (this.param.anyType) {
 	              // any type
 	              code.push(prefix + '// type: any');
-	              code.push(this._innerCode(refs, prefix, anyType));
+	              code.push(this._innerCode(refs, prefix));
 	            } else {
 	              // regular type
 	              var type = this.param.types[0];
 	              var test = type !== 'any' ? refs.add(getTypeTest(type), 'test') : null;
 
 	              code.push(prefix + 'if (' + test + '(arg' + index + ')) { ' + comment);
-	              code.push(this._innerCode(refs, prefix + '  ', anyType));
+	              code.push(this._innerCode(refs, prefix + '  '));
 	              code.push(prefix + '}');
 	            }
 	          }
 	        } else {
 	          // root node (path is empty)
-	          code.push(this._innerCode(refs, prefix, anyType));
+	          code.push(this._innerCode(refs, prefix));
 	        }
 
 	        return code.join('\n');
@@ -13245,11 +13809,10 @@ var require$$1 = Object.freeze({
 	       * This is a helper function of Node.prototype.toCode
 	       * @param {Refs} refs
 	       * @param {string} prefix
-	       * @param {Node | undefined} [anyType]  Sibling of this node with any type parameter
 	       * @returns {string} Returns the inner code as string
 	       * @private
 	       */
-	      Node.prototype._innerCode = function (refs, prefix, anyType) {
+	      Node.prototype._innerCode = function (refs, prefix) {
 	        var code = [];
 	        var i;
 
@@ -13259,25 +13822,16 @@ var require$$1 = Object.freeze({
 	          code.push(prefix + '}');
 	        }
 
-	        var nextAnyType;
 	        for (i = 0; i < this.childs.length; i++) {
-	          if (this.childs[i].param.anyType) {
-	            nextAnyType = this.childs[i];
-	            break;
+	          code.push(this.childs[i].toCode(refs, prefix));
+	        }
+
+	        // TODO: shouldn't the this.param.anyType check be redundant
+	        if (!this.fallThrough || this.param && this.param.anyType) {
+	          var exceptions = this._exceptions(refs, prefix);
+	          if (exceptions) {
+	            code.push(exceptions);
 	          }
-	        }
-
-	        for (i = 0; i < this.childs.length; i++) {
-	          code.push(this.childs[i].toCode(refs, prefix, nextAnyType));
-	        }
-
-	        if (anyType && !this.param.anyType) {
-	          code.push(anyType.toCode(refs, prefix, nextAnyType));
-	        }
-
-	        var exceptions = this._exceptions(refs, prefix);
-	        if (exceptions) {
-	          code.push(exceptions);
 	        }
 
 	        return code.join('\n');
@@ -13408,6 +13962,23 @@ var require$$1 = Object.freeze({
 	      }
 
 	      /**
+	       * Filter all any type signatures
+	       * @param {Signature[]} signatures
+	       * @return {Signature[]} Returns only any type signatures
+	       */
+	      function filterAnyTypeSignatures(signatures) {
+	        var filtered = [];
+
+	        for (var i = 0; i < signatures.length; i++) {
+	          if (signatures[i].anyType) {
+	            filtered.push(signatures[i]);
+	          }
+	        }
+
+	        return filtered;
+	      }
+
+	      /**
 	       * create a map with normalized signatures as key and the function as value
 	       * @param {Signature[]} signatures   An array with split signatures
 	       * @return {Object.<string, Function>} Returns a map with normalized
@@ -13432,9 +14003,10 @@ var require$$1 = Object.freeze({
 	       * Parse signatures recursively in a node tree.
 	       * @param {Signature[]} signatures  Array with expanded signatures
 	       * @param {Param[]} path            Traversed path of parameter types
+	       * @param {Signature[]} anys
 	       * @return {Node}                   Returns a node tree
 	       */
-	      function parseTree(signatures, path) {
+	      function parseTree(signatures, path, anys) {
 	        var i, signature;
 	        var index = path.length;
 	        var nodeSignature;
@@ -13491,14 +14063,34 @@ var require$$1 = Object.freeze({
 	          }
 	        }
 
+	        // find all any type signature that can still match our current path
+	        var matchingAnys = [];
+	        for (i = 0; i < anys.length; i++) {
+	          if (anys[i].paramsStartWith(path)) {
+	            matchingAnys.push(anys[i]);
+	          }
+	        }
+
+	        // see if there are any type signatures that don't match any of the
+	        // signatures that we have in our tree, i.e. we have alternative
+	        // matching signature(s) outside of our current tree and we should
+	        // fall through to them instead of throwing an exception
+	        var fallThrough = false;
+	        for (i = 0; i < matchingAnys.length; i++) {
+	          if (!contains(signatures, matchingAnys[i])) {
+	            fallThrough = true;
+	            break;
+	          }
+	        }
+
 	        // parse the childs
 	        var childs = new Array(entries.length);
 	        for (i = 0; i < entries.length; i++) {
 	          var entry = entries[i];
-	          childs[i] = parseTree(entry.signatures, path.concat(entry.param));
+	          childs[i] = parseTree(entry.signatures, path.concat(entry.param), matchingAnys);
 	        }
 
-	        return new Node(path, nodeSignature, childs);
+	        return new Node(path, nodeSignature, childs, fallThrough);
 	      }
 
 	      /**
@@ -13538,8 +14130,11 @@ var require$$1 = Object.freeze({
 	          throw new Error('No signatures provided');
 	        }
 
+	        // filter all any type signatures
+	        var anys = filterAnyTypeSignatures(_signatures);
+
 	        // parse signatures into a node tree
-	        var node = parseTree(_signatures, []);
+	        var node = parseTree(_signatures, [], anys);
 
 	        //var util = require('util');
 	        //console.log('ROOT');
@@ -13552,7 +14147,7 @@ var require$$1 = Object.freeze({
 	        code.push('function ' + _name + '(' + _args.join(', ') + ') {');
 	        code.push('  "use strict";');
 	        code.push('  var name = \'' + _name + '\';');
-	        code.push(node.toCode(refs, '  '));
+	        code.push(node.toCode(refs, '  ', false));
 	        code.push('}');
 
 	        // generate body for the factory function
@@ -13614,13 +14209,22 @@ var require$$1 = Object.freeze({
 	      }
 
 	      /**
-	       * Test whether an array contains some entry
+	       * Test whether an array contains some item
 	       * @param {Array} array
-	       * @param {*} entry
-	       * @return {boolean} Returns true if array contains entry, false if not.
+	       * @param {*} item
+	       * @return {boolean} Returns true if array contains item, false if not.
 	       */
-	      function contains(array, entry) {
-	        return array.indexOf(entry) !== -1;
+	      function contains(array, item) {
+	        return array.indexOf(item) !== -1;
+	      }
+
+	      /**
+	       * Returns the last item in the array
+	       * @param {Array} array
+	       * @return {*} item
+	       */
+	      function last(array) {
+	        return array[array.length - 1];
 	      }
 
 	      // data type tests
@@ -13637,7 +14241,7 @@ var require$$1 = Object.freeze({
 	        } }, { name: 'RegExp', test: function test(x) {
 	          return x instanceof RegExp;
 	        } }, { name: 'Object', test: function test(x) {
-	          return (typeof x === 'undefined' ? 'undefined' : babelHelpers.typeof(x)) === 'object';
+	          return (typeof x === 'undefined' ? 'undefined' : _typeof(x)) === 'object';
 	        } }, { name: 'null', test: function test(x) {
 	          return x === null;
 	        } }, { name: 'undefined', test: function test(x) {
@@ -13694,7 +14298,7 @@ var require$$1 = Object.freeze({
 	            var fn = fns[i];
 
 	            // test whether this is a typed-function
-	            if (!(babelHelpers.typeof(fn.signatures) === 'object')) {
+	            if (!(_typeof(fn.signatures) === 'object')) {
 	              err = new TypeError('Function is no typed-function (index: ' + i + ')');
 	              err.data = { index: i };
 	              throw err;
@@ -13827,7 +14431,9 @@ var require$$1 = Object.freeze({
 
 	var typedFunction$1 = interopDefault(typedFunction);
 
-var require$$1$1 = Object.freeze({
+
+
+	var require$$1$1 = Object.freeze({
 	  default: typedFunction$1
 	});
 
@@ -14449,7 +15055,7 @@ var require$$0$2 = Object.freeze({
 	      } }, { name: 'RegExp', test: function test(x) {
 	        return x instanceof RegExp;
 	      } }, { name: 'Object', test: function test(x) {
-	        return (typeof x === 'undefined' ? 'undefined' : babelHelpers.typeof(x)) === 'object';
+	        return (typeof x === 'undefined' ? 'undefined' : _typeof(x)) === 'object';
 	      } }, { name: 'null', test: function test(x) {
 	        return x === null;
 	      } }, { name: 'undefined', test: function test(x) {
@@ -14484,6 +15090,12 @@ var require$$0$2 = Object.freeze({
 	      to: 'Complex',
 	      convert: function convert(x) {
 	        return new type.Complex(x.toNumber(), 0);
+	      }
+	    }, {
+	      from: 'Fraction',
+	      to: 'BigNumber',
+	      convert: function convert(x) {
+	        throw new TypeError('Cannot implicitly convert a Fraction to BigNumber or vice versa. ' + 'Use function bignumber(x) to convert to BigNumber or fraction(x) to convert to Fraction.');
 	      }
 	    }, {
 	      from: 'Fraction',
@@ -14587,12 +15199,14 @@ var require$$0$2 = Object.freeze({
 	var typed$1 = interopDefault(typed);
 	var create$2 = typed.create;
 
-var require$$3 = Object.freeze({
+
+
+	var require$$3 = Object.freeze({
 	  default: typed$1,
 	  create: create$2
 	});
 
-	var index$4 = createCommonjsModule(function (module) {
+	var index$5 = createCommonjsModule(function (module) {
 	  function E() {
 	    // Keep this empty so it's easier to inherit from
 	    // (via https://github.com/lipsmack from https://github.com/scottcorgan/tiny-emitter/issues/3)
@@ -14658,10 +15272,10 @@ var require$$3 = Object.freeze({
 	  module.exports = E;
 	});
 
-	var index$5 = interopDefault(index$4);
+	var index$6 = interopDefault(index$5);
 
 var require$$0$5 = Object.freeze({
-	  default: index$5
+	  default: index$6
 	});
 
 	var emitter = createCommonjsModule(function (module, exports) {
@@ -14811,7 +15425,7 @@ var require$$0$6 = Object.freeze({
 	          object.forEach(function (entry) {
 	            math_import(entry, options);
 	          });
-	        } else if ((typeof object === 'undefined' ? 'undefined' : babelHelpers.typeof(object)) === 'object') {
+	        } else if ((typeof object === 'undefined' ? 'undefined' : _typeof(object)) === 'object') {
 	          // a map with functions
 	          for (var name in object) {
 	            if (object.hasOwnProperty(name)) {
@@ -14971,7 +15585,7 @@ var require$$0$6 = Object.freeze({
 	     * @return {boolean} Returns true when `fn` is a typed-function
 	     */
 	    function isTypedFunction(fn) {
-	      return typeof fn === 'function' && babelHelpers.typeof(fn.signatures) === 'object';
+	      return typeof fn === 'function' && _typeof(fn.signatures) === 'object';
 	    }
 
 	    return math_import;
@@ -14989,7 +15603,9 @@ var require$$0$6 = Object.freeze({
 	var name = _import.name;
 	var math$1 = _import.math;
 
-var require$$1$2 = Object.freeze({
+
+
+	var require$$1$2 = Object.freeze({
 	  default: _import$1,
 	  lazy: lazy$1,
 	  factory: factory,
@@ -15551,7 +16167,7 @@ var require$$0$8 = Object.freeze({
 	      return value.syntax ? String(value.syntax) : 'function';
 	    }
 
-	    if (value && (typeof value === 'undefined' ? 'undefined' : babelHelpers.typeof(value)) === 'object') {
+	    if (value && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object') {
 	      if (typeof value.format === 'function') {
 	        return value.format(options);
 	      } else if (value && value.toString() !== {}.toString()) {
@@ -15606,7 +16222,9 @@ var require$$0$8 = Object.freeze({
 	var endsWith = string$2.endsWith;
 	var isString = string$2.isString;
 
-var require$$4 = Object.freeze({
+
+
+	var require$$4 = Object.freeze({
 	  default: string$3,
 	  format: format$1,
 	  endsWith: endsWith,
@@ -15641,7 +16259,7 @@ var require$$4 = Object.freeze({
 	   */
 
 	  exports.type = function (x) {
-	    var type = typeof x === 'undefined' ? 'undefined' : babelHelpers.typeof(x);
+	    var type = typeof x === 'undefined' ? 'undefined' : _typeof(x);
 
 	    if (type === 'object') {
 	      if (x === null) return 'null';
@@ -15675,7 +16293,9 @@ var require$$4 = Object.freeze({
 	var isScalar = types$1.isScalar;
 	var type = types$1.type;
 
-var require$$2$1 = Object.freeze({
+
+
+	var require$$2$1 = Object.freeze({
 	  default: types$2,
 	  isScalar: isScalar,
 	  type: type
@@ -16180,7 +16800,7 @@ var require$$6 = Object.freeze({
 	   */
 	  exports.memoize = function (fn, hasher) {
 	    return function memoize() {
-	      if (babelHelpers.typeof(memoize.cache) !== 'object') {
+	      if (_typeof(memoize.cache) !== 'object') {
 	        memoize.cache = {};
 	      }
 
@@ -16215,13 +16835,15 @@ var require$$6 = Object.freeze({
 	var maxArgumentCount = _function.maxArgumentCount;
 	var memoize = _function.memoize;
 
-var require$$5 = Object.freeze({
+
+
+	var require$$5 = Object.freeze({
 	  default: _function$1,
 	  maxArgumentCount: maxArgumentCount,
 	  memoize: memoize
 	});
 
-	var index$7 = createCommonjsModule(function (module, exports) {
+	var index$8 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
 	  exports.array = interopDefault(require$$7);
@@ -16234,16 +16856,16 @@ var require$$5 = Object.freeze({
 	  exports.emitter = interopDefault(require$$0$4);
 	});
 
-	var index$8 = interopDefault(index$7);
-	var emitter$2 = index$7.emitter;
-	var types = index$7.types;
-	var string$1 = index$7.string;
-	var object$2 = index$7.object;
-	var number$3 = index$7.number;
-	var array$1 = index$7.array;
+	var index$9 = interopDefault(index$8);
+	var emitter$2 = index$8.emitter;
+	var types = index$8.types;
+	var string$1 = index$8.string;
+	var object$2 = index$8.object;
+	var number$3 = index$8.number;
+	var array$1 = index$8.array;
 
 var require$$2 = Object.freeze({
-	  default: index$8,
+	  default: index$9,
 	  emitter: emitter$2,
 	  types: types,
 	  string: string$1,
@@ -19744,16 +20366,18 @@ var require$$1$6 = Object.freeze({
 	    var algorithm14 = load(interopDefault(require$$1$6));
 
 	    /**
-	     * Add two values, `x + y`.
+	     * Add two or more values, `x + y`.
 	     * For matrices, the function is evaluated element wise.
 	     *
 	     * Syntax:
 	     *
 	     *    math.add(x, y)
+	     *    math.add(x, y, z, ...)
 	     *
 	     * Examples:
 	     *
 	     *    math.add(2, 3);               // returns number 5
+	     *    math.add(2, 3, 4);            // returns number 9
 	     *
 	     *    var a = math.complex(2, 3);
 	     *    var b = math.complex(-4, 1);
@@ -19769,7 +20393,7 @@ var require$$1$6 = Object.freeze({
 	     *
 	     * See also:
 	     *
-	     *    subtract
+	     *    subtract, sum
 	     *
 	     * @param  {number | BigNumber | Fraction | Complex | Unit | Array | Matrix} x First value to add
 	     * @param  {number | BigNumber | Fraction | Complex | Unit | Array | Matrix} y Second value to add
@@ -19865,6 +20489,18 @@ var require$$1$6 = Object.freeze({
 	      'any, Array': function anyArray(x, y) {
 	        // use matrix implementation
 	        return algorithm14(matrix(y), x, addScalar, true).valueOf();
+	      },
+
+	      'any, any': addScalar,
+
+	      'any, any, ...any': function anyAnyAny(x, y, rest) {
+	        var result = add(x, y);
+
+	        for (var i = 0; i < rest.length; i++) {
+	          result = add(result, rest[i]);
+	        }
+
+	        return result;
 	      }
 	    }, addScalar.signatures));
 
@@ -22000,7 +22636,7 @@ var require$$3$3 = Object.freeze({
 	  name: name$21
 	});
 
-	var index$9 = createCommonjsModule(function (module, exports) {
+	var index$10 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
 	  function factory(type, config, load, typed) {
@@ -22065,12 +22701,12 @@ var require$$3$3 = Object.freeze({
 	  exports.factory = factory;
 	});
 
-	var index$10 = interopDefault(index$9);
-	var factory$24 = index$9.factory;
-	var name$22 = index$9.name;
+	var index$11 = interopDefault(index$10);
+	var factory$24 = index$10.factory;
+	var name$22 = index$10.name;
 
 var require$$2$4 = Object.freeze({
-	  default: index$10,
+	  default: index$11,
 	  factory: factory$24,
 	  name: name$22
 	});
@@ -22149,7 +22785,7 @@ var require$$0$15 = Object.freeze({
 	  name: name$23
 	});
 
-	var index$6 = createCommonjsModule(function (module) {
+	var index$7 = createCommonjsModule(function (module) {
 	  module.exports = [
 	  // types
 	  interopDefault(require$$1$3), interopDefault(require$$1$4), interopDefault(require$$8), interopDefault(require$$7$2), interopDefault(require$$6$3), interopDefault(require$$5$2), interopDefault(require$$4$3), interopDefault(require$$3$3),
@@ -22158,7 +22794,7 @@ var require$$0$15 = Object.freeze({
 	  interopDefault(require$$2$4), interopDefault(require$$6$1), interopDefault(require$$0$15)];
 	});
 
-	var matrices = interopDefault(index$6);
+	var matrices = interopDefault(index$7);
 
 	var math = core$1.create();
 	math.import(matrices);
@@ -22370,14 +23006,17 @@ var require$$0$15 = Object.freeze({
 	var _darker = 0.7;
 	var _brighter = 1 / _darker;
 
+	var reI = "\\s*([+-]?\\d+)\\s*";
+	var reN = "\\s*([+-]?\\d*\\.?\\d+(?:[eE][+-]?\\d+)?)\\s*";
+	var reP = "\\s*([+-]?\\d*\\.?\\d+(?:[eE][+-]?\\d+)?)%\\s*";
 	var reHex3 = /^#([0-9a-f]{3})$/;
 	var reHex6 = /^#([0-9a-f]{6})$/;
-	var reRgbInteger = /^rgb\(\s*([-+]?\d+)\s*,\s*([-+]?\d+)\s*,\s*([-+]?\d+)\s*\)$/;
-	var reRgbPercent = /^rgb\(\s*([-+]?\d+(?:\.\d+)?)%\s*,\s*([-+]?\d+(?:\.\d+)?)%\s*,\s*([-+]?\d+(?:\.\d+)?)%\s*\)$/;
-	var reRgbaInteger = /^rgba\(\s*([-+]?\d+)\s*,\s*([-+]?\d+)\s*,\s*([-+]?\d+)\s*,\s*([-+]?\d+(?:\.\d+)?)\s*\)$/;
-	var reRgbaPercent = /^rgba\(\s*([-+]?\d+(?:\.\d+)?)%\s*,\s*([-+]?\d+(?:\.\d+)?)%\s*,\s*([-+]?\d+(?:\.\d+)?)%\s*,\s*([-+]?\d+(?:\.\d+)?)\s*\)$/;
-	var reHslPercent = /^hsl\(\s*([-+]?\d+(?:\.\d+)?)\s*,\s*([-+]?\d+(?:\.\d+)?)%\s*,\s*([-+]?\d+(?:\.\d+)?)%\s*\)$/;
-	var reHslaPercent = /^hsla\(\s*([-+]?\d+(?:\.\d+)?)\s*,\s*([-+]?\d+(?:\.\d+)?)%\s*,\s*([-+]?\d+(?:\.\d+)?)%\s*,\s*([-+]?\d+(?:\.\d+)?)\s*\)$/;
+	var reRgbInteger = new RegExp("^rgb\\(" + [reI, reI, reI] + "\\)$");
+	var reRgbPercent = new RegExp("^rgb\\(" + [reP, reP, reP] + "\\)$");
+	var reRgbaInteger = new RegExp("^rgba\\(" + [reI, reI, reI, reN] + "\\)$");
+	var reRgbaPercent = new RegExp("^rgba\\(" + [reP, reP, reP, reN] + "\\)$");
+	var reHslPercent = new RegExp("^hsl\\(" + [reN, reP, reP] + "\\)$");
+	var reHslaPercent = new RegExp("^hsla\\(" + [reN, reP, reP, reN] + "\\)$");
 	var named = {
 	  aliceblue: 0xf0f8ff,
 	  antiquewhite: 0xfaebd7,
@@ -24103,7 +24742,7 @@ var 	t1$1 = new Date();
 
 	var plasma = ramp(colors("0d088710078813078916078a19068c1b068d1d068e20068f2206902406912605912805922a05932c05942e05952f059631059733059735049837049938049a3a049a3c049b3e049c3f049c41049d43039e44039e46039f48039f4903a04b03a14c02a14e02a25002a25102a35302a35502a45601a45801a45901a55b01a55c01a65e01a66001a66100a76300a76400a76600a76700a86900a86a00a86c00a86e00a86f00a87100a87201a87401a87501a87701a87801a87a02a87b02a87d03a87e03a88004a88104a78305a78405a78606a68707a68808a68a09a58b0aa58d0ba58e0ca48f0da4910ea3920fa39410a29511a19613a19814a099159f9a169f9c179e9d189d9e199da01a9ca11b9ba21d9aa31e9aa51f99a62098a72197a82296aa2395ab2494ac2694ad2793ae2892b02991b12a90b22b8fb32c8eb42e8db52f8cb6308bb7318ab83289ba3388bb3488bc3587bd3786be3885bf3984c03a83c13b82c23c81c33d80c43e7fc5407ec6417dc7427cc8437bc9447aca457acb4679cc4778cc4977cd4a76ce4b75cf4c74d04d73d14e72d24f71d35171d45270d5536fd5546ed6556dd7566cd8576bd9586ada5a6ada5b69db5c68dc5d67dd5e66de5f65de6164df6263e06363e16462e26561e26660e3685fe4695ee56a5de56b5de66c5ce76e5be76f5ae87059e97158e97257ea7457eb7556eb7655ec7754ed7953ed7a52ee7b51ef7c51ef7e50f07f4ff0804ef1814df1834cf2844bf3854bf3874af48849f48948f58b47f58c46f68d45f68f44f79044f79143f79342f89441f89540f9973ff9983ef99a3efa9b3dfa9c3cfa9e3bfb9f3afba139fba238fca338fca537fca636fca835fca934fdab33fdac33fdae32fdaf31fdb130fdb22ffdb42ffdb52efeb72dfeb82cfeba2cfebb2bfebd2afebe2afec029fdc229fdc328fdc527fdc627fdc827fdca26fdcb26fccd25fcce25fcd025fcd225fbd324fbd524fbd724fad824fada24f9dc24f9dd25f8df25f8e125f7e225f7e425f6e626f6e826f5e926f5eb27f4ed27f3ee27f3f027f2f227f1f426f1f525f0f724f0f921"));
 
-	var index$11 = createCommonjsModule(function (module) {
+	var index$12 = createCommonjsModule(function (module) {
 	  'use strict';
 
 	  /** Calculator for finding widest and/or shortest paths in a graph using the Floyed-Warshall algorithm. */
@@ -24115,7 +24754,7 @@ var 	t1$1 = new Date();
 	     * @param {number[][]} adjacencyMatrix - A square matrix representing a graph with weighted edges.
 	     */
 	    function FloydWarshall(adjacencyMatrix) {
-	      babelHelpers.classCallCheck(this, FloydWarshall);
+	      classCallCheck(this, FloydWarshall);
 
 	      this.adjacencyMatrix = adjacencyMatrix;
 	    }
@@ -24126,7 +24765,7 @@ var 	t1$1 = new Date();
 	     */
 
 
-	    babelHelpers.createClass(FloydWarshall, [{
+	    createClass(FloydWarshall, [{
 	      key: '_initializeDistanceMatrix',
 
 
@@ -24226,7 +24865,7 @@ var 	t1$1 = new Date();
 	  module.exports = FloydWarshall;
 	});
 
-	var FloydWarshall = interopDefault(index$11);
+	var FloydWarshall = interopDefault(index$12);
 
 	// import core from 'mathjs/core'
 	// import matrices from 'mathjs/lib/type/matrix'
