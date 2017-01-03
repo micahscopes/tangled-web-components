@@ -8615,6 +8615,13 @@ var require$$0 = Object.freeze({
 	var Kefir = interopDefault(kefir);
 
 	function eventsPositionDiff(prevEvent, nextEvent) {
+	  //console.log(prevEvent,nextEvent);
+	  if (nextEvent.touches) {
+	    nextEvent = nextEvent.touches[0];
+	  }
+	  if (prevEvent.touches) {
+	    prevEvent = prevEvent.touches[0];
+	  }
 	  return {
 	    x: nextEvent.clientX - prevEvent.clientX,
 	    y: nextEvent.clientY - prevEvent.clientY
@@ -8622,6 +8629,7 @@ var require$$0 = Object.freeze({
 	}
 
 	function applyMove(currentPosition, move) {
+	  //console.log(move);
 	  return {
 	    x: currentPosition.x + move.x,
 	    y: currentPosition.y + move.y
@@ -8642,9 +8650,9 @@ var require$$0 = Object.freeze({
 	      elem.style.left = pos.x + 'px';
 	    };
 
-	    var mouseUps = Kefir.fromEvents(document, 'mouseup');
-	    var mouseMoves = Kefir.fromEvents(document, 'mousemove');
-	    var mouseDowns = Kefir.fromEvents(elem, 'mousedown');
+	    var mouseUps = Kefir.fromEvents(document, 'mouseup').merge(Kefir.fromEvents(document, 'touchend'));
+	    var mouseMoves = Kefir.fromEvents(document, 'mousemove').merge(Kefir.fromEvents(document, 'touchmove'));
+	    var mouseDowns = Kefir.fromEvents(elem, 'mousedown').merge(Kefir.fromEvents(elem, 'touchstart'));
 	    mouseDowns.onValue(preventDefault);
 
 	    var moves = mouseDowns.flatMap(function (downEvent) {
@@ -8693,6 +8701,49 @@ var require$$0 = Object.freeze({
 	  rendered: function rendered(elem) {}
 	});
 
+	var reattacher = Symbol();
+
+	function detach(elem, timeout) {
+	  timeout = timeout ? timeout : 200;
+	  setTimeout(function () {
+	    var rect = elem.getBoundingClientRect();
+	    var style = window.getComputedStyle(elem);
+	    var oldStyle = elem.style;
+	    // console.log(style);
+	    var currentPosition = { x: parseInt(rect.left) - parseInt(style.marginLeft),
+	      y: parseInt(rect.top) - parseInt(style.marginTop) };
+
+	    setTimeout(function () {
+	      elem.style.position = "absolute";
+	      elem.style.top = currentPosition.y + 'px';
+	      elem.style.left = currentPosition.x + 'px';
+	    }, timeout);
+
+	    elem[reattacher] = function () {
+	      elem.style = oldStyle;
+	    };
+	  }, 50);
+	}
+
+	function reattach(elem) {
+	  elem[reattacher]();
+	}
+
+	var css$1 = ' :host {display: inline-table} loose-box {display: inline-table}';
+
+	var DetachedBox = define$1("detached-box", {
+	  attached: function attached(elem) {
+	    detach(elem);
+	  },
+	  detached: function detached(elem) {
+	    reattach(elem);
+	  },
+	  render: function render(elem) {
+	    return [h("slot", ""), h("style", css$1)];
+	  },
+	  rendered: function rendered(elem) {}
+	});
+
 	// from http://stackoverflow.com/a/38149758/1189799
 
 	var parentSelector = function parentSelector(el, selector, stopSelector) {
@@ -8718,7 +8769,7 @@ var require$$0 = Object.freeze({
 	  }, 1000 / elem.fps);
 	};
 
-	var css$1 = 'graph-container, :host {display: inline-table}';
+	var css$2 = 'graph-container, :host {display: inline-table}';
 
 	var GraphContainer = define$1('graph-container', {
 	  props: {
@@ -8733,7 +8784,7 @@ var require$$0 = Object.freeze({
 	      onSlotchange: function onSlotchange(e) {
 	        elem.dispatchEvent(new Event("graph-updated"));
 	      }
-	    }), h('style', css$1)];
+	    }), h('style', css$2)];
 	  },
 	  updated: function updated(elem) {
 	    // console.log("updated")
@@ -22112,7 +22163,7 @@ var require$$0$15 = Object.freeze({
 	var math = core$1.create();
 	math.import(matrices);
 
-	var css$2 = "\ncanvas {\n  // width: 100%;\n  // height: 100%;\n  padding: 0; margin: 0;\n  left:0; top:0;\n  position: fixed;\n  overflow: hidden;\n  z-index: -1;\n}\n\n";
+	var css$3 = "\ncanvas {\n  // width: 100%;\n  // height: 100%;\n  padding: 0; margin: 0;\n  left:0; top:0;\n  position: fixed;\n  overflow: hidden;\n  z-index: -1;\n}\n\n";
 	var _detached = Symbol();
 	var lastRenderTime = Symbol();
 	var animate$1 = function animate(elem, now) {
@@ -22221,7 +22272,7 @@ var require$$0$15 = Object.freeze({
 	  },
 	  attributeChanged: function attributeChanged(elem) {},
 	  render: function render(elem) {
-	    return [h('div', { style: "display: none" }, h('slot', {})), h("style", css$2)];
+	    return [h('div', { style: "display: none" }, h('slot', {})), h("style", css$3)];
 	  },
 	  rendered: function rendered(elem) {
 	    elem.shadowRoot.appendChild(elem[canvas]);
@@ -22262,7 +22313,7 @@ var require$$0$15 = Object.freeze({
 	  render: function render(elem) {
 	    return [h('div', { style: "display: none" }, h('slot', {
 	      onSlotchange: elem[refreshEdges]
-	    })), h("style", css$2)];
+	    })), h("style", css$3)];
 	  }
 	}));
 
