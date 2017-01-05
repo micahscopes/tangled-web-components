@@ -4,9 +4,19 @@
 	(factory());
 }(this, function () { 'use strict';
 
+	var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {}
+
+	function interopDefault(ex) {
+		return ex && typeof ex === 'object' && 'default' in ex ? ex['default'] : ex;
+	}
+
+	function createCommonjsModule(fn, module) {
+		return module = { exports: {} }, fn(module, module.exports), module.exports;
+	}
+
 	var _window = window;
-	var HTMLElement = _window.HTMLElement;
-	var MutationObserver = _window.MutationObserver;
+	var HTMLElement$1 = _window.HTMLElement;
+	var MutationObserver$1 = _window.MutationObserver;
 	var navigator$1 = _window.navigator;
 	var userAgent = navigator$1.userAgent;
 
@@ -19,12 +29,12 @@
 
 	// Workaround for https://bugs.webkit.org/show_bug.cgi?id=160331
 	function fixSafari() {
-	  var oldAttachShadow = HTMLElement.prototype.attachShadow;
+	  var oldAttachShadow = HTMLElement$1.prototype.attachShadow;
 
 	  // We observe a shadow root, but only need to know if the target that was mutated is a <style>
 	  // element as this is the only scenario where styles aren't recalculated.
 	  var moOpts = { childList: true, subtree: true };
-	  var mo = new MutationObserver(function (muts) {
+	  var mo = new MutationObserver$1(function (muts) {
 	    muts.forEach(function (mut) {
 	      var target = mut.target;
 
@@ -50,7 +60,7 @@
 	  }
 
 	  // We have to define a property because Safari won't take the override if it is set directly.
-	  Object.defineProperty(HTMLElement.prototype, 'attachShadow', {
+	  Object.defineProperty(HTMLElement$1.prototype, 'attachShadow', {
 	    // Ensure polyfills can override it (hoping they call it back).
 	    configurable: true,
 	    enumerable: true,
@@ -66,3018 +76,7 @@
 	  fixSafari();
 	}
 
-	// Polyfill for creating CustomEvents on IE9/10/11
-
-	// code pulled from:
-	// https://github.com/d4tocchini/customevent-polyfill
-	// https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent#Polyfill
-
-	try {
-	  var ce = new window.CustomEvent('test');
-	  ce.preventDefault();
-	  if (ce.defaultPrevented !== true) {
-	    // IE has problems with .preventDefault() on custom events
-	    // http://stackoverflow.com/questions/23349191
-	    throw new Error('Could not prevent default');
-	  }
-	} catch (e) {
-	  var CustomEvent$1 = function CustomEvent(event, params) {
-	    var evt, origPrevent;
-	    params = params || {
-	      bubbles: false,
-	      cancelable: false,
-	      detail: undefined
-	    };
-
-	    evt = document.createEvent("CustomEvent");
-	    evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
-	    origPrevent = evt.preventDefault;
-	    evt.preventDefault = function () {
-	      origPrevent.call(this);
-	      try {
-	        Object.defineProperty(this, 'defaultPrevented', {
-	          get: function get() {
-	            return true;
-	          }
-	        });
-	      } catch (e) {
-	        this.defaultPrevented = true;
-	      }
-	    };
-	    return evt;
-	  };
-
-	  CustomEvent$1.prototype = window.Event.prototype;
-	  window.CustomEvent = CustomEvent$1; // expose definition to window
-	}
-
-	var div = document.createElement('div');
-	var shadowDomV1 = !!div.attachShadow; // eslint-disable-line import/prefer-default-export
-
-	var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {}
-
-	function interopDefault(ex) {
-		return ex && typeof ex === 'object' && 'default' in ex ? ex['default'] : ex;
-	}
-
-	function createCommonjsModule(fn, module) {
-		return module = { exports: {} }, fn(module, module.exports), module.exports;
-	}
-
-	var index$1 = createCommonjsModule(function (module) {
-	    module.exports = Date.now || now;
-
-	    function now() {
-	        return new Date().getTime();
-	    }
-	});
-
-	var index$2 = interopDefault(index$1);
-
-var require$$0 = Object.freeze({
-	    default: index$2
-	});
-
-	var index = createCommonjsModule(function (module) {
-	  /**
-	   * Module dependencies.
-	   */
-
-	  var now = interopDefault(require$$0);
-
-	  /**
-	   * Returns a function, that, as long as it continues to be invoked, will not
-	   * be triggered. The function will be called after it stops being called for
-	   * N milliseconds. If `immediate` is passed, trigger the function on the
-	   * leading edge, instead of the trailing.
-	   *
-	   * @source underscore.js
-	   * @see http://unscriptable.com/2009/03/20/debouncing-javascript-methods/
-	   * @param {Function} function to wrap
-	   * @param {Number} timeout in ms (`100`)
-	   * @param {Boolean} whether to execute at the beginning (`false`)
-	   * @api public
-	   */
-
-	  module.exports = function debounce(func, wait, immediate) {
-	    var timeout, args, context, timestamp, result;
-	    if (null == wait) wait = 100;
-
-	    function later() {
-	      var last = now() - timestamp;
-
-	      if (last < wait && last > 0) {
-	        timeout = setTimeout(later, wait - last);
-	      } else {
-	        timeout = null;
-	        if (!immediate) {
-	          result = func.apply(context, args);
-	          if (!timeout) context = args = null;
-	        }
-	      }
-	    };
-
-	    return function debounced() {
-	      context = this;
-	      args = arguments;
-	      timestamp = now();
-	      var callNow = immediate && !timeout;
-	      if (!timeout) timeout = setTimeout(later, wait);
-	      if (callNow) {
-	        result = func.apply(context, args);
-	        context = args = null;
-	      }
-
-	      return result;
-	    };
-	  };
-	});
-
-	var debounce = interopDefault(index);
-
-	var weakMap = createCommonjsModule(function (module) {
-	  // Copyright (C) 2011 Google Inc.
-	  //
-	  // Licensed under the Apache License, Version 2.0 (the "License");
-	  // you may not use this file except in compliance with the License.
-	  // You may obtain a copy of the License at
-	  //
-	  // http://www.apache.org/licenses/LICENSE-2.0
-	  //
-	  // Unless required by applicable law or agreed to in writing, software
-	  // distributed under the License is distributed on an "AS IS" BASIS,
-	  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	  // See the License for the specific language governing permissions and
-	  // limitations under the License.
-
-	  /**
-	   * @fileoverview Install a leaky WeakMap emulation on platforms that
-	   * don't provide a built-in one.
-	   *
-	   * <p>Assumes that an ES5 platform where, if {@code WeakMap} is
-	   * already present, then it conforms to the anticipated ES6
-	   * specification. To run this file on an ES5 or almost ES5
-	   * implementation where the {@code WeakMap} specification does not
-	   * quite conform, run <code>repairES5.js</code> first.
-	   *
-	   * <p>Even though WeakMapModule is not global, the linter thinks it
-	   * is, which is why it is in the overrides list below.
-	   *
-	   * <p>NOTE: Before using this WeakMap emulation in a non-SES
-	   * environment, see the note below about hiddenRecord.
-	   *
-	   * @author Mark S. Miller
-	   * @requires crypto, ArrayBuffer, Uint8Array, navigator, console
-	   * @overrides WeakMap, ses, Proxy
-	   * @overrides WeakMapModule
-	   */
-
-	  /**
-	   * This {@code WeakMap} emulation is observably equivalent to the
-	   * ES-Harmony WeakMap, but with leakier garbage collection properties.
-	   *
-	   * <p>As with true WeakMaps, in this emulation, a key does not
-	   * retain maps indexed by that key and (crucially) a map does not
-	   * retain the keys it indexes. A map by itself also does not retain
-	   * the values associated with that map.
-	   *
-	   * <p>However, the values associated with a key in some map are
-	   * retained so long as that key is retained and those associations are
-	   * not overridden. For example, when used to support membranes, all
-	   * values exported from a given membrane will live for the lifetime
-	   * they would have had in the absence of an interposed membrane. Even
-	   * when the membrane is revoked, all objects that would have been
-	   * reachable in the absence of revocation will still be reachable, as
-	   * far as the GC can tell, even though they will no longer be relevant
-	   * to ongoing computation.
-	   *
-	   * <p>The API implemented here is approximately the API as implemented
-	   * in FF6.0a1 and agreed to by MarkM, Andreas Gal, and Dave Herman,
-	   * rather than the offially approved proposal page. TODO(erights):
-	   * upgrade the ecmascript WeakMap proposal page to explain this API
-	   * change and present to EcmaScript committee for their approval.
-	   *
-	   * <p>The first difference between the emulation here and that in
-	   * FF6.0a1 is the presence of non enumerable {@code get___, has___,
-	   * set___, and delete___} methods on WeakMap instances to represent
-	   * what would be the hidden internal properties of a primitive
-	   * implementation. Whereas the FF6.0a1 WeakMap.prototype methods
-	   * require their {@code this} to be a genuine WeakMap instance (i.e.,
-	   * an object of {@code [[Class]]} "WeakMap}), since there is nothing
-	   * unforgeable about the pseudo-internal method names used here,
-	   * nothing prevents these emulated prototype methods from being
-	   * applied to non-WeakMaps with pseudo-internal methods of the same
-	   * names.
-	   *
-	   * <p>Another difference is that our emulated {@code
-	   * WeakMap.prototype} is not itself a WeakMap. A problem with the
-	   * current FF6.0a1 API is that WeakMap.prototype is itself a WeakMap
-	   * providing ambient mutability and an ambient communications
-	   * channel. Thus, if a WeakMap is already present and has this
-	   * problem, repairES5.js wraps it in a safe wrappper in order to
-	   * prevent access to this channel. (See
-	   * PATCH_MUTABLE_FROZEN_WEAKMAP_PROTO in repairES5.js).
-	   */
-
-	  /**
-	   * If this is a full <a href=
-	   * "http://code.google.com/p/es-lab/wiki/SecureableES5"
-	   * >secureable ES5</a> platform and the ES-Harmony {@code WeakMap} is
-	   * absent, install an approximate emulation.
-	   *
-	   * <p>If WeakMap is present but cannot store some objects, use our approximate
-	   * emulation as a wrapper.
-	   *
-	   * <p>If this is almost a secureable ES5 platform, then WeakMap.js
-	   * should be run after repairES5.js.
-	   *
-	   * <p>See {@code WeakMap} for documentation of the garbage collection
-	   * properties of this WeakMap emulation.
-	   */
-	  (function WeakMapModule() {
-	    "use strict";
-
-	    if (typeof ses !== 'undefined' && ses.ok && !ses.ok()) {
-	      // already too broken, so give up
-	      return;
-	    }
-
-	    /**
-	     * In some cases (current Firefox), we must make a choice betweeen a
-	     * WeakMap which is capable of using all varieties of host objects as
-	     * keys and one which is capable of safely using proxies as keys. See
-	     * comments below about HostWeakMap and DoubleWeakMap for details.
-	     *
-	     * This function (which is a global, not exposed to guests) marks a
-	     * WeakMap as permitted to do what is necessary to index all host
-	     * objects, at the cost of making it unsafe for proxies.
-	     *
-	     * Do not apply this function to anything which is not a genuine
-	     * fresh WeakMap.
-	     */
-	    function weakMapPermitHostObjects(map) {
-	      // identity of function used as a secret -- good enough and cheap
-	      if (map.permitHostObjects___) {
-	        map.permitHostObjects___(weakMapPermitHostObjects);
-	      }
-	    }
-	    if (typeof ses !== 'undefined') {
-	      ses.weakMapPermitHostObjects = weakMapPermitHostObjects;
-	    }
-
-	    // IE 11 has no Proxy but has a broken WeakMap such that we need to patch
-	    // it using DoubleWeakMap; this flag tells DoubleWeakMap so.
-	    var doubleWeakMapCheckSilentFailure = false;
-
-	    // Check if there is already a good-enough WeakMap implementation, and if so
-	    // exit without replacing it.
-	    if (typeof WeakMap === 'function') {
-	      var HostWeakMap = WeakMap;
-	      // There is a WeakMap -- is it good enough?
-	      if (typeof navigator !== 'undefined' && /Firefox/.test(navigator.userAgent)) {
-	        // We're now *assuming not*, because as of this writing (2013-05-06)
-	        // Firefox's WeakMaps have a miscellany of objects they won't accept, and
-	        // we don't want to make an exhaustive list, and testing for just one
-	        // will be a problem if that one is fixed alone (as they did for Event).
-
-	        // If there is a platform that we *can* reliably test on, here's how to
-	        // do it:
-	        //  var problematic = ... ;
-	        //  var testHostMap = new HostWeakMap();
-	        //  try {
-	        //    testHostMap.set(problematic, 1);  // Firefox 20 will throw here
-	        //    if (testHostMap.get(problematic) === 1) {
-	        //      return;
-	        //    }
-	        //  } catch (e) {}
-
-	      } else {
-	        // IE 11 bug: WeakMaps silently fail to store frozen objects.
-	        var testMap = new HostWeakMap();
-	        var testObject = Object.freeze({});
-	        testMap.set(testObject, 1);
-	        if (testMap.get(testObject) !== 1) {
-	          doubleWeakMapCheckSilentFailure = true;
-	          // Fall through to installing our WeakMap.
-	        } else {
-	          module.exports = WeakMap;
-	          return;
-	        }
-	      }
-	    }
-
-	    var hop = Object.prototype.hasOwnProperty;
-	    var gopn = Object.getOwnPropertyNames;
-	    var defProp = Object.defineProperty;
-	    var isExtensible = Object.isExtensible;
-
-	    /**
-	     * Security depends on HIDDEN_NAME being both <i>unguessable</i> and
-	     * <i>undiscoverable</i> by untrusted code.
-	     *
-	     * <p>Given the known weaknesses of Math.random() on existing
-	     * browsers, it does not generate unguessability we can be confident
-	     * of.
-	     *
-	     * <p>It is the monkey patching logic in this file that is intended
-	     * to ensure undiscoverability. The basic idea is that there are
-	     * three fundamental means of discovering properties of an object:
-	     * The for/in loop, Object.keys(), and Object.getOwnPropertyNames(),
-	     * as well as some proposed ES6 extensions that appear on our
-	     * whitelist. The first two only discover enumerable properties, and
-	     * we only use HIDDEN_NAME to name a non-enumerable property, so the
-	     * only remaining threat should be getOwnPropertyNames and some
-	     * proposed ES6 extensions that appear on our whitelist. We monkey
-	     * patch them to remove HIDDEN_NAME from the list of properties they
-	     * returns.
-	     *
-	     * <p>TODO(erights): On a platform with built-in Proxies, proxies
-	     * could be used to trap and thereby discover the HIDDEN_NAME, so we
-	     * need to monkey patch Proxy.create, Proxy.createFunction, etc, in
-	     * order to wrap the provided handler with the real handler which
-	     * filters out all traps using HIDDEN_NAME.
-	     *
-	     * <p>TODO(erights): Revisit Mike Stay's suggestion that we use an
-	     * encapsulated function at a not-necessarily-secret name, which
-	     * uses the Stiegler shared-state rights amplification pattern to
-	     * reveal the associated value only to the WeakMap in which this key
-	     * is associated with that value. Since only the key retains the
-	     * function, the function can also remember the key without causing
-	     * leakage of the key, so this doesn't violate our general gc
-	     * goals. In addition, because the name need not be a guarded
-	     * secret, we could efficiently handle cross-frame frozen keys.
-	     */
-	    var HIDDEN_NAME_PREFIX = 'weakmap:';
-	    var HIDDEN_NAME = HIDDEN_NAME_PREFIX + 'ident:' + Math.random() + '___';
-
-	    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function' && typeof ArrayBuffer === 'function' && typeof Uint8Array === 'function') {
-	      var ab = new ArrayBuffer(25);
-	      var u8s = new Uint8Array(ab);
-	      crypto.getRandomValues(u8s);
-	      HIDDEN_NAME = HIDDEN_NAME_PREFIX + 'rand:' + Array.prototype.map.call(u8s, function (u8) {
-	        return (u8 % 36).toString(36);
-	      }).join('') + '___';
-	    }
-
-	    function isNotHiddenName(name) {
-	      return !(name.substr(0, HIDDEN_NAME_PREFIX.length) == HIDDEN_NAME_PREFIX && name.substr(name.length - 3) === '___');
-	    }
-
-	    /**
-	     * Monkey patch getOwnPropertyNames to avoid revealing the
-	     * HIDDEN_NAME.
-	     *
-	     * <p>The ES5.1 spec requires each name to appear only once, but as
-	     * of this writing, this requirement is controversial for ES6, so we
-	     * made this code robust against this case. If the resulting extra
-	     * search turns out to be expensive, we can probably relax this once
-	     * ES6 is adequately supported on all major browsers, iff no browser
-	     * versions we support at that time have relaxed this constraint
-	     * without providing built-in ES6 WeakMaps.
-	     */
-	    defProp(Object, 'getOwnPropertyNames', {
-	      value: function fakeGetOwnPropertyNames(obj) {
-	        return gopn(obj).filter(isNotHiddenName);
-	      }
-	    });
-
-	    /**
-	     * getPropertyNames is not in ES5 but it is proposed for ES6 and
-	     * does appear in our whitelist, so we need to clean it too.
-	     */
-	    if ('getPropertyNames' in Object) {
-	      var originalGetPropertyNames = Object.getPropertyNames;
-	      defProp(Object, 'getPropertyNames', {
-	        value: function fakeGetPropertyNames(obj) {
-	          return originalGetPropertyNames(obj).filter(isNotHiddenName);
-	        }
-	      });
-	    }
-
-	    /**
-	     * <p>To treat objects as identity-keys with reasonable efficiency
-	     * on ES5 by itself (i.e., without any object-keyed collections), we
-	     * need to add a hidden property to such key objects when we
-	     * can. This raises several issues:
-	     * <ul>
-	     * <li>Arranging to add this property to objects before we lose the
-	     *     chance, and
-	     * <li>Hiding the existence of this new property from most
-	     *     JavaScript code.
-	     * <li>Preventing <i>certification theft</i>, where one object is
-	     *     created falsely claiming to be the key of an association
-	     *     actually keyed by another object.
-	     * <li>Preventing <i>value theft</i>, where untrusted code with
-	     *     access to a key object but not a weak map nevertheless
-	     *     obtains access to the value associated with that key in that
-	     *     weak map.
-	     * </ul>
-	     * We do so by
-	     * <ul>
-	     * <li>Making the name of the hidden property unguessable, so "[]"
-	     *     indexing, which we cannot intercept, cannot be used to access
-	     *     a property without knowing the name.
-	     * <li>Making the hidden property non-enumerable, so we need not
-	     *     worry about for-in loops or {@code Object.keys},
-	     * <li>monkey patching those reflective methods that would
-	     *     prevent extensions, to add this hidden property first,
-	     * <li>monkey patching those methods that would reveal this
-	     *     hidden property.
-	     * </ul>
-	     * Unfortunately, because of same-origin iframes, we cannot reliably
-	     * add this hidden property before an object becomes
-	     * non-extensible. Instead, if we encounter a non-extensible object
-	     * without a hidden record that we can detect (whether or not it has
-	     * a hidden record stored under a name secret to us), then we just
-	     * use the key object itself to represent its identity in a brute
-	     * force leaky map stored in the weak map, losing all the advantages
-	     * of weakness for these.
-	     */
-	    function getHiddenRecord(key) {
-	      if (key !== Object(key)) {
-	        throw new TypeError('Not an object: ' + key);
-	      }
-	      var hiddenRecord = key[HIDDEN_NAME];
-	      if (hiddenRecord && hiddenRecord.key === key) {
-	        return hiddenRecord;
-	      }
-	      if (!isExtensible(key)) {
-	        // Weak map must brute force, as explained in doc-comment above.
-	        return void 0;
-	      }
-
-	      // The hiddenRecord and the key point directly at each other, via
-	      // the "key" and HIDDEN_NAME properties respectively. The key
-	      // field is for quickly verifying that this hidden record is an
-	      // own property, not a hidden record from up the prototype chain.
-	      //
-	      // NOTE: Because this WeakMap emulation is meant only for systems like
-	      // SES where Object.prototype is frozen without any numeric
-	      // properties, it is ok to use an object literal for the hiddenRecord.
-	      // This has two advantages:
-	      // * It is much faster in a performance critical place
-	      // * It avoids relying on Object.create(null), which had been
-	      //   problematic on Chrome 28.0.1480.0. See
-	      //   https://code.google.com/p/google-caja/issues/detail?id=1687
-	      hiddenRecord = { key: key };
-
-	      // When using this WeakMap emulation on platforms where
-	      // Object.prototype might not be frozen and Object.create(null) is
-	      // reliable, use the following two commented out lines instead.
-	      // hiddenRecord = Object.create(null);
-	      // hiddenRecord.key = key;
-
-	      // Please contact us if you need this to work on platforms where
-	      // Object.prototype might not be frozen and
-	      // Object.create(null) might not be reliable.
-
-	      try {
-	        defProp(key, HIDDEN_NAME, {
-	          value: hiddenRecord,
-	          writable: false,
-	          enumerable: false,
-	          configurable: false
-	        });
-	        return hiddenRecord;
-	      } catch (error) {
-	        // Under some circumstances, isExtensible seems to misreport whether
-	        // the HIDDEN_NAME can be defined.
-	        // The circumstances have not been isolated, but at least affect
-	        // Node.js v0.10.26 on TravisCI / Linux, but not the same version of
-	        // Node.js on OS X.
-	        return void 0;
-	      }
-	    }
-
-	    /**
-	     * Monkey patch operations that would make their argument
-	     * non-extensible.
-	     *
-	     * <p>The monkey patched versions throw a TypeError if their
-	     * argument is not an object, so it should only be done to functions
-	     * that should throw a TypeError anyway if their argument is not an
-	     * object.
-	     */
-	    (function () {
-	      var oldFreeze = Object.freeze;
-	      defProp(Object, 'freeze', {
-	        value: function identifyingFreeze(obj) {
-	          getHiddenRecord(obj);
-	          return oldFreeze(obj);
-	        }
-	      });
-	      var oldSeal = Object.seal;
-	      defProp(Object, 'seal', {
-	        value: function identifyingSeal(obj) {
-	          getHiddenRecord(obj);
-	          return oldSeal(obj);
-	        }
-	      });
-	      var oldPreventExtensions = Object.preventExtensions;
-	      defProp(Object, 'preventExtensions', {
-	        value: function identifyingPreventExtensions(obj) {
-	          getHiddenRecord(obj);
-	          return oldPreventExtensions(obj);
-	        }
-	      });
-	    })();
-
-	    function constFunc(func) {
-	      func.prototype = null;
-	      return Object.freeze(func);
-	    }
-
-	    var calledAsFunctionWarningDone = false;
-	    function calledAsFunctionWarning() {
-	      // Future ES6 WeakMap is currently (2013-09-10) expected to reject WeakMap()
-	      // but we used to permit it and do it ourselves, so warn only.
-	      if (!calledAsFunctionWarningDone && typeof console !== 'undefined') {
-	        calledAsFunctionWarningDone = true;
-	        console.warn('WeakMap should be invoked as new WeakMap(), not ' + 'WeakMap(). This will be an error in the future.');
-	      }
-	    }
-
-	    var nextId = 0;
-
-	    var OurWeakMap = function OurWeakMap() {
-	      if (!(this instanceof OurWeakMap)) {
-	        // approximate test for new ...()
-	        calledAsFunctionWarning();
-	      }
-
-	      // We are currently (12/25/2012) never encountering any prematurely
-	      // non-extensible keys.
-	      var keys = []; // brute force for prematurely non-extensible keys.
-	      var values = []; // brute force for corresponding values.
-	      var id = nextId++;
-
-	      function get___(key, opt_default) {
-	        var index;
-	        var hiddenRecord = getHiddenRecord(key);
-	        if (hiddenRecord) {
-	          return id in hiddenRecord ? hiddenRecord[id] : opt_default;
-	        } else {
-	          index = keys.indexOf(key);
-	          return index >= 0 ? values[index] : opt_default;
-	        }
-	      }
-
-	      function has___(key) {
-	        var hiddenRecord = getHiddenRecord(key);
-	        if (hiddenRecord) {
-	          return id in hiddenRecord;
-	        } else {
-	          return keys.indexOf(key) >= 0;
-	        }
-	      }
-
-	      function set___(key, value) {
-	        var index;
-	        var hiddenRecord = getHiddenRecord(key);
-	        if (hiddenRecord) {
-	          hiddenRecord[id] = value;
-	        } else {
-	          index = keys.indexOf(key);
-	          if (index >= 0) {
-	            values[index] = value;
-	          } else {
-	            // Since some browsers preemptively terminate slow turns but
-	            // then continue computing with presumably corrupted heap
-	            // state, we here defensively get keys.length first and then
-	            // use it to update both the values and keys arrays, keeping
-	            // them in sync.
-	            index = keys.length;
-	            values[index] = value;
-	            // If we crash here, values will be one longer than keys.
-	            keys[index] = key;
-	          }
-	        }
-	        return this;
-	      }
-
-	      function delete___(key) {
-	        var hiddenRecord = getHiddenRecord(key);
-	        var index, lastIndex;
-	        if (hiddenRecord) {
-	          return id in hiddenRecord && delete hiddenRecord[id];
-	        } else {
-	          index = keys.indexOf(key);
-	          if (index < 0) {
-	            return false;
-	          }
-	          // Since some browsers preemptively terminate slow turns but
-	          // then continue computing with potentially corrupted heap
-	          // state, we here defensively get keys.length first and then use
-	          // it to update both the keys and the values array, keeping
-	          // them in sync. We update the two with an order of assignments,
-	          // such that any prefix of these assignments will preserve the
-	          // key/value correspondence, either before or after the delete.
-	          // Note that this needs to work correctly when index === lastIndex.
-	          lastIndex = keys.length - 1;
-	          keys[index] = void 0;
-	          // If we crash here, there's a void 0 in the keys array, but
-	          // no operation will cause a "keys.indexOf(void 0)", since
-	          // getHiddenRecord(void 0) will always throw an error first.
-	          values[index] = values[lastIndex];
-	          // If we crash here, values[index] cannot be found here,
-	          // because keys[index] is void 0.
-	          keys[index] = keys[lastIndex];
-	          // If index === lastIndex and we crash here, then keys[index]
-	          // is still void 0, since the aliasing killed the previous key.
-	          keys.length = lastIndex;
-	          // If we crash here, keys will be one shorter than values.
-	          values.length = lastIndex;
-	          return true;
-	        }
-	      }
-
-	      return Object.create(OurWeakMap.prototype, {
-	        get___: { value: constFunc(get___) },
-	        has___: { value: constFunc(has___) },
-	        set___: { value: constFunc(set___) },
-	        delete___: { value: constFunc(delete___) }
-	      });
-	    };
-
-	    OurWeakMap.prototype = Object.create(Object.prototype, {
-	      get: {
-	        /**
-	         * Return the value most recently associated with key, or
-	         * opt_default if none.
-	         */
-	        value: function get(key, opt_default) {
-	          return this.get___(key, opt_default);
-	        },
-	        writable: true,
-	        configurable: true
-	      },
-
-	      has: {
-	        /**
-	         * Is there a value associated with key in this WeakMap?
-	         */
-	        value: function has(key) {
-	          return this.has___(key);
-	        },
-	        writable: true,
-	        configurable: true
-	      },
-
-	      set: {
-	        /**
-	         * Associate value with key in this WeakMap, overwriting any
-	         * previous association if present.
-	         */
-	        value: function set(key, value) {
-	          return this.set___(key, value);
-	        },
-	        writable: true,
-	        configurable: true
-	      },
-
-	      'delete': {
-	        /**
-	         * Remove any association for key in this WeakMap, returning
-	         * whether there was one.
-	         *
-	         * <p>Note that the boolean return here does not work like the
-	         * {@code delete} operator. The {@code delete} operator returns
-	         * whether the deletion succeeds at bringing about a state in
-	         * which the deleted property is absent. The {@code delete}
-	         * operator therefore returns true if the property was already
-	         * absent, whereas this {@code delete} method returns false if
-	         * the association was already absent.
-	         */
-	        value: function remove(key) {
-	          return this.delete___(key);
-	        },
-	        writable: true,
-	        configurable: true
-	      }
-	    });
-
-	    if (typeof HostWeakMap === 'function') {
-	      (function () {
-	        // If we got here, then the platform has a WeakMap but we are concerned
-	        // that it may refuse to store some key types. Therefore, make a map
-	        // implementation which makes use of both as possible.
-
-	        // In this mode we are always using double maps, so we are not proxy-safe.
-	        // This combination does not occur in any known browser, but we had best
-	        // be safe.
-	        if (doubleWeakMapCheckSilentFailure && typeof Proxy !== 'undefined') {
-	          Proxy = undefined;
-	        }
-
-	        function DoubleWeakMap() {
-	          if (!(this instanceof OurWeakMap)) {
-	            // approximate test for new ...()
-	            calledAsFunctionWarning();
-	          }
-
-	          // Preferable, truly weak map.
-	          var hmap = new HostWeakMap();
-
-	          // Our hidden-property-based pseudo-weak-map. Lazily initialized in the
-	          // 'set' implementation; thus we can avoid performing extra lookups if
-	          // we know all entries actually stored are entered in 'hmap'.
-	          var omap = undefined;
-
-	          // Hidden-property maps are not compatible with proxies because proxies
-	          // can observe the hidden name and either accidentally expose it or fail
-	          // to allow the hidden property to be set. Therefore, we do not allow
-	          // arbitrary WeakMaps to switch to using hidden properties, but only
-	          // those which need the ability, and unprivileged code is not allowed
-	          // to set the flag.
-	          //
-	          // (Except in doubleWeakMapCheckSilentFailure mode in which case we
-	          // disable proxies.)
-	          var enableSwitching = false;
-
-	          function dget(key, opt_default) {
-	            if (omap) {
-	              return hmap.has(key) ? hmap.get(key) : omap.get___(key, opt_default);
-	            } else {
-	              return hmap.get(key, opt_default);
-	            }
-	          }
-
-	          function dhas(key) {
-	            return hmap.has(key) || (omap ? omap.has___(key) : false);
-	          }
-
-	          var dset;
-	          if (doubleWeakMapCheckSilentFailure) {
-	            dset = function dset(key, value) {
-	              hmap.set(key, value);
-	              if (!hmap.has(key)) {
-	                if (!omap) {
-	                  omap = new OurWeakMap();
-	                }
-	                omap.set(key, value);
-	              }
-	              return this;
-	            };
-	          } else {
-	            dset = function dset(key, value) {
-	              if (enableSwitching) {
-	                try {
-	                  hmap.set(key, value);
-	                } catch (e) {
-	                  if (!omap) {
-	                    omap = new OurWeakMap();
-	                  }
-	                  omap.set___(key, value);
-	                }
-	              } else {
-	                hmap.set(key, value);
-	              }
-	              return this;
-	            };
-	          }
-
-	          function ddelete(key) {
-	            var result = !!hmap['delete'](key);
-	            if (omap) {
-	              return omap.delete___(key) || result;
-	            }
-	            return result;
-	          }
-
-	          return Object.create(OurWeakMap.prototype, {
-	            get___: { value: constFunc(dget) },
-	            has___: { value: constFunc(dhas) },
-	            set___: { value: constFunc(dset) },
-	            delete___: { value: constFunc(ddelete) },
-	            permitHostObjects___: { value: constFunc(function (token) {
-	                if (token === weakMapPermitHostObjects) {
-	                  enableSwitching = true;
-	                } else {
-	                  throw new Error('bogus call to permitHostObjects___');
-	                }
-	              }) }
-	          });
-	        }
-	        DoubleWeakMap.prototype = OurWeakMap.prototype;
-	        module.exports = DoubleWeakMap;
-
-	        // define .constructor to hide OurWeakMap ctor
-	        Object.defineProperty(WeakMap.prototype, 'constructor', {
-	          value: WeakMap,
-	          enumerable: false, // as default .constructor is
-	          configurable: true,
-	          writable: true
-	        });
-	      })();
-	    } else {
-	      // There is no host WeakMap, so we must use the emulation.
-
-	      // Emulated WeakMaps are incompatible with native proxies (because proxies
-	      // can observe the hidden name), so we must disable Proxy usage (in
-	      // ArrayLike and Domado, currently).
-	      if (typeof Proxy !== 'undefined') {
-	        Proxy = undefined;
-	      }
-
-	      module.exports = OurWeakMap;
-	    }
-	  })();
-	});
-
-	var WeakMap$1 = interopDefault(weakMap);
-
-	var _window$2 = window;
-	var DocumentFragment$1 = _window$2.DocumentFragment;
-
-
-	function eachChildNode(node, func) {
-	  if (!node) {
-	    return;
-	  }
-
-	  var chs = node.childNodes;
-	  var chsLen = chs.length;
-	  for (var a = 0; a < chsLen; a++) {
-	    var ret = func(chs[a], a, chs);
-	    if (typeof ret !== 'undefined') {
-	      return ret; // eslint-disable-line consistent-return
-	    }
-	  }
-	}
-
-	// Re-implemented to avoid Array.prototype.slice.call for performance reasons
-	function reverse(arr) {
-	  var reversedArray = [];
-	  for (var i = arr.length - 1; i >= 0; i--) {
-	    reversedArray.push(arr[i]);
-	  }
-	  return reversedArray;
-	}
-
-	/**
-	 * Execute func over all child nodes or a document fragment, or a single node
-	 * @param node the node or document fragment
-	 * @param func a function to execute on node or the children of node, if node is a document fragment.
-	 *        func may optionally append the node elsewhere, in the case of a document fragment
-	 */
-	function eachNodeOrFragmentNodes(node, func) {
-	  if (node instanceof DocumentFragment$1) {
-	    var chs = node.childNodes;
-	    var chsLen = chs.length;
-
-	    // We must iterate in reverse to handle the case where child nodes are moved elsewhere during execution
-	    for (var a = chsLen - 1; a >= 0; a--) {
-	      var thisNode = reverse(node.childNodes)[a];
-	      func(thisNode, a);
-	    }
-	  } else {
-	    func(node, 0);
-	  }
-	}
-
-	var _window$4 = window;
-	var Node$1 = _window$4.Node;
-
-	var div$1 = document.createElement('div');
-
-	function getPrototype(obj, key) {
-	  var descriptor = void 0;
-
-	  while (obj && !(descriptor = Object.getOwnPropertyDescriptor(obj, key))) {
-	    // eslint-disable-line no-cond-assign
-	    obj = Object.getPrototypeOf(obj);
-	  }
-	  return descriptor;
-	}
-	function getPropertyDescriptor (obj, key) {
-	  if (obj instanceof Node$1) {
-	    obj = div$1;
-	  }
-	  var proto = getPrototype(obj, key);
-
-	  if (proto) {
-	    var getter = proto.get;
-	    var setter = proto.set;
-	    var _descriptor = {
-	      configurable: true,
-	      enumerable: true
-	    };
-
-	    if (getter) {
-	      _descriptor.get = getter;
-	      _descriptor.set = setter;
-	      return _descriptor;
-	    } else if (typeof obj[key] === 'function') {
-	      _descriptor.value = obj[key];
-	      return _descriptor;
-	    }
-	  }
-
-	  var descriptor = Object.getOwnPropertyDescriptor(obj, key);
-	  if (descriptor && descriptor.get) {
-	    return descriptor;
-	  }
-	}
-
-	var _window$3 = window;
-	var Element$1 = _window$3.Element;
-
-	var nativeParentNode = getPropertyDescriptor(Element$1.prototype, 'innerHTML');
-
-	var canPatchNativeAccessors = !!nativeParentNode;
-
-	/**
-	 * See https://w3c.github.io/DOM-Parsing/#serializing
-	 * @param {TextNode}
-	 * @returns {string}
-	 */
-	function getEscapedTextContent(textNode) {
-	  return textNode.textContent.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-	}
-
-	/**
-	 * @param {TextNode}
-	 * @returns {string}
-	 */
-	function getRawTextContent(textNode) {
-	  return textNode.textContent;
-	}
-
-	/**
-	 * @returns {string}
-	 * @param {commentNode}
-	 */
-	function getCommentNodeOuterHtml(commentNode) {
-	  return commentNode.text || "<!--" + commentNode.textContent + "-->";
-	}
-
-	function isSlotNode (node) {
-	  return node.tagName === 'SLOT';
-	}
-
-	var _window$5 = window;
-	var Node$2 = _window$5.Node;
-
-
-	function findSlots(root) {
-	  var slots = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-	  var childNodes = root.childNodes;
-
-
-	  if (!childNodes || [Node$2.ELEMENT_NODE, Node$2.DOCUMENT_FRAGMENT_NODE].indexOf(root.nodeType) === -1) {
-	    return slots;
-	  }
-
-	  var length = childNodes.length;
-
-
-	  for (var a = 0; a < length; a++) {
-	    var childNode = childNodes[a];
-
-	    if (isSlotNode(childNode)) {
-	      slots.push(childNode);
-	    }
-	    findSlots(childNode, slots);
-	  }
-
-	  return slots;
-	}
-
-	function isFragmentNode (node) {
-	  return node instanceof DocumentFragment;
-	}
-
-	function isRootNode (node) {
-	  return node.tagName === '_SHADOW_ROOT_';
-	}
-
-	var pseudoArrayToArray = (function (pseudoArray) {
-	  return Array.prototype.slice.call(pseudoArray);
-	});
-
-	var _window$1 = window;
-	var Comment = _window$1.Comment;
-	var CustomEvent$2 = _window$1.CustomEvent;
-	var DOMParser = _window$1.DOMParser;
-	var HTMLElement$1 = _window$1.HTMLElement;
-	var Node = _window$1.Node;
-	var SVGElement = _window$1.SVGElement;
-	var Text = _window$1.Text;
-
-	var arrProto = Array.prototype;
-	var forEach = arrProto.forEach;
-
-	// We use a real DOM node for a shadow root. This is because the host node
-	// basically becomes a virtual entry point for your element leaving the shadow
-	// root the only thing that can receive instructions on how the host should
-	// render to the browser.
-
-	var defaultShadowRootTagName = '_shadow_root_';
-
-	// * WebKit only *
-	//
-	// These members we need cannot override as we require native access to their
-	// original values at some point.
-	var polyfillAtRuntime = ['childNodes', 'parentNode'];
-
-	// Some properties that should not be overridden in the Text prototype.
-	var doNotOverridePropertiesInTextNodes = ['textContent'];
-
-	// Some new properties that should be defined in the Text prototype.
-	var defineInTextNodes = ['assignedSlot'];
-
-	// Some properties that should not be overridden in the Comment prototype.
-	var doNotOverridePropertiesInCommNodes = ['textContent'];
-
-	// Some properties that should be overridden in the DocumentFragment prototype.
-	var overridePropertiesInFragNodes = ['appendChild', 'insertBefore', 'removeChild'];
-
-	// Some new properties that should be defined in the Comment prototype.
-	var defineInCommNodes = [];
-
-	// Nodes that should be slotted
-	var slottedNodeTypes = [Node.ELEMENT_NODE, Node.TEXT_NODE];
-
-	// Private data stores.
-	var assignedToSlotMap = new WeakMap$1();
-	var hostToModeMap = new WeakMap$1();
-	var hostToRootMap = new WeakMap$1();
-	var nodeToChildNodesMap = new WeakMap$1();
-	var nodeToParentNodeMap = new WeakMap$1();
-	var nodeToSlotMap = new WeakMap$1();
-	var rootToHostMap = new WeakMap$1();
-	var rootToSlotMap = new WeakMap$1();
-	var slotToRootMap = new WeakMap$1();
-
-	// Unfortunately manual DOM parsing is because of WebKit.
-	var parser = new DOMParser();
-	function parse(html) {
-	  var tree = document.createElement('div');
-
-	  // Everything not WebKit can do this easily.
-	  if (canPatchNativeAccessors) {
-	    tree.__innerHTML = html;
-	    return tree;
-	  }
-
-	  var parsed = parser.parseFromString('<div>' + html + '</div>', 'text/html').body.firstChild;
-
-	  while (parsed.hasChildNodes()) {
-	    var firstChild = parsed.firstChild;
-	    parsed.removeChild(firstChild);
-	    tree.appendChild(firstChild);
-	  }
-
-	  // Need to import the node to initialise the custom elements from the parser.
-	  return document.importNode(tree, true);
-	}
-
-	function staticProp(obj, name, value) {
-	  Object.defineProperty(obj, name, {
-	    configurable: true,
-	    get: function get() {
-	      return value;
-	    }
-	  });
-	}
-
-	// Slotting helpers.
-
-	function arrayItem(idx) {
-	  return this[idx];
-	}
-
-	function makeLikeNodeList(arr) {
-	  arr.item = arrayItem;
-	  return arr;
-	}
-
-	function isHostNode(node) {
-	  return !!hostToRootMap.get(node);
-	}
-
-	function getNodeType(node) {
-	  if (isHostNode(node)) {
-	    return 'host';
-	  }
-
-	  if (isSlotNode(node)) {
-	    return 'slot';
-	  }
-
-	  if (isRootNode(node)) {
-	    return 'root';
-	  }
-
-	  if (isFragmentNode(node)) {
-	    return 'fragment';
-	  }
-
-	  return 'node';
-	}
-
-	function findClosest(node, func) {
-	  while (node) {
-	    if (node === document) {
-	      break;
-	    }
-	    if (func(node)) {
-	      return node;
-	    }
-	    node = node.parentNode;
-	  }
-	}
-
-	function getSlotNameFromSlot(node) {
-	  return node.getAttribute && node.getAttribute('name') || 'default';
-	}
-
-	function getSlotNameFromNode(node) {
-	  return node.getAttribute && node.getAttribute('slot') || 'default';
-	}
-
-	function slotNodeIntoSlot(slot, node, insertBefore) {
-	  // Only Text and Element nodes should be slotted.
-	  if (slottedNodeTypes.indexOf(node.nodeType) === -1) {
-	    return;
-	  }
-
-	  var assignedNodes = slot.assignedNodes();
-	  var shouldGoIntoContentMode = assignedNodes.length === 0;
-	  var slotInsertBeforeIndex = assignedNodes.indexOf(insertBefore);
-
-	  // Assign the slot to the node internally.
-	  nodeToSlotMap.set(node, slot);
-
-	  // Remove the fallback content and state if we're going into content mode.
-	  if (shouldGoIntoContentMode) {
-	    forEach.call(slot.childNodes, function (child) {
-	      return slot.__removeChild(child);
-	    });
-	  }
-
-	  if (slotInsertBeforeIndex > -1) {
-	    slot.__insertBefore(node, insertBefore !== undefined ? insertBefore : null);
-	    assignedNodes.splice(slotInsertBeforeIndex, 0, node);
-	  } else {
-	    slot.__appendChild(node);
-	    assignedNodes.push(node);
-	  }
-
-	  slot.____triggerSlotChangeEvent();
-	}
-
-	function slotNodeFromSlot(node) {
-	  var slot = nodeToSlotMap.get(node);
-
-	  if (slot) {
-	    var assignedNodes = slot.assignedNodes();
-	    var index = assignedNodes.indexOf(node);
-
-	    if (index > -1) {
-	      var shouldGoIntoDefaultMode = assignedNodes.length === 1;
-
-	      assignedNodes.splice(index, 1);
-	      nodeToSlotMap.set(node, null);
-
-	      // Actually remove the child.
-	      slot.__removeChild(node);
-
-	      // If this was the last slotted node, then insert fallback content.
-	      if (shouldGoIntoDefaultMode) {
-	        forEach.call(slot.childNodes, function (child) {
-	          return slot.__appendChild(child);
-	        });
-	      }
-
-	      slot.____triggerSlotChangeEvent();
-	    }
-	  }
-	}
-
-	// Returns the index of the node in the host's childNodes.
-	function indexOfNode(host, node) {
-	  var chs = host.childNodes;
-	  var chsLen = chs.length;
-	  for (var a = 0; a < chsLen; a++) {
-	    if (chs[a] === node) {
-	      return a;
-	    }
-	  }
-	  return -1;
-	}
-
-	// Adds the node to the list of childNodes on the host and fakes any necessary
-	// information such as parentNode.
-	function registerNode(host, node, insertBefore, func) {
-	  var index = indexOfNode(host, insertBefore);
-	  eachNodeOrFragmentNodes(node, function (eachNode, eachIndex) {
-	    func(eachNode, eachIndex);
-
-	    if (canPatchNativeAccessors) {
-	      nodeToParentNodeMap.set(eachNode, host);
-	    } else {
-	      staticProp(eachNode, 'parentNode', host);
-	    }
-
-	    // When childNodes is artificial, do manual house keeping.
-	    if (Array.isArray(host.childNodes)) {
-	      if (index > -1) {
-	        arrProto.splice.call(host.childNodes, index + eachIndex, 0, eachNode);
-	      } else {
-	        arrProto.push.call(host.childNodes, eachNode);
-	      }
-	    }
-	  });
-	}
-
-	// Cleans up registerNode().
-	function unregisterNode(host, node, func) {
-	  var index = indexOfNode(host, node);
-
-	  if (index > -1) {
-	    func(node, 0);
-
-	    if (canPatchNativeAccessors) {
-	      nodeToParentNodeMap.set(node, null);
-	    } else {
-	      staticProp(node, 'parentNode', null);
-	    }
-
-	    arrProto.splice.call(host.childNodes, index, 1);
-	  }
-	}
-
-	function addNodeToNode(host, node, insertBefore) {
-	  registerNode(host, node, insertBefore, function (eachNode) {
-	    host.__insertBefore(eachNode, insertBefore !== undefined ? insertBefore : null);
-	  });
-	}
-
-	function addNodeToHost(host, node, insertBefore) {
-	  registerNode(host, node, insertBefore, function (eachNode) {
-	    var rootNode = hostToRootMap.get(host);
-	    var slotNodes = rootToSlotMap.get(rootNode);
-	    var slotNode = slotNodes[getSlotNameFromNode(eachNode)];
-	    if (slotNode) {
-	      slotNodeIntoSlot(slotNode, eachNode, insertBefore);
-	    }
-	  });
-	}
-
-	function addSlotToRoot(root, slot) {
-	  var slotName = getSlotNameFromSlot(slot);
-
-	  // Ensure a slot node's childNodes are overridden at the earliest point
-	  // possible for WebKit.
-	  if (!canPatchNativeAccessors && !Array.isArray(slot.childNodes)) {
-	    staticProp(slot, 'childNodes', pseudoArrayToArray(slot.childNodes));
-	  }
-
-	  rootToSlotMap.get(root)[slotName] = slot;
-
-	  if (!slotToRootMap.has(slot)) {
-	    slotToRootMap.set(slot, root);
-	  }
-
-	  eachChildNode(rootToHostMap.get(root), function (eachNode) {
-	    if (!eachNode.assignedSlot && slotName === getSlotNameFromNode(eachNode)) {
-	      slotNodeIntoSlot(slot, eachNode);
-	    }
-	  });
-	}
-
-	function addNodeToRoot(root, node, insertBefore) {
-	  eachNodeOrFragmentNodes(node, function (child) {
-	    if (isSlotNode(child)) {
-	      addSlotToRoot(root, child);
-	    } else {
-	      var slotNodes = findSlots(child);
-	      if (slotNodes) {
-	        var slotNodesLen = slotNodes.length;
-	        for (var a = 0; a < slotNodesLen; a++) {
-	          addSlotToRoot(root, slotNodes[a]);
-	        }
-	      }
-	    }
-	  });
-	  addNodeToNode(root, node, insertBefore);
-	}
-
-	// Adds a node to a slot. In other words, adds default content to a slot. It
-	// ensures that if the slot doesn't have any assigned nodes yet, that the node
-	// is actually displayed, otherwise it's just registered as child content.
-	function addNodeToSlot(slot, node, insertBefore) {
-	  var isInDefaultMode = slot.assignedNodes().length === 0;
-	  registerNode(slot, node, insertBefore, function (eachNode) {
-	    if (isInDefaultMode) {
-	      slot.__insertBefore(eachNode, insertBefore !== undefined ? insertBefore : null);
-	    }
-	  });
-	}
-
-	// Removes a node from a slot (default content). It ensures that if the slot
-	// doesn't have any assigned nodes yet, that the node is actually removed,
-	// otherwise it's just unregistered.
-	function removeNodeFromSlot(slot, node) {
-	  var isInDefaultMode = slot.assignedNodes().length === 0;
-	  unregisterNode(slot, node, function () {
-	    if (isInDefaultMode) {
-	      slot.__removeChild(node);
-	    }
-	  });
-	}
-
-	function removeNodeFromNode(host, node) {
-	  unregisterNode(host, node, function () {
-	    host.__removeChild(node);
-	  });
-	}
-
-	function removeNodeFromHost(host, node) {
-	  unregisterNode(host, node, function () {
-	    slotNodeFromSlot(node);
-	  });
-	}
-
-	function removeSlotFromRoot(root, node) {
-	  var assignedNodes = Array.prototype.slice.call(node.assignedNodes());
-	  assignedNodes.forEach(slotNodeFromSlot);
-	  delete rootToSlotMap.get(root)[getSlotNameFromSlot(node)];
-	  slotToRootMap.delete(node);
-	}
-
-	function removeNodeFromRoot(root, node) {
-	  unregisterNode(root, node, function () {
-	    if (isSlotNode(node)) {
-	      removeSlotFromRoot(root, node);
-	    } else {
-	      var nodes = findSlots(node);
-	      if (nodes) {
-	        for (var a = 0; a < nodes.length; a++) {
-	          removeSlotFromRoot(root, nodes[a]);
-	        }
-	      }
-	    }
-	    root.__removeChild(node);
-	  });
-	}
-
-	// TODO terribly inefficient
-	function getRootNode(host) {
-	  if (isRootNode(host)) {
-	    return host;
-	  }
-
-	  if (!host.parentNode) {
-	    return;
-	  }
-
-	  return getRootNode(host.parentNode);
-	}
-
-	function appendChildOrInsertBefore(host, newNode, refNode) {
-	  var nodeType = getNodeType(host);
-	  var parentNode = newNode.parentNode;
-	  var rootNode = getRootNode(host);
-
-	  // Ensure childNodes is patched so we can manually update it for WebKit.
-	  // Fragment has minimal patching and expects .childNodes to remain native.
-	  if (!canPatchNativeAccessors && !Array.isArray(host.childNodes) && nodeType !== 'fragment') {
-	    staticProp(host, 'childNodes', pseudoArrayToArray(host.childNodes));
-	  }
-
-	  if (rootNode && getNodeType(newNode) === 'slot') {
-	    addSlotToRoot(rootNode, newNode);
-	  }
-
-	  // If we append a child to a host, the host tells the shadow root to distribute
-	  // it. If the root decides it doesn't need to be distributed, it is never
-	  // removed from the old parent because in polyfill land we store a reference
-	  // to the node but we don't move it. Due to that, we must explicitly remove the
-	  // node from its old parent.
-	  if (parentNode && getNodeType(parentNode) === 'host') {
-	    if (canPatchNativeAccessors) {
-	      nodeToParentNodeMap.set(newNode, null);
-	    } else {
-	      staticProp(newNode, 'parentNode', null);
-	    }
-	  }
-
-	  // safari doesn't update its children properly for some reason, so it needs a little push
-	  if (!canPatchNativeAccessors && parentNode) {
-	    parentNode.removeChild(newNode);
-	  }
-
-	  switch (nodeType) {
-	    case 'fragment':
-	    case 'node':
-	      return addNodeToNode(host, newNode, refNode);
-	    case 'slot':
-	      return addNodeToSlot(host, newNode, refNode);
-	    case 'host':
-	      return addNodeToHost(host, newNode, refNode);
-	    case 'root':
-	      return addNodeToRoot(host, newNode, refNode);
-	  }
-	}
-
-	function syncSlotChildNodes(node) {
-	  if (canPatchNativeAccessors && getNodeType(node) === 'slot' && node.__childNodes.length !== node.childNodes.length) {
-	    while (node.hasChildNodes()) {
-	      node.removeChild(node.firstChild);
-	    }
-
-	    forEach.call(node.__childNodes, function (child) {
-	      return node.appendChild(child);
-	    });
-	  }
-	}
-
-	var members = {
-	  // For testing purposes.
-	  ____assignedNodes: {
-	    get: function get() {
-	      return this.______assignedNodes || (this.______assignedNodes = []);
-	    }
-	  },
-
-	  // For testing purposes.
-	  ____isInFallbackMode: {
-	    get: function get() {
-	      return this.assignedNodes().length === 0;
-	    }
-	  },
-
-	  ____slotChangeListeners: {
-	    get: function get() {
-	      if (typeof this.______slotChangeListeners === 'undefined') {
-	        this.______slotChangeListeners = 0;
-	      }
-	      return this.______slotChangeListeners;
-	    },
-	    set: function set(value) {
-	      this.______slotChangeListeners = value;
-	    }
-	  },
-	  ____triggerSlotChangeEvent: {
-	    value: debounce(function callback() {
-	      if (this.____slotChangeListeners) {
-	        this.dispatchEvent(new CustomEvent$2('slotchange', {
-	          bubbles: false,
-	          cancelable: false
-	        }));
-	      }
-	    })
-	  },
-	  addEventListener: {
-	    value: function value(name, func, opts) {
-	      if (name === 'slotchange' && isSlotNode(this)) {
-	        this.____slotChangeListeners++;
-	      }
-	      return this.__addEventListener(name, func, opts);
-	    }
-	  },
-	  appendChild: {
-	    value: function value(newNode) {
-	      appendChildOrInsertBefore(this, newNode);
-	      return newNode;
-	    }
-	  },
-	  assignedSlot: {
-	    get: function get() {
-	      var slot = nodeToSlotMap.get(this);
-
-	      if (!slot) {
-	        return null;
-	      }
-
-	      var root = slotToRootMap.get(slot);
-	      var host = rootToHostMap.get(root);
-	      var mode = hostToModeMap.get(host);
-
-	      return mode === 'open' ? slot : null;
-	    }
-	  },
-	  attachShadow: {
-	    value: function value(opts) {
-	      var _this = this;
-
-	      var mode = opts && opts.mode;
-	      if (mode !== 'closed' && mode !== 'open') {
-	        throw new Error('You must specify { mode } as "open" or "closed" to attachShadow().');
-	      }
-
-	      // Return the existing shadow root if it exists.
-	      var existingShadowRoot = hostToRootMap.get(this);
-	      if (existingShadowRoot) {
-	        return existingShadowRoot;
-	      }
-
-	      var lightNodes = makeLikeNodeList([].slice.call(this.childNodes));
-	      var shadowRoot = document.createElement(opts.polyfillShadowRootTagName || defaultShadowRootTagName);
-
-	      // Host and shadow root data.
-	      hostToModeMap.set(this, mode);
-	      hostToRootMap.set(this, shadowRoot);
-	      rootToHostMap.set(shadowRoot, this);
-	      rootToSlotMap.set(shadowRoot, {});
-
-	      if (canPatchNativeAccessors) {
-	        nodeToChildNodesMap.set(this, lightNodes);
-	      } else {
-	        staticProp(this, 'childNodes', lightNodes);
-	      }
-
-	      // Process light DOM.
-	      lightNodes.forEach(function (node) {
-	        // Existing children should be removed from being displayed, but still
-	        // appear to be child nodes. This is how light DOM works; they're still
-	        // child nodes but not in the composed DOM yet as there won't be any
-	        // slots for them to go into.
-	        _this.__removeChild(node);
-
-	        // We must register the parentNode here as this has the potential to
-	        // become out of sync if the node is moved before being slotted.
-	        if (canPatchNativeAccessors) {
-	          nodeToParentNodeMap.set(node, _this);
-	        } else {
-	          staticProp(node, 'parentNode', _this);
-	        }
-	      });
-
-	      // The shadow root is actually the only child of the host.
-	      return this.__appendChild(shadowRoot);
-	    }
-	  },
-	  childElementCount: {
-	    get: function get() {
-	      return this.children.length;
-	    }
-	  },
-	  childNodes: {
-	    get: function get() {
-	      if (canPatchNativeAccessors && getNodeType(this) === 'node') {
-	        return this.__childNodes;
-	      }
-	      var childNodes = nodeToChildNodesMap.get(this);
-
-	      if (!childNodes) {
-	        nodeToChildNodesMap.set(this, childNodes = makeLikeNodeList([]));
-	      }
-
-	      return childNodes;
-	    }
-	  },
-	  children: {
-	    get: function get() {
-	      var chs = [];
-	      eachChildNode(this, function (node) {
-	        if (node.nodeType === 1) {
-	          chs.push(node);
-	        }
-	      });
-	      return makeLikeNodeList(chs);
-	    }
-	  },
-	  firstChild: {
-	    get: function get() {
-	      return this.childNodes[0] || null;
-	    }
-	  },
-	  firstElementChild: {
-	    get: function get() {
-	      return this.children[0] || null;
-	    }
-	  },
-	  assignedNodes: {
-	    value: function value() {
-	      if (isSlotNode(this)) {
-	        var assigned = assignedToSlotMap.get(this);
-
-	        if (!assigned) {
-	          assignedToSlotMap.set(this, assigned = []);
-	        }
-
-	        return assigned;
-	      }
-	    }
-	  },
-	  hasChildNodes: {
-	    value: function value() {
-	      return this.childNodes.length > 0;
-	    }
-	  },
-	  innerHTML: {
-	    get: function get() {
-	      var innerHTML = '';
-
-	      var getHtmlNodeOuterHtml = function getHtmlNodeOuterHtml(node) {
-	        return node.outerHTML;
-	      };
-	      var getOuterHtmlByNodeType = {};
-	      getOuterHtmlByNodeType[Node.ELEMENT_NODE] = getHtmlNodeOuterHtml;
-	      getOuterHtmlByNodeType[Node.COMMENT_NODE] = getCommentNodeOuterHtml;
-
-	      // Text nodes with these ancestors should be treated as raw text
-	      // See section 8.4 of
-	      // https://www.w3.org/TR/2008/WD-html5-20080610/serializing.html#html-fragment
-	      // Though Chrome does not adhere to spec for <noscript/>
-	      var rawTextNodeNames = {
-	        style: true,
-	        script: true,
-	        xmp: true,
-	        iframe: true,
-	        noembed: true,
-	        noframes: true,
-	        noscript: true,
-	        plaintext: true
-	      };
-
-	      function isRawTextNode(node) {
-	        return node.nodeType === Node.ELEMENT_NODE && node.nodeName.toLowerCase() in rawTextNodeNames;
-	      }
-
-	      var isParentNodeRawText = isRawTextNode(this);
-
-	      eachChildNode(this, function (node) {
-	        var getOuterHtml = void 0;
-	        if (node.nodeType === Node.TEXT_NODE) {
-	          if (isParentNodeRawText) {
-	            getOuterHtml = getRawTextContent;
-	          } else {
-	            getOuterHtml = getEscapedTextContent;
-	          }
-	        } else {
-	          getOuterHtml = getOuterHtmlByNodeType[node.nodeType] || getHtmlNodeOuterHtml;
-	        }
-	        innerHTML += getOuterHtml(node);
-	      });
-	      return innerHTML;
-	    },
-	    set: function set(innerHTML) {
-	      var parsed = parse(innerHTML);
-
-	      while (this.hasChildNodes()) {
-	        this.removeChild(this.firstChild);
-	      }
-
-	      // when we are doing this: root.innerHTML = "<slot><div></div></slot>";
-	      // slot.__childNodes is out of sync with slot.childNodes.
-	      // to fix it we have to manually remove and insert them
-	      var slots = findSlots(parsed);
-	      forEach.call(slots, function (slot) {
-	        return syncSlotChildNodes(slot);
-	      });
-
-	      while (parsed.hasChildNodes()) {
-	        var firstChild = parsed.firstChild;
-
-	        // When we polyfill everything on HTMLElement.prototype, we overwrite
-	        // properties. This makes it so that parentNode reports null even though
-	        // it's actually a parent of the HTML parser. For this reason,
-	        // cleanNode() won't work and we must manually remove it from the
-	        // parser before it is moved to the host just in case it's added as a
-	        // light node but not assigned to a slot.
-	        parsed.removeChild(firstChild);
-
-	        this.appendChild(firstChild);
-	      }
-	    }
-	  },
-	  insertBefore: {
-	    value: function value(newNode, refNode) {
-	      appendChildOrInsertBefore(this, newNode, refNode);
-	      return newNode;
-	    }
-	  },
-	  lastChild: {
-	    get: function get() {
-	      var ch = this.childNodes;
-	      return ch[ch.length - 1] || null;
-	    }
-	  },
-	  lastElementChild: {
-	    get: function get() {
-	      var ch = this.children;
-	      return ch[ch.length - 1] || null;
-	    }
-	  },
-	  name: {
-	    get: function get() {
-	      return this.getAttribute('name');
-	    },
-	    set: function set(name) {
-	      var oldName = this.name;
-	      var ret = this.__setAttribute('name', name);
-
-	      if (name === oldName) {
-	        return ret;
-	      }
-
-	      if (!isSlotNode(this)) {
-	        return ret;
-	      }
-	      var root = slotToRootMap.get(this);
-	      if (root) {
-	        removeSlotFromRoot(root, this);
-	        addSlotToRoot(root, this);
-	      }
-	      return ret;
-	    }
-	  },
-	  nextSibling: {
-	    get: function get() {
-	      var host = this;
-	      return eachChildNode(this.parentNode, function (child, index, nodes) {
-	        if (host === child) {
-	          return nodes[index + 1] || null;
-	        }
-	      });
-	    }
-	  },
-	  nextElementSibling: {
-	    get: function get() {
-	      var host = this;
-	      var found = void 0;
-	      return eachChildNode(this.parentNode, function (child) {
-	        if (found && child.nodeType === 1) {
-	          return child;
-	        }
-	        if (host === child) {
-	          found = true;
-	        }
-	      });
-	    }
-	  },
-	  outerHTML: {
-	    get: function get() {
-	      var name = this.tagName.toLowerCase();
-	      var attributes = Array.prototype.slice.call(this.attributes).map(function (attr) {
-	        return ' ' + attr.name + (attr.value ? '="' + attr.value + '"' : '');
-	      }).join('');
-	      return '<' + name + attributes + '>' + this.innerHTML + '</' + name + '>';
-	    },
-	    set: function set(outerHTML) {
-	      if (this.parentNode) {
-	        var parsed = parse(outerHTML);
-	        this.parentNode.replaceChild(parsed.firstChild, this);
-	      } else if (canPatchNativeAccessors) {
-	        this.__outerHTML = outerHTML; // this will throw a native error;
-	      } else {
-	        throw new Error('Failed to set the \'outerHTML\' property on \'Element\': This element has no parent node.');
-	      }
-	    }
-	  },
-	  parentElement: {
-	    get: function get() {
-	      return findClosest(this.parentNode, function (node) {
-	        return node.nodeType === 1;
-	      });
-	    }
-	  },
-	  parentNode: {
-	    get: function get() {
-	      return nodeToParentNodeMap.get(this) || this.__parentNode || null;
-	    }
-	  },
-	  previousSibling: {
-	    get: function get() {
-	      var host = this;
-	      return eachChildNode(this.parentNode, function (child, index, nodes) {
-	        if (host === child) {
-	          return nodes[index - 1] || null;
-	        }
-	      });
-	    }
-	  },
-	  previousElementSibling: {
-	    get: function get() {
-	      var host = this;
-	      var found = void 0;
-	      return eachChildNode(this.parentNode, function (child) {
-	        if (found && host === child) {
-	          return found;
-	        }
-	        if (child.nodeType === 1) {
-	          found = child;
-	        }
-	      });
-	    }
-	  },
-	  removeChild: {
-	    value: function value(refNode) {
-	      var nodeType = getNodeType(this);
-
-	      switch (nodeType) {
-	        case 'fragment':
-	        case 'node':
-	          if (canPatchNativeAccessors) {
-	            nodeToParentNodeMap.set(refNode, null);
-	            return this.__removeChild(refNode);
-	          }
-	          removeNodeFromNode(this, refNode);
-	          break;
-	        case 'slot':
-	          removeNodeFromSlot(this, refNode);
-	          break;
-	        case 'host':
-	          removeNodeFromHost(this, refNode);
-	          break;
-	        case 'root':
-	          removeNodeFromRoot(this, refNode);
-	          break;
-	        default:
-	          break;
-	      }
-	      return refNode;
-	    }
-	  },
-	  removeEventListener: {
-	    value: function value(name, func, opts) {
-	      if (name === 'slotchange' && this.____slotChangeListeners && isSlotNode(this)) {
-	        this.____slotChangeListeners--;
-	      }
-	      return this.__removeEventListener(name, func, opts);
-	    }
-	  },
-	  replaceChild: {
-	    value: function value(newNode, refNode) {
-	      this.insertBefore(newNode, refNode);
-	      return this.removeChild(refNode);
-	    }
-	  },
-	  setAttribute: {
-	    value: function value(attrName, attrValue) {
-	      if (attrName === 'slot') {
-	        this[attrName] = attrValue;
-	      }
-	      if (isSlotNode(this)) {
-	        if (attrName === 'name') {
-	          this[attrName] = attrValue;
-	        }
-	      }
-	      return this.__setAttribute(attrName, attrValue);
-	    }
-	  },
-	  shadowRoot: {
-	    get: function get() {
-	      return hostToModeMap.get(this) === 'open' ? hostToRootMap.get(this) : null;
-	    }
-	  },
-	  slot: {
-	    get: function get() {
-	      return this.getAttribute('slot');
-	    },
-	    set: function set(name) {
-	      var oldName = this.name;
-	      var ret = this.__setAttribute('slot', name);
-
-	      if (oldName === name) {
-	        return ret;
-	      }
-
-	      var slot = nodeToSlotMap.get(this);
-	      var root = slot && slotToRootMap.get(slot);
-	      var host = root && rootToHostMap.get(root);
-
-	      if (host) {
-	        removeNodeFromHost(host, this);
-	        addNodeToHost(host, this);
-	      }
-	      return ret;
-	    }
-	  },
-	  textContent: {
-	    get: function get() {
-	      var textContent = '';
-	      eachChildNode(this, function (node) {
-	        if (node.nodeType !== Node.COMMENT_NODE) {
-	          textContent += node.textContent;
-	        }
-	      });
-	      return textContent;
-	    },
-	    set: function set(textContent) {
-	      while (this.hasChildNodes()) {
-	        this.removeChild(this.firstChild);
-	      }
-	      if (!textContent) {
-	        return;
-	      }
-	      this.appendChild(document.createTextNode(textContent));
-	    }
-	  }
-	};
-
-	var v1 = (function () {
-	  var commProto = Comment.prototype;
-	  var elementProto = HTMLElement$1.prototype;
-	  var fragmentProto = DocumentFragment.prototype;
-	  var svgProto = SVGElement && SVGElement.prototype;
-	  var textProto = Text.prototype;
-	  var textNode = document.createTextNode('');
-	  var commNode = document.createComment('');
-	  var fragment = document.createDocumentFragment();
-
-	  Object.keys(members).forEach(function (memberName) {
-	    var memberProperty = members[memberName];
-
-	    // All properties should be configurable and enumerable.
-	    memberProperty.configurable = true;
-	    memberProperty.enumerable = true;
-
-	    // Applying to the data properties only since we can't have writable accessor properties.
-	    if (memberProperty.hasOwnProperty('value')) {
-	      // eslint-disable-line no-prototype-builtins
-	      memberProperty.writable = true;
-	    }
-
-	    // Polyfill as much as we can and work around WebKit in other areas.
-	    if (canPatchNativeAccessors || polyfillAtRuntime.indexOf(memberName) === -1) {
-	      var nativeDescriptor = getPropertyDescriptor(elementProto, memberName);
-	      var nativeFragDescriptor = getPropertyDescriptor(fragmentProto, memberName);
-	      var nativeTextDescriptor = getPropertyDescriptor(textProto, memberName);
-	      var nativeCommDescriptor = getPropertyDescriptor(commProto, memberName);
-	      var shouldOverrideInTextNode = memberName in textNode && doNotOverridePropertiesInTextNodes.indexOf(memberName) === -1 || ~defineInTextNodes.indexOf(memberName);
-	      var shouldOverrideInCommentNode = memberName in commNode && doNotOverridePropertiesInCommNodes.indexOf(memberName) === -1 || ~defineInCommNodes.indexOf(memberName);
-	      var shouldOverrideInFragment = memberName in fragment && ~overridePropertiesInFragNodes.indexOf(memberName);
-	      var nativeMemberName = '__' + memberName;
-
-	      Object.defineProperty(elementProto, memberName, memberProperty);
-	      svgProto && Object.defineProperty(svgProto, memberName, memberProperty);
-
-	      if (nativeDescriptor) {
-	        Object.defineProperty(elementProto, nativeMemberName, nativeDescriptor);
-	        svgProto && Object.defineProperty(svgProto, nativeMemberName, nativeDescriptor);
-	      }
-
-	      if (shouldOverrideInFragment) {
-	        Object.defineProperty(fragmentProto, memberName, memberProperty);
-	      }
-
-	      if (shouldOverrideInFragment && nativeFragDescriptor) {
-	        Object.defineProperty(fragmentProto, nativeMemberName, nativeFragDescriptor);
-	      }
-
-	      if (shouldOverrideInTextNode) {
-	        Object.defineProperty(textProto, memberName, memberProperty);
-	      }
-
-	      if (shouldOverrideInTextNode && nativeTextDescriptor) {
-	        Object.defineProperty(textProto, nativeMemberName, nativeTextDescriptor);
-	      }
-
-	      if (shouldOverrideInCommentNode) {
-	        Object.defineProperty(commProto, memberName, memberProperty);
-	      }
-
-	      if (shouldOverrideInCommentNode && nativeCommDescriptor) {
-	        Object.defineProperty(commProto, nativeMemberName, nativeCommDescriptor);
-	      }
-	    }
-	  });
-	});
-
-	if (shadowDomV1) {
-	  // then we should probably not be loading this
-	} else {
-	  v1();
-	}
-
-	var documentRegisterElement_node = createCommonjsModule(function (module) {
-	  /*!
-	  
-	  Copyright (C) 2014-2016 by Andrea Giammarchi - @WebReflection
-	  
-	  Permission is hereby granted, free of charge, to any person obtaining a copy
-	  of this software and associated documentation files (the "Software"), to deal
-	  in the Software without restriction, including without limitation the rights
-	  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-	  copies of the Software, and to permit persons to whom the Software is
-	  furnished to do so, subject to the following conditions:
-	  
-	  The above copyright notice and this permission notice shall be included in
-	  all copies or substantial portions of the Software.
-	  
-	  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-	  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-	  THE SOFTWARE.
-	  
-	  */
-	  function installCustomElements(window) {
-	    'use strict';
-
-	    // DO NOT USE THIS FILE DIRECTLY, IT WON'T WORK
-	    // THIS IS A PROJECT BASED ON A BUILD SYSTEM
-	    // THIS FILE IS JUST WRAPPED UP RESULTING IN
-	    // build/document-register-element.node.js
-
-	    var document = window.document,
-	        Object = window.Object;
-
-	    var htmlClass = function (info) {
-	      // (C) Andrea Giammarchi - @WebReflection - MIT Style
-	      var catchClass = /^[A-Z]+[a-z]/,
-	          filterBy = function filterBy(re) {
-	        var arr = [],
-	            tag;
-	        for (tag in register) {
-	          if (re.test(tag)) arr.push(tag);
-	        }
-	        return arr;
-	      },
-	          add = function add(Class, tag) {
-	        tag = tag.toLowerCase();
-	        if (!(tag in register)) {
-	          register[Class] = (register[Class] || []).concat(tag);
-	          register[tag] = register[tag.toUpperCase()] = Class;
-	        }
-	      },
-	          register = (Object.create || Object)(null),
-	          htmlClass = {},
-	          i,
-	          section,
-	          tags,
-	          Class;
-	      for (section in info) {
-	        for (Class in info[section]) {
-	          tags = info[section][Class];
-	          register[Class] = tags;
-	          for (i = 0; i < tags.length; i++) {
-	            register[tags[i].toLowerCase()] = register[tags[i].toUpperCase()] = Class;
-	          }
-	        }
-	      }
-	      htmlClass.get = function get(tagOrClass) {
-	        return typeof tagOrClass === 'string' ? register[tagOrClass] || (catchClass.test(tagOrClass) ? [] : '') : filterBy(tagOrClass);
-	      };
-	      htmlClass.set = function set(tag, Class) {
-	        return catchClass.test(tag) ? add(tag, Class) : add(Class, tag), htmlClass;
-	      };
-	      return htmlClass;
-	    }({
-	      "collections": {
-	        "HTMLAllCollection": ["all"],
-	        "HTMLCollection": ["forms"],
-	        "HTMLFormControlsCollection": ["elements"],
-	        "HTMLOptionsCollection": ["options"]
-	      },
-	      "elements": {
-	        "Element": ["element"],
-	        "HTMLAnchorElement": ["a"],
-	        "HTMLAppletElement": ["applet"],
-	        "HTMLAreaElement": ["area"],
-	        "HTMLAttachmentElement": ["attachment"],
-	        "HTMLAudioElement": ["audio"],
-	        "HTMLBRElement": ["br"],
-	        "HTMLBaseElement": ["base"],
-	        "HTMLBodyElement": ["body"],
-	        "HTMLButtonElement": ["button"],
-	        "HTMLCanvasElement": ["canvas"],
-	        "HTMLContentElement": ["content"],
-	        "HTMLDListElement": ["dl"],
-	        "HTMLDataElement": ["data"],
-	        "HTMLDataListElement": ["datalist"],
-	        "HTMLDetailsElement": ["details"],
-	        "HTMLDialogElement": ["dialog"],
-	        "HTMLDirectoryElement": ["dir"],
-	        "HTMLDivElement": ["div"],
-	        "HTMLDocument": ["document"],
-	        "HTMLElement": ["element", "abbr", "address", "article", "aside", "b", "bdi", "bdo", "cite", "code", "command", "dd", "dfn", "dt", "em", "figcaption", "figure", "footer", "header", "i", "kbd", "mark", "nav", "noscript", "rp", "rt", "ruby", "s", "samp", "section", "small", "strong", "sub", "summary", "sup", "u", "var", "wbr"],
-	        "HTMLEmbedElement": ["embed"],
-	        "HTMLFieldSetElement": ["fieldset"],
-	        "HTMLFontElement": ["font"],
-	        "HTMLFormElement": ["form"],
-	        "HTMLFrameElement": ["frame"],
-	        "HTMLFrameSetElement": ["frameset"],
-	        "HTMLHRElement": ["hr"],
-	        "HTMLHeadElement": ["head"],
-	        "HTMLHeadingElement": ["h1", "h2", "h3", "h4", "h5", "h6"],
-	        "HTMLHtmlElement": ["html"],
-	        "HTMLIFrameElement": ["iframe"],
-	        "HTMLImageElement": ["img"],
-	        "HTMLInputElement": ["input"],
-	        "HTMLKeygenElement": ["keygen"],
-	        "HTMLLIElement": ["li"],
-	        "HTMLLabelElement": ["label"],
-	        "HTMLLegendElement": ["legend"],
-	        "HTMLLinkElement": ["link"],
-	        "HTMLMapElement": ["map"],
-	        "HTMLMarqueeElement": ["marquee"],
-	        "HTMLMediaElement": ["media"],
-	        "HTMLMenuElement": ["menu"],
-	        "HTMLMenuItemElement": ["menuitem"],
-	        "HTMLMetaElement": ["meta"],
-	        "HTMLMeterElement": ["meter"],
-	        "HTMLModElement": ["del", "ins"],
-	        "HTMLOListElement": ["ol"],
-	        "HTMLObjectElement": ["object"],
-	        "HTMLOptGroupElement": ["optgroup"],
-	        "HTMLOptionElement": ["option"],
-	        "HTMLOutputElement": ["output"],
-	        "HTMLParagraphElement": ["p"],
-	        "HTMLParamElement": ["param"],
-	        "HTMLPictureElement": ["picture"],
-	        "HTMLPreElement": ["pre"],
-	        "HTMLProgressElement": ["progress"],
-	        "HTMLQuoteElement": ["blockquote", "q", "quote"],
-	        "HTMLScriptElement": ["script"],
-	        "HTMLSelectElement": ["select"],
-	        "HTMLShadowElement": ["shadow"],
-	        "HTMLSlotElement": ["slot"],
-	        "HTMLSourceElement": ["source"],
-	        "HTMLSpanElement": ["span"],
-	        "HTMLStyleElement": ["style"],
-	        "HTMLTableCaptionElement": ["caption"],
-	        "HTMLTableCellElement": ["td", "th"],
-	        "HTMLTableColElement": ["col", "colgroup"],
-	        "HTMLTableElement": ["table"],
-	        "HTMLTableRowElement": ["tr"],
-	        "HTMLTableSectionElement": ["thead", "tbody", "tfoot"],
-	        "HTMLTemplateElement": ["template"],
-	        "HTMLTextAreaElement": ["textarea"],
-	        "HTMLTimeElement": ["time"],
-	        "HTMLTitleElement": ["title"],
-	        "HTMLTrackElement": ["track"],
-	        "HTMLUListElement": ["ul"],
-	        "HTMLUnknownElement": ["unknown", "vhgroupv", "vkeygen"],
-	        "HTMLVideoElement": ["video"]
-	      },
-	      "nodes": {
-	        "Attr": ["node"],
-	        "Audio": ["audio"],
-	        "CDATASection": ["node"],
-	        "CharacterData": ["node"],
-	        "Comment": ["#comment"],
-	        "Document": ["#document"],
-	        "DocumentFragment": ["#document-fragment"],
-	        "DocumentType": ["node"],
-	        "HTMLDocument": ["#document"],
-	        "Image": ["img"],
-	        "Option": ["option"],
-	        "ProcessingInstruction": ["node"],
-	        "ShadowRoot": ["#shadow-root"],
-	        "Text": ["#text"],
-	        "XMLDocument": ["xml"]
-	      }
-	    });
-
-	    var
-	    // V0 polyfill entry
-	    REGISTER_ELEMENT = 'registerElement',
-
-
-	    // IE < 11 only + old WebKit for attributes + feature detection
-	    EXPANDO_UID = '__' + REGISTER_ELEMENT + (window.Math.random() * 10e4 >> 0),
-
-
-	    // shortcuts and costants
-	    ADD_EVENT_LISTENER = 'addEventListener',
-	        ATTACHED = 'attached',
-	        CALLBACK = 'Callback',
-	        DETACHED = 'detached',
-	        EXTENDS = 'extends',
-	        ATTRIBUTE_CHANGED_CALLBACK = 'attributeChanged' + CALLBACK,
-	        ATTACHED_CALLBACK = ATTACHED + CALLBACK,
-	        CONNECTED_CALLBACK = 'connected' + CALLBACK,
-	        DISCONNECTED_CALLBACK = 'disconnected' + CALLBACK,
-	        CREATED_CALLBACK = 'created' + CALLBACK,
-	        DETACHED_CALLBACK = DETACHED + CALLBACK,
-	        ADDITION = 'ADDITION',
-	        MODIFICATION = 'MODIFICATION',
-	        REMOVAL = 'REMOVAL',
-	        DOM_ATTR_MODIFIED = 'DOMAttrModified',
-	        DOM_CONTENT_LOADED = 'DOMContentLoaded',
-	        DOM_SUBTREE_MODIFIED = 'DOMSubtreeModified',
-	        PREFIX_TAG = '<',
-	        PREFIX_IS = '=',
-
-
-	    // valid and invalid node names
-	    validName = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/,
-	        invalidNames = ['ANNOTATION-XML', 'COLOR-PROFILE', 'FONT-FACE', 'FONT-FACE-SRC', 'FONT-FACE-URI', 'FONT-FACE-FORMAT', 'FONT-FACE-NAME', 'MISSING-GLYPH'],
-
-
-	    // registered types and their prototypes
-	    types = [],
-	        protos = [],
-
-
-	    // to query subnodes
-	    query = '',
-
-
-	    // html shortcut used to feature detect
-	    documentElement = document.documentElement,
-
-
-	    // ES5 inline helpers || basic patches
-	    indexOf = types.indexOf || function (v) {
-	      for (var i = this.length; i-- && this[i] !== v;) {}
-	      return i;
-	    },
-
-
-	    // other helpers / shortcuts
-	    OP = Object.prototype,
-	        hOP = OP.hasOwnProperty,
-	        iPO = OP.isPrototypeOf,
-	        defineProperty = Object.defineProperty,
-	        empty = [],
-	        gOPD = Object.getOwnPropertyDescriptor,
-	        gOPN = Object.getOwnPropertyNames,
-	        gPO = Object.getPrototypeOf,
-	        sPO = Object.setPrototypeOf,
-
-
-	    // jshint proto: true
-	    hasProto = !!Object.__proto__,
-
-
-	    // V1 helpers
-	    fixGetClass = false,
-	        DRECEV1 = '__dreCEv1',
-	        customElements = window.customElements,
-	        usableCustomElements = !!(customElements && customElements.define && customElements.get && customElements.whenDefined),
-	        Dict = Object.create || Object,
-	        Map = window.Map || function Map() {
-	      var K = [],
-	          V = [],
-	          i;
-	      return {
-	        get: function get(k) {
-	          return V[indexOf.call(K, k)];
-	        },
-	        set: function set(k, v) {
-	          i = indexOf.call(K, k);
-	          if (i < 0) V[K.push(k) - 1] = v;else V[i] = v;
-	        }
-	      };
-	    },
-	        Promise = window.Promise || function (fn) {
-	      var notify = [],
-	          done = false,
-	          p = {
-	        'catch': function _catch() {
-	          return p;
-	        },
-	        'then': function then(cb) {
-	          notify.push(cb);
-	          if (done) setTimeout(resolve, 1);
-	          return p;
-	        }
-	      };
-	      function resolve(value) {
-	        done = true;
-	        while (notify.length) {
-	          notify.shift()(value);
-	        }
-	      }
-	      fn(resolve);
-	      return p;
-	    },
-	        justCreated = false,
-	        constructors = Dict(null),
-	        waitingList = Dict(null),
-	        nodeNames = new Map(),
-	        secondArgument = String,
-
-
-	    // used to create unique instances
-	    create = Object.create || function Bridge(proto) {
-	      // silly broken polyfill probably ever used but short enough to work
-	      return proto ? (Bridge.prototype = proto, new Bridge()) : this;
-	    },
-
-
-	    // will set the prototype if possible
-	    // or copy over all properties
-	    setPrototype = sPO || (hasProto ? function (o, p) {
-	      o.__proto__ = p;
-	      return o;
-	    } : gOPN && gOPD ? function () {
-	      function setProperties(o, p) {
-	        for (var key, names = gOPN(p), i = 0, length = names.length; i < length; i++) {
-	          key = names[i];
-	          if (!hOP.call(o, key)) {
-	            defineProperty(o, key, gOPD(p, key));
-	          }
-	        }
-	      }
-	      return function (o, p) {
-	        do {
-	          setProperties(o, p);
-	        } while ((p = gPO(p)) && !iPO.call(p, o));
-	        return o;
-	      };
-	    }() : function (o, p) {
-	      for (var key in p) {
-	        o[key] = p[key];
-	      }
-	      return o;
-	    }),
-
-
-	    // DOM shortcuts and helpers, if any
-
-	    MutationObserver = window.MutationObserver || window.WebKitMutationObserver,
-	        HTMLElementPrototype = (window.HTMLElement || window.Element || window.Node).prototype,
-	        IE8 = !iPO.call(HTMLElementPrototype, documentElement),
-	        safeProperty = IE8 ? function (o, k, d) {
-	      o[k] = d.value;
-	      return o;
-	    } : defineProperty,
-	        isValidNode = IE8 ? function (node) {
-	      return node.nodeType === 1;
-	    } : function (node) {
-	      return iPO.call(HTMLElementPrototype, node);
-	    },
-	        targets = IE8 && [],
-	        attachShadow = HTMLElementPrototype.attachShadow,
-	        cloneNode = HTMLElementPrototype.cloneNode,
-	        dispatchEvent = HTMLElementPrototype.dispatchEvent,
-	        getAttribute = HTMLElementPrototype.getAttribute,
-	        hasAttribute = HTMLElementPrototype.hasAttribute,
-	        removeAttribute = HTMLElementPrototype.removeAttribute,
-	        setAttribute = HTMLElementPrototype.setAttribute,
-
-
-	    // replaced later on
-	    createElement = document.createElement,
-	        patchedCreateElement = createElement,
-
-
-	    // shared observer for all attributes
-	    attributesObserver = MutationObserver && {
-	      attributes: true,
-	      characterData: true,
-	      attributeOldValue: true
-	    },
-
-
-	    // useful to detect only if there's no MutationObserver
-	    DOMAttrModified = MutationObserver || function (e) {
-	      doesNotSupportDOMAttrModified = false;
-	      documentElement.removeEventListener(DOM_ATTR_MODIFIED, DOMAttrModified);
-	    },
-
-
-	    // will both be used to make DOMNodeInserted asynchronous
-	    asapQueue,
-	        asapTimer = 0,
-
-
-	    // internal flags
-	    setListener = false,
-	        doesNotSupportDOMAttrModified = true,
-	        dropDomContentLoaded = true,
-
-
-	    // needed for the innerHTML helper
-	    notFromInnerHTMLHelper = true,
-
-
-	    // optionally defined later on
-	    onSubtreeModified,
-	        callDOMAttrModified,
-	        getAttributesMirror,
-	        observer,
-	        observe,
-
-
-	    // based on setting prototype capability
-	    // will check proto or the expando attribute
-	    // in order to setup the node once
-	    patchIfNotAlready,
-	        patch;
-
-	    // only if needed
-	    if (!(REGISTER_ELEMENT in document)) {
-
-	      if (sPO || hasProto) {
-	        patchIfNotAlready = function patchIfNotAlready(node, proto) {
-	          if (!iPO.call(proto, node)) {
-	            setupNode(node, proto);
-	          }
-	        };
-	        patch = setupNode;
-	      } else {
-	        patchIfNotAlready = function patchIfNotAlready(node, proto) {
-	          if (!node[EXPANDO_UID]) {
-	            node[EXPANDO_UID] = Object(true);
-	            setupNode(node, proto);
-	          }
-	        };
-	        patch = patchIfNotAlready;
-	      }
-
-	      if (IE8) {
-	        doesNotSupportDOMAttrModified = false;
-	        (function () {
-	          var descriptor = gOPD(HTMLElementPrototype, ADD_EVENT_LISTENER),
-	              addEventListener = descriptor.value,
-	              patchedRemoveAttribute = function patchedRemoveAttribute(name) {
-	            var e = new CustomEvent(DOM_ATTR_MODIFIED, { bubbles: true });
-	            e.attrName = name;
-	            e.prevValue = getAttribute.call(this, name);
-	            e.newValue = null;
-	            e[REMOVAL] = e.attrChange = 2;
-	            removeAttribute.call(this, name);
-	            dispatchEvent.call(this, e);
-	          },
-	              patchedSetAttribute = function patchedSetAttribute(name, value) {
-	            var had = hasAttribute.call(this, name),
-	                old = had && getAttribute.call(this, name),
-	                e = new CustomEvent(DOM_ATTR_MODIFIED, { bubbles: true });
-	            setAttribute.call(this, name, value);
-	            e.attrName = name;
-	            e.prevValue = had ? old : null;
-	            e.newValue = value;
-	            if (had) {
-	              e[MODIFICATION] = e.attrChange = 1;
-	            } else {
-	              e[ADDITION] = e.attrChange = 0;
-	            }
-	            dispatchEvent.call(this, e);
-	          },
-	              onPropertyChange = function onPropertyChange(e) {
-	            // jshint eqnull:true
-	            var node = e.currentTarget,
-	                superSecret = node[EXPANDO_UID],
-	                propertyName = e.propertyName,
-	                event;
-	            if (superSecret.hasOwnProperty(propertyName)) {
-	              superSecret = superSecret[propertyName];
-	              event = new CustomEvent(DOM_ATTR_MODIFIED, { bubbles: true });
-	              event.attrName = superSecret.name;
-	              event.prevValue = superSecret.value || null;
-	              event.newValue = superSecret.value = node[propertyName] || null;
-	              if (event.prevValue == null) {
-	                event[ADDITION] = event.attrChange = 0;
-	              } else {
-	                event[MODIFICATION] = event.attrChange = 1;
-	              }
-	              dispatchEvent.call(node, event);
-	            }
-	          };
-	          descriptor.value = function (type, handler, capture) {
-	            if (type === DOM_ATTR_MODIFIED && this[ATTRIBUTE_CHANGED_CALLBACK] && this.setAttribute !== patchedSetAttribute) {
-	              this[EXPANDO_UID] = {
-	                className: {
-	                  name: 'class',
-	                  value: this.className
-	                }
-	              };
-	              this.setAttribute = patchedSetAttribute;
-	              this.removeAttribute = patchedRemoveAttribute;
-	              addEventListener.call(this, 'propertychange', onPropertyChange);
-	            }
-	            addEventListener.call(this, type, handler, capture);
-	          };
-	          defineProperty(HTMLElementPrototype, ADD_EVENT_LISTENER, descriptor);
-	        })();
-	      } else if (!MutationObserver) {
-	        documentElement[ADD_EVENT_LISTENER](DOM_ATTR_MODIFIED, DOMAttrModified);
-	        documentElement.setAttribute(EXPANDO_UID, 1);
-	        documentElement.removeAttribute(EXPANDO_UID);
-	        if (doesNotSupportDOMAttrModified) {
-	          onSubtreeModified = function onSubtreeModified(e) {
-	            var node = this,
-	                oldAttributes,
-	                newAttributes,
-	                key;
-	            if (node === e.target) {
-	              oldAttributes = node[EXPANDO_UID];
-	              node[EXPANDO_UID] = newAttributes = getAttributesMirror(node);
-	              for (key in newAttributes) {
-	                if (!(key in oldAttributes)) {
-	                  // attribute was added
-	                  return callDOMAttrModified(0, node, key, oldAttributes[key], newAttributes[key], ADDITION);
-	                } else if (newAttributes[key] !== oldAttributes[key]) {
-	                  // attribute was changed
-	                  return callDOMAttrModified(1, node, key, oldAttributes[key], newAttributes[key], MODIFICATION);
-	                }
-	              }
-	              // checking if it has been removed
-	              for (key in oldAttributes) {
-	                if (!(key in newAttributes)) {
-	                  // attribute removed
-	                  return callDOMAttrModified(2, node, key, oldAttributes[key], newAttributes[key], REMOVAL);
-	                }
-	              }
-	            }
-	          };
-	          callDOMAttrModified = function callDOMAttrModified(attrChange, currentTarget, attrName, prevValue, newValue, action) {
-	            var e = {
-	              attrChange: attrChange,
-	              currentTarget: currentTarget,
-	              attrName: attrName,
-	              prevValue: prevValue,
-	              newValue: newValue
-	            };
-	            e[action] = attrChange;
-	            onDOMAttrModified(e);
-	          };
-	          getAttributesMirror = function getAttributesMirror(node) {
-	            for (var attr, name, result = {}, attributes = node.attributes, i = 0, length = attributes.length; i < length; i++) {
-	              attr = attributes[i];
-	              name = attr.name;
-	              if (name !== 'setAttribute') {
-	                result[name] = attr.value;
-	              }
-	            }
-	            return result;
-	          };
-	        }
-	      }
-
-	      // set as enumerable, writable and configurable
-	      document[REGISTER_ELEMENT] = function registerElement(type, options) {
-	        upperType = type.toUpperCase();
-	        if (!setListener) {
-	          // only first time document.registerElement is used
-	          // we need to set this listener
-	          // setting it by default might slow down for no reason
-	          setListener = true;
-	          if (MutationObserver) {
-	            observer = function (attached, detached) {
-	              function checkEmAll(list, callback) {
-	                for (var i = 0, length = list.length; i < length; callback(list[i++])) {}
-	              }
-	              return new MutationObserver(function (records) {
-	                for (var current, node, newValue, i = 0, length = records.length; i < length; i++) {
-	                  current = records[i];
-	                  if (current.type === 'childList') {
-	                    checkEmAll(current.addedNodes, attached);
-	                    checkEmAll(current.removedNodes, detached);
-	                  } else {
-	                    node = current.target;
-	                    if (notFromInnerHTMLHelper && node[ATTRIBUTE_CHANGED_CALLBACK] && current.attributeName !== 'style') {
-	                      newValue = getAttribute.call(node, current.attributeName);
-	                      if (newValue !== current.oldValue) {
-	                        node[ATTRIBUTE_CHANGED_CALLBACK](current.attributeName, current.oldValue, newValue);
-	                      }
-	                    }
-	                  }
-	                }
-	              });
-	            }(executeAction(ATTACHED), executeAction(DETACHED));
-	            observe = function observe(node) {
-	              observer.observe(node, {
-	                childList: true,
-	                subtree: true
-	              });
-	              return node;
-	            };
-	            observe(document);
-	            if (attachShadow) {
-	              HTMLElementPrototype.attachShadow = function () {
-	                return observe(attachShadow.apply(this, arguments));
-	              };
-	            }
-	          } else {
-	            asapQueue = [];
-	            document[ADD_EVENT_LISTENER]('DOMNodeInserted', onDOMNode(ATTACHED));
-	            document[ADD_EVENT_LISTENER]('DOMNodeRemoved', onDOMNode(DETACHED));
-	          }
-
-	          document[ADD_EVENT_LISTENER](DOM_CONTENT_LOADED, onReadyStateChange);
-	          document[ADD_EVENT_LISTENER]('readystatechange', onReadyStateChange);
-
-	          HTMLElementPrototype.cloneNode = function (deep) {
-	            var node = cloneNode.call(this, !!deep),
-	                i = getTypeIndex(node);
-	            if (-1 < i) patch(node, protos[i]);
-	            if (deep) loopAndSetup(node.querySelectorAll(query));
-	            return node;
-	          };
-	        }
-
-	        if (-2 < indexOf.call(types, PREFIX_IS + upperType) + indexOf.call(types, PREFIX_TAG + upperType)) {
-	          throwTypeError(type);
-	        }
-
-	        if (!validName.test(upperType) || -1 < indexOf.call(invalidNames, upperType)) {
-	          throw new Error('The type ' + type + ' is invalid');
-	        }
-
-	        var constructor = function constructor() {
-	          return extending ? document.createElement(nodeName, upperType) : document.createElement(nodeName);
-	        },
-	            opt = options || OP,
-	            extending = hOP.call(opt, EXTENDS),
-	            nodeName = extending ? options[EXTENDS].toUpperCase() : upperType,
-	            upperType,
-	            i;
-
-	        if (extending && -1 < indexOf.call(types, PREFIX_TAG + nodeName)) {
-	          throwTypeError(nodeName);
-	        }
-
-	        i = types.push((extending ? PREFIX_IS : PREFIX_TAG) + upperType) - 1;
-
-	        query = query.concat(query.length ? ',' : '', extending ? nodeName + '[is="' + type.toLowerCase() + '"]' : nodeName);
-
-	        constructor.prototype = protos[i] = hOP.call(opt, 'prototype') ? opt.prototype : create(HTMLElementPrototype);
-
-	        loopAndVerify(document.querySelectorAll(query), ATTACHED);
-
-	        return constructor;
-	      };
-
-	      document.createElement = patchedCreateElement = function patchedCreateElement(localName, typeExtension) {
-	        var is = getIs(typeExtension),
-	            node = is ? createElement.call(document, localName, secondArgument(is)) : createElement.call(document, localName),
-	            name = '' + localName,
-	            i = indexOf.call(types, (is ? PREFIX_IS : PREFIX_TAG) + (is || name).toUpperCase()),
-	            setup = -1 < i;
-	        if (is) {
-	          node.setAttribute('is', is = is.toLowerCase());
-	          if (setup) {
-	            setup = isInQSA(name.toUpperCase(), is);
-	          }
-	        }
-	        notFromInnerHTMLHelper = !document.createElement.innerHTMLHelper;
-	        if (setup) patch(node, protos[i]);
-	        return node;
-	      };
-	    }
-
-	    function ASAP() {
-	      var queue = asapQueue.splice(0, asapQueue.length);
-	      asapTimer = 0;
-	      while (queue.length) {
-	        queue.shift().call(null, queue.shift());
-	      }
-	    }
-
-	    function loopAndVerify(list, action) {
-	      for (var i = 0, length = list.length; i < length; i++) {
-	        verifyAndSetupAndAction(list[i], action);
-	      }
-	    }
-
-	    function loopAndSetup(list) {
-	      for (var i = 0, length = list.length, node; i < length; i++) {
-	        node = list[i];
-	        patch(node, protos[getTypeIndex(node)]);
-	      }
-	    }
-
-	    function executeAction(action) {
-	      return function (node) {
-	        if (isValidNode(node)) {
-	          verifyAndSetupAndAction(node, action);
-	          loopAndVerify(node.querySelectorAll(query), action);
-	        }
-	      };
-	    }
-
-	    function getTypeIndex(target) {
-	      var is = getAttribute.call(target, 'is'),
-	          nodeName = target.nodeName.toUpperCase(),
-	          i = indexOf.call(types, is ? PREFIX_IS + is.toUpperCase() : PREFIX_TAG + nodeName);
-	      return is && -1 < i && !isInQSA(nodeName, is) ? -1 : i;
-	    }
-
-	    function isInQSA(name, type) {
-	      return -1 < query.indexOf(name + '[is="' + type + '"]');
-	    }
-
-	    function onDOMAttrModified(e) {
-	      var node = e.currentTarget,
-	          attrChange = e.attrChange,
-	          attrName = e.attrName,
-	          target = e.target,
-	          addition = e[ADDITION] || 2,
-	          removal = e[REMOVAL] || 3;
-	      if (notFromInnerHTMLHelper && (!target || target === node) && node[ATTRIBUTE_CHANGED_CALLBACK] && attrName !== 'style' && (e.prevValue !== e.newValue ||
-	      // IE9, IE10, and Opera 12 gotcha
-	      e.newValue === '' && (attrChange === addition || attrChange === removal))) {
-	        node[ATTRIBUTE_CHANGED_CALLBACK](attrName, attrChange === addition ? null : e.prevValue, attrChange === removal ? null : e.newValue);
-	      }
-	    }
-
-	    function onDOMNode(action) {
-	      var executor = executeAction(action);
-	      return function (e) {
-	        asapQueue.push(executor, e.target);
-	        if (asapTimer) clearTimeout(asapTimer);
-	        asapTimer = setTimeout(ASAP, 1);
-	      };
-	    }
-
-	    function onReadyStateChange(e) {
-	      if (dropDomContentLoaded) {
-	        dropDomContentLoaded = false;
-	        e.currentTarget.removeEventListener(DOM_CONTENT_LOADED, onReadyStateChange);
-	      }
-	      loopAndVerify((e.target || document).querySelectorAll(query), e.detail === DETACHED ? DETACHED : ATTACHED);
-	      if (IE8) purge();
-	    }
-
-	    function patchedSetAttribute(name, value) {
-	      // jshint validthis:true
-	      var self = this;
-	      setAttribute.call(self, name, value);
-	      onSubtreeModified.call(self, { target: self });
-	    }
-
-	    function setupNode(node, proto) {
-	      setPrototype(node, proto);
-	      if (observer) {
-	        observer.observe(node, attributesObserver);
-	      } else {
-	        if (doesNotSupportDOMAttrModified) {
-	          node.setAttribute = patchedSetAttribute;
-	          node[EXPANDO_UID] = getAttributesMirror(node);
-	          node[ADD_EVENT_LISTENER](DOM_SUBTREE_MODIFIED, onSubtreeModified);
-	        }
-	        node[ADD_EVENT_LISTENER](DOM_ATTR_MODIFIED, onDOMAttrModified);
-	      }
-	      if (node[CREATED_CALLBACK] && notFromInnerHTMLHelper) {
-	        node.created = true;
-	        node[CREATED_CALLBACK]();
-	        node.created = false;
-	      }
-	    }
-
-	    function purge() {
-	      for (var node, i = 0, length = targets.length; i < length; i++) {
-	        node = targets[i];
-	        if (!documentElement.contains(node)) {
-	          length--;
-	          targets.splice(i--, 1);
-	          verifyAndSetupAndAction(node, DETACHED);
-	        }
-	      }
-	    }
-
-	    function throwTypeError(type) {
-	      throw new Error('A ' + type + ' type is already registered');
-	    }
-
-	    function verifyAndSetupAndAction(node, action) {
-	      var fn,
-	          i = getTypeIndex(node);
-	      if (-1 < i) {
-	        patchIfNotAlready(node, protos[i]);
-	        i = 0;
-	        if (action === ATTACHED && !node[ATTACHED]) {
-	          node[DETACHED] = false;
-	          node[ATTACHED] = true;
-	          i = 1;
-	          if (IE8 && indexOf.call(targets, node) < 0) {
-	            targets.push(node);
-	          }
-	        } else if (action === DETACHED && !node[DETACHED]) {
-	          node[ATTACHED] = false;
-	          node[DETACHED] = true;
-	          i = 1;
-	        }
-	        if (i && (fn = node[action + CALLBACK])) fn.call(node);
-	      }
-	    }
-
-	    // V1 in da House!
-	    function CustomElementRegistry() {}
-
-	    CustomElementRegistry.prototype = {
-	      constructor: CustomElementRegistry,
-	      // a workaround for the stubborn WebKit
-	      define: usableCustomElements ? function (name, Class, options) {
-	        if (options) {
-	          CERDefine(name, Class, options);
-	        } else {
-	          var NAME = name.toUpperCase();
-	          constructors[NAME] = {
-	            constructor: Class,
-	            create: [NAME]
-	          };
-	          nodeNames.set(Class, NAME);
-	          customElements.define(name, Class);
-	        }
-	      } : CERDefine,
-	      get: usableCustomElements ? function (name) {
-	        return customElements.get(name) || get(name);
-	      } : get,
-	      whenDefined: usableCustomElements ? function (name) {
-	        return Promise.race([customElements.whenDefined(name), whenDefined(name)]);
-	      } : whenDefined
-	    };
-
-	    function CERDefine(name, Class, options) {
-	      var is = options && options[EXTENDS] || '',
-	          CProto = Class.prototype,
-	          proto = create(CProto),
-	          attributes = Class.observedAttributes || empty,
-	          definition = { prototype: proto };
-	      // TODO: is this needed at all since it's inherited?
-	      // defineProperty(proto, 'constructor', {value: Class});
-	      safeProperty(proto, CREATED_CALLBACK, {
-	        value: function value() {
-	          if (justCreated) justCreated = false;else if (!this[DRECEV1]) {
-	            this[DRECEV1] = true;
-	            new Class(this);
-	            if (CProto[CREATED_CALLBACK]) CProto[CREATED_CALLBACK].call(this);
-	            var info = constructors[nodeNames.get(Class)];
-	            if (!usableCustomElements || info.create.length > 1) {
-	              notifyAttributes(this);
-	            }
-	          }
-	        }
-	      });
-	      safeProperty(proto, ATTRIBUTE_CHANGED_CALLBACK, {
-	        value: function value(name) {
-	          if (-1 < indexOf.call(attributes, name)) CProto[ATTRIBUTE_CHANGED_CALLBACK].apply(this, arguments);
-	        }
-	      });
-	      if (CProto[CONNECTED_CALLBACK]) {
-	        safeProperty(proto, ATTACHED_CALLBACK, {
-	          value: CProto[CONNECTED_CALLBACK]
-	        });
-	      }
-	      if (CProto[DISCONNECTED_CALLBACK]) {
-	        safeProperty(proto, DETACHED_CALLBACK, {
-	          value: CProto[DISCONNECTED_CALLBACK]
-	        });
-	      }
-	      if (is) definition[EXTENDS] = is;
-	      name = name.toUpperCase();
-	      constructors[name] = {
-	        constructor: Class,
-	        create: is ? [is, secondArgument(name)] : [name]
-	      };
-	      nodeNames.set(Class, name);
-	      document[REGISTER_ELEMENT](name.toLowerCase(), definition);
-	      whenDefined(name);
-	      waitingList[name].r();
-	    }
-
-	    function get(name) {
-	      var info = constructors[name.toUpperCase()];
-	      return info && info.constructor;
-	    }
-
-	    function getIs(options) {
-	      return typeof options === 'string' ? options : options && options.is || '';
-	    }
-
-	    function notifyAttributes(self) {
-	      var callback = self[ATTRIBUTE_CHANGED_CALLBACK],
-	          attributes = callback ? self.attributes : empty,
-	          i = attributes.length,
-	          attribute;
-	      while (i--) {
-	        attribute = attributes[i]; // || attributes.item(i);
-	        callback.call(self, attribute.name || attribute.nodeName, null, attribute.value || attribute.nodeValue);
-	      }
-	    }
-
-	    function whenDefined(name) {
-	      name = name.toUpperCase();
-	      if (!(name in waitingList)) {
-	        waitingList[name] = {};
-	        waitingList[name].p = new Promise(function (resolve) {
-	          waitingList[name].r = resolve;
-	        });
-	      }
-	      return waitingList[name].p;
-	    }
-
-	    function polyfillV1() {
-	      if (customElements) delete window.customElements;
-	      defineProperty(window, 'customElements', {
-	        configurable: true,
-	        value: new CustomElementRegistry()
-	      });
-	      defineProperty(window, 'CustomElementRegistry', {
-	        configurable: true,
-	        value: CustomElementRegistry
-	      });
-	      for (var patchClass = function patchClass(name) {
-	        var Class = window[name];
-	        if (Class) {
-	          window[name] = function CustomElementsV1(self) {
-	            var info, isNative;
-	            if (!self) self = this;
-	            if (!self[DRECEV1]) {
-	              justCreated = true;
-	              info = constructors[nodeNames.get(self.constructor)];
-	              isNative = usableCustomElements && info.create.length === 1;
-	              self = isNative ? Reflect.construct(Class, empty, info.constructor) : document.createElement.apply(document, info.create);
-	              self[DRECEV1] = true;
-	              justCreated = false;
-	              if (!isNative) notifyAttributes(self);
-	            }
-	            return self;
-	          };
-	          window[name].prototype = Class.prototype;
-	          try {
-	            Class.prototype.constructor = window[name];
-	          } catch (WebKit) {
-	            fixGetClass = true;
-	            defineProperty(Class, DRECEV1, { value: window[name] });
-	          }
-	        }
-	      }, Classes = htmlClass.get(/^HTML[A-Z]*[a-z]/), i = Classes.length; i--; patchClass(Classes[i])) {}
-	      document.createElement = function (name, options) {
-	        var is = getIs(options);
-	        return is ? patchedCreateElement.call(this, name, secondArgument(is)) : patchedCreateElement.call(this, name);
-	      };
-	    }
-
-	    // if customElements is not there at all
-	    if (!customElements) polyfillV1();else {
-	      // if available test extends work as expected
-	      try {
-	        (function (DRE, options, name) {
-	          options[EXTENDS] = 'a';
-	          DRE.prototype = create(HTMLAnchorElement.prototype);
-	          DRE.prototype.constructor = DRE;
-	          window.customElements.define(name, DRE, options);
-	          if (getAttribute.call(document.createElement('a', { is: name }), 'is') !== name || usableCustomElements && getAttribute.call(new DRE(), 'is') !== name) {
-	            throw options;
-	          }
-	        })(function DRE() {
-	          return Reflect.construct(HTMLAnchorElement, [], DRE);
-	        }, {}, 'document-register-element-a');
-	      } catch (o_O) {
-	        // or force the polyfill if not
-	        // and keep internal original reference
-	        polyfillV1();
-	      }
-	    }
-
-	    try {
-	      createElement.call(document, 'a', 'a');
-	    } catch (FireFox) {
-	      secondArgument = function secondArgument(is) {
-	        return { is: is };
-	      };
-	    }
-	  }
-
-	  installCustomElements(commonjsGlobal);
-
-	  module.exports = installCustomElements;
-	});
-
-	interopDefault(documentRegisterElement_node);
-
-	function keys() {
-	  var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-	  var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-	  var _ref$enumOnly = _ref.enumOnly;
-	  var enumOnly = _ref$enumOnly === undefined ? false : _ref$enumOnly;
-
-	  var listOfKeys = Object[enumOnly ? 'keys' : 'getOwnPropertyNames'](obj);
-	  return typeof Object.getOwnPropertySymbols === 'function' ? listOfKeys.concat(Object.getOwnPropertySymbols(obj)) : listOfKeys;
-	}
-
-	// We are not using Object.assign if it is defined since it will cause problems when Symbol is polyfilled.
-	// Apparently Object.assign (or any polyfill for this method) does not copy non-native Symbols.
-	var assign = (function (obj) {
-	  for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-	    args[_key - 1] = arguments[_key];
-	  }
-
-	  args.forEach(function (arg) {
-	    return keys(arg).forEach(function (name) {
-	      return obj[name] = arg[name];
-	    });
-	  }); // eslint-disable-line no-return-assign
-	  return obj;
-	});
-
-	function empty (val) {
-	  return typeof val === 'undefined' || val === null;
-	}
-
-	var $connected = '____skate_connected';
-	var $created = '____skate_created';
-
-	// DEPRECATED
-	//
-	// This is the only "symbol" that must stay a string. This is because it is
-	// relied upon across several versions. We should remove it, but ensure that
-	// it's considered a breaking change that whatever version removes it cannot
-	// be passed to vdom functions as tag names.
-	var $name = '____skate_name';
-
-	var $props = '____skate_props';
-	var $ref = '____skate_ref';
-	var $renderer = '____skate_renderer';
-	var $rendering = '____skate_rendering';
-	var $rendererDebounced = '____skate_rendererDebounced';
-	var $updated = '____skate_updated';
+	window.customElements && eval("/**\n * @license\n * Copyright (c) 2016 The Polymer Project Authors. All rights reserved.\n * This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt\n * The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt\n * The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt\n * Code distributed by Google as part of the polymer project is also\n * subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt\n */\n\n/**\n * This shim allows elements written in, or compiled to, ES5 to work on native\n * implementations of Custom Elements.\n *\n * ES5-style classes don't work with native Custom Elements because the\n * HTMLElement constructor uses the value of `new.target` to look up the custom\n * element definition for the currently called constructor. `new.target` is only\n * set when `new` is called and is only propagated via super() calls. super()\n * is not emulatable in ES5. The pattern of `SuperClass.call(this)`` only works\n * when extending other ES5-style classes, and does not propagate `new.target`.\n *\n * This shim allows the native HTMLElement constructor to work by generating and\n * registering a stand-in class instead of the users custom element class. This\n * stand-in class's constructor has an actual call to super().\n * `customElements.define()` and `customElements.get()` are both overridden to\n * hide this stand-in class from users.\n *\n * In order to create instance of the user-defined class, rather than the stand\n * in, the stand-in's constructor swizzles its instances prototype and invokes\n * the user-defined constructor. When the user-defined constructor is called\n * directly it creates an instance of the stand-in class to get a real extension\n * of HTMLElement and returns that.\n *\n * There are two important constructors: A patched HTMLElement constructor, and\n * the StandInElement constructor. They both will be called to create an element\n * but which is called first depends on whether the browser creates the element\n * or the user-defined constructor is called directly. The variables\n * `browserConstruction` and `userConstruction` control the flow between the\n * two constructors.\n *\n * This shim should be better than forcing the polyfill because:\n *   1. It's smaller\n *   2. All reaction timings are the same as native (mostly synchronous)\n *   3. All reaction triggering DOM operations are automatically supported\n *\n * There are some restrictions and requirements on ES5 constructors:\n *   1. All constructors in a inheritance hierarchy must be ES5-style, so that\n *      they can be called with Function.call(). This effectively means that the\n *      whole application must be compiled to ES5.\n *   2. Constructors must return the value of the emulated super() call. Like\n *      `return SuperClass.call(this)`\n *   3. The `this` reference should not be used before the emulated super() call\n *      just like `this` is illegal to use before super() in ES6.\n *   4. Constructors should not create other custom elements before the emulated\n *      super() call. This is the same restriction as with native custom\n *      elements.\n *\n *  Compiling valid class-based custom elements to ES5 will satisfy these\n *  requirements with the latest version of popular transpilers.\n */\n(() => {\n  'use strict';\n\n  const NativeHTMLElement = window.HTMLElement;\n  const nativeDefine = window.customElements.define;\n  const nativeGet = window.customElements.get;\n\n  /**\n   * Map of user-provided constructors to tag names.\n   *\n   * @type {Map<Function, string>}\n   */\n  const tagnameByConstructor = new Map();\n\n  /**\n   * Map of tag names to user-provided constructors.\n   *\n   * @type {Map<string, Function>}\n   */\n  const constructorByTagname = new Map();\n\n\n  /**\n   * Whether the constructors are being called by a browser process, ie parsing\n   * or createElement.\n   */\n  let browserConstruction = false;\n\n  /**\n   * Whether the constructors are being called by a user-space process, ie\n   * calling an element constructor.\n   */\n  let userConstruction = false;\n\n  window.HTMLElement = function() {\n    if (!browserConstruction) {\n      const tagname = tagnameByConstructor.get(this.constructor);\n      const fakeClass = nativeGet.call(window.customElements, tagname);\n\n      // Make sure that the fake constructor doesn't call back to this constructor\n      userConstruction = true;\n      const instance = new (fakeClass)();\n      return instance;\n    }\n    // Else do nothing. This will be reached by ES5-style classes doing\n    // HTMLElement.call() during initialization\n    browserConstruction = false;\n  };\n\n  window.HTMLElement.prototype = Object.create(NativeHTMLElement.prototype);\n  window.HTMLElement.prototype.constructor = window.HTMLElement;\n\n  window.customElements.define = (tagname, elementClass) => {\n    const elementProto = elementClass.prototype;\n    const StandInElement = class extends NativeHTMLElement {\n      constructor() {\n        // Call the native HTMLElement constructor, this gives us the\n        // under-construction instance as `this`:\n        super();\n\n        // The prototype will be wrong up because the browser used our fake\n        // class, so fix it:\n        Object.setPrototypeOf(this, elementProto);\n\n        if (!userConstruction) {\n          // Make sure that user-defined constructor bottom's out to a do-nothing\n          // HTMLElement() call\n          browserConstruction = true;\n          // Call the user-defined constructor on our instance:\n          elementClass.call(this);\n        }\n        userConstruction = false;\n      }\n    };\n    const standInProto = StandInElement.prototype;\n    StandInElement.observedAttributes = elementClass.observedAttributes;\n    standInProto.connectedCallback = elementProto.connectedCallback;\n    standInProto.disconnectedCallback = elementProto.disconnectedCallback;\n    standInProto.attributeChangedCallback = elementProto.attributeChangedCallback;\n    standInProto.adoptedCallback = elementProto.adoptedCallback;\n\n    tagnameByConstructor.set(elementClass, tagname);\n    constructorByTagname.set(tagname, elementClass);\n    nativeDefine.call(window.customElements, tagname, StandInElement);\n  };\n\n  window.customElements.get = (tagname) => constructorByTagname.get(tagname);\n\n})();");
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
 	  return typeof obj;
@@ -3237,6 +236,31 @@ var require$$0 = Object.freeze({
 	  return obj;
 	};
 
+	var get = function get(object, property, receiver) {
+	  if (object === null) object = Function.prototype;
+	  var desc = Object.getOwnPropertyDescriptor(object, property);
+
+	  if (desc === undefined) {
+	    var parent = Object.getPrototypeOf(object);
+
+	    if (parent === null) {
+	      return undefined;
+	    } else {
+	      return get(parent, property, receiver);
+	    }
+	  } else if ("value" in desc) {
+	    return desc.value;
+	  } else {
+	    var getter = desc.get;
+
+	    if (getter === undefined) {
+	      return undefined;
+	    }
+
+	    return getter.call(receiver);
+	  }
+	};
+
 	var inherits = function (subClass, superClass) {
 	  if (typeof superClass !== "function" && superClass !== null) {
 	    throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
@@ -3270,6 +294,5629 @@ var require$$0 = Object.freeze({
 	    return Array.from(arr);
 	  }
 	};
+
+	(function () {
+	  function c() {
+	    this.a = new Map();this.j = new Map();this.h = new Map();this.o = new Set();this.C = new MutationObserver(this.D.bind(this));this.f = null;this.F = new Set();this.enableFlush = !0;this.s = !1;this.m = null;
+	  }function g() {
+	    return h.customElements;
+	  }function k(a) {
+	    if (!/^[a-z][.0-9_a-z]*-[\-.0-9_a-z]*$/.test(a) || -1 !== r.indexOf(a)) return Error("The element name '" + a + "' is not valid.");
+	  }function l(a, b, e, d) {
+	    var c = g();a = e ? m.call(a, b, e) : m.call(a, b);(b = c.a.get(b.toLowerCase())) && c.u(a, b, d);c.b(a);return a;
+	  }
+	  function n(a, b, e, d) {
+	    b = b.toLowerCase();var c = a.getAttribute(b);d.call(a, b, e);1 == a.__$CE_upgraded && (d = g().a.get(a.localName), e = d.A, (d = d.i) && 0 <= e.indexOf(b) && (e = a.getAttribute(b), e !== c && d.call(a, b, c, e, null)));
+	  }var f = document,
+	      h = window;if (g() && (g().g = function () {}, !g().forcePolyfill)) return;var r = "annotation-xml color-profile font-face font-face-src font-face-uri font-face-format font-face-name missing-glyph".split(" ");c.prototype.L = function (a, b) {
+	    function e(a) {
+	      var b = f[a];if (void 0 !== b && "function" !== typeof b) throw Error(c + " '" + a + "' is not a Function");return b;
+	    }if ("function" !== typeof b) throw new TypeError("constructor must be a Constructor");var d = k(a);if (d) throw d;if (this.a.has(a)) throw Error("An element with name '" + a + "' is already defined");if (this.j.has(b)) throw Error("Definition failed for '" + a + "': The constructor is already used.");var c = a,
+	        f = b.prototype;if ("object" !== (typeof f === "undefined" ? "undefined" : _typeof(f))) throw new TypeError("Definition failed for '" + a + "': constructor.prototype must be an object");var d = e("connectedCallback"),
+	        g = e("disconnectedCallback"),
+	        h = e("attributeChangedCallback");this.a.set(c, { name: a, localName: c, constructor: b, v: d, w: g, i: h, A: h && b.observedAttributes || [] });this.j.set(b, c);this.K();if (a = this.h.get(c)) a.resolve(void 0), this.h.delete(c);
+	  };c.prototype.get = function (a) {
+	    return (a = this.a.get(a)) ? a.constructor : void 0;
+	  };c.prototype.M = function (a) {
+	    var b = k(a);if (b) return Promise.reject(b);if (this.a.has(a)) return Promise.resolve();if (b = this.h.get(a)) return b.N;var e,
+	        d = new Promise(function (a) {
+	      e = a;
+	    }),
+	        b = { N: d, resolve: e };this.h.set(a, b);return d;
+	  };c.prototype.g = function () {
+	    this.enableFlush && (this.l(this.m.takeRecords()), this.D(this.C.takeRecords()), this.o.forEach(function (a) {
+	      this.l(a.takeRecords());
+	    }, this));
+	  };c.prototype.K = function () {
+	    var a = this;if (!this.s) {
+	      this.s = !0;var b = function b() {
+	        a.s = !1;a.m || (a.m = a.b(f));a.c(f.childNodes);
+	      };window.HTMLImports ? window.HTMLImports.whenReady(b) : b();
+	    }
+	  };c.prototype.I = function (a) {
+	    this.f = a;
+	  };c.prototype.b = function (a) {
+	    if (null != a.__$CE_observer) return a.__$CE_observer;a.__$CE_observer = new MutationObserver(this.l.bind(this));a.__$CE_observer.observe(a, { childList: !0, subtree: !0 });this.enableFlush && this.o.add(a.__$CE_observer);return a.__$CE_observer;
+	  };c.prototype.J = function (a) {
+	    null != a.__$CE_observer && (a.__$CE_observer.disconnect(), this.enableFlush && this.o.delete(a.__$CE_observer), a.__$CE_observer = null);
+	  };c.prototype.l = function (a) {
+	    for (var b = 0; b < a.length; b++) {
+	      var e = a[b];if ("childList" === e.type) {
+	        var d = e.removedNodes;this.c(e.addedNodes);this.H(d);
+	      }
+	    }
+	  };c.prototype.c = function (a, b) {
+	    b = b || new Set();for (var e = 0; e < a.length; e++) {
+	      var d = a[e];if (d.nodeType === Node.ELEMENT_NODE) {
+	        this.J(d);
+	        d = f.createTreeWalker(d, NodeFilter.SHOW_ELEMENT, null, !1);do {
+	          this.G(d.currentNode, b);
+	        } while (d.nextNode());
+	      }
+	    }
+	  };c.prototype.G = function (a, b) {
+	    if (!b.has(a)) {
+	      b.add(a);var e = this.a.get(a.localName);if (e) {
+	        a.__$CE_upgraded || this.u(a, e, !0);var d;if (d = a.__$CE_upgraded && !a.__$CE_attached) a: {
+	          d = a;do {
+	            if (d.__$CE_attached || d.nodeType === Node.DOCUMENT_NODE) {
+	              d = !0;break a;
+	            }d = d.parentNode || d.nodeType === Node.DOCUMENT_FRAGMENT_NODE && d.host;
+	          } while (d);d = !1;
+	        }d && (a.__$CE_attached = !0, e.v && e.v.call(a));
+	      }a.shadowRoot && this.c(a.shadowRoot.childNodes, b);"LINK" === a.tagName && a.rel && -1 !== a.rel.toLowerCase().split(" ").indexOf("import") && this.B(a, b);
+	    }
+	  };c.prototype.B = function (a, b) {
+	    var e = a.import;if (e) b.has(e) || (b.add(e), e.__$CE_observer || this.b(e), this.c(e.childNodes, b));else if (b = a.href, !this.F.has(b)) {
+	      this.F.add(b);var d = this,
+	          c = function c() {
+	        a.removeEventListener("load", c);a.import.__$CE_observer || d.b(a.import);d.c(a.import.childNodes);
+	      };a.addEventListener("load", c);
+	    }
+	  };c.prototype.H = function (a) {
+	    for (var b = 0; b < a.length; b++) {
+	      var e = a[b];if (e.nodeType === Node.ELEMENT_NODE) {
+	        this.b(e);
+	        e = f.createTreeWalker(e, NodeFilter.SHOW_ELEMENT, null, !1);do {
+	          var d = e.currentNode;if (d.__$CE_upgraded && d.__$CE_attached) {
+	            d.__$CE_attached = !1;var c = this.a.get(d.localName);c && c.w && c.w.call(d);
+	          }
+	        } while (e.nextNode());
+	      }
+	    }
+	  };c.prototype.u = function (a, b, e) {
+	    a.__proto__ = b.constructor.prototype;e && (this.I(a), new b.constructor(), a.__$CE_upgraded = !0, console.assert(!this.f));e = b.A;if ((b = b.i) && 0 < e.length) {
+	      this.C.observe(a, { attributes: !0, attributeOldValue: !0, attributeFilter: e });for (var d = 0; d < e.length; d++) {
+	        var c = e[d];if (a.hasAttribute(c)) {
+	          var f = a.getAttribute(c);b.call(a, c, null, f, null);
+	        }
+	      }
+	    }
+	  };c.prototype.D = function (a) {
+	    for (var b = 0; b < a.length; b++) {
+	      var c = a[b];if ("attributes" === c.type) {
+	        var d = c.target,
+	            f = this.a.get(d.localName),
+	            g = c.attributeName,
+	            h = c.oldValue,
+	            k = d.getAttribute(g);k !== h && f.i.call(d, g, h, k, c.attributeNamespace);
+	      }
+	    }
+	  };window.CustomElementRegistry = c;c.prototype.define = c.prototype.L;c.prototype.get = c.prototype.get;c.prototype.whenDefined = c.prototype.M;c.prototype.flush = c.prototype.g;c.prototype.polyfilled = !0;c.prototype._observeRoot = c.prototype.b;
+	  c.prototype._addImport = c.prototype.B;var p = h.HTMLElement;c.prototype.nativeHTMLElement = p;h.HTMLElement = function () {
+	    var a = g();if (a.f) {
+	      var b = a.f;a.f = null;return b;
+	    }if (this.constructor) return a = a.j.get(this.constructor), l(f, a, void 0, !1);throw Error("Unknown constructor. Did you call customElements.define()?");
+	  };h.HTMLElement.prototype = Object.create(p.prototype, { constructor: { value: h.HTMLElement, configurable: !0, writable: !0 } });var m = f.createElement;f.createElement = function (a, b) {
+	    return l(f, a, b, !0);
+	  };var t = f.createElementNS;f.createElementNS = function (a, b) {
+	    return "http://www.w3.org/1999/xhtml" === a ? f.createElement(b) : t.call(f, a, b);
+	  };var q = Element.prototype.attachShadow;q && Object.defineProperty(Element.prototype, "attachShadow", { value: function value(a) {
+	      a = q.call(this, a);g().b(a);return a;
+	    } });var u = f.importNode;f.importNode = function (a, b) {
+	    a = u.call(f, a, b);g().c(a.nodeType === Node.ELEMENT_NODE ? [a] : a.childNodes);return a;
+	  };var v = Element.prototype.setAttribute;Element.prototype.setAttribute = function (a, b) {
+	    n(this, a, b, v);
+	  };
+	  var w = Element.prototype.removeAttribute;Element.prototype.removeAttribute = function (a) {
+	    n(this, a, null, w);
+	  };Object.defineProperty(window, "customElements", { value: new c(), configurable: !0, enumerable: !0 });window.CustomElements = { takeRecords: function takeRecords() {
+	      g().g && g().g();
+	    } };
+	})();
+
+	(function () {
+	  'use strict';
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  var settings = window.ShadyDOM || {};
+
+	  settings.hasNativeShadowDOM = Boolean(Element.prototype.attachShadow && Node.prototype.getRootNode);
+
+	  settings.inUse = settings.force || !settings.hasNativeShadowDOM;
+
+	  function isShadyRoot(obj) {
+	    return Boolean(obj.__localName === 'ShadyRoot');
+	  }
+
+	  var p = Element.prototype;
+	  var matches = p.matches || p.matchesSelector || p.mozMatchesSelector || p.msMatchesSelector || p.oMatchesSelector || p.webkitMatchesSelector;
+
+	  function matchesSelector(element, selector) {
+	    return matches.call(element, selector);
+	  }
+
+	  function copyOwnProperty(name, source, target) {
+	    var pd = Object.getOwnPropertyDescriptor(source, name);
+	    if (pd) {
+	      Object.defineProperty(target, name, pd);
+	    }
+	  }
+
+	  function extend(target, source) {
+	    if (target && source) {
+	      var n$ = Object.getOwnPropertyNames(source);
+	      for (var i = 0, n; i < n$.length && (n = n$[i]); i++) {
+	        copyOwnProperty(n, source, target);
+	      }
+	    }
+	    return target || source;
+	  }
+
+	  function extendAll(target) {
+	    var sources = [],
+	        len = arguments.length - 1;
+	    while (len-- > 0) {
+	      sources[len] = arguments[len + 1];
+	    }for (var i = 0; i < sources.length; i++) {
+	      extend(target, sources[i]);
+	    }
+	    return target;
+	  }
+
+	  function mixin(target, source) {
+	    for (var i in source) {
+	      target[i] = source[i];
+	    }
+	    return target;
+	  }
+
+	  var setPrototypeOf = Object.setPrototypeOf || function (obj, proto) {
+	    obj.__proto__ = proto;
+	    return obj;
+	  };
+
+	  function patchPrototype(obj, mixin) {
+	    var proto = Object.getPrototypeOf(obj);
+	    if (!proto.hasOwnProperty('__patchProto')) {
+	      var patchProto = Object.create(proto);
+	      patchProto.__sourceProto = proto;
+	      extend(patchProto, mixin);
+	      proto.__patchProto = patchProto;
+	    }
+	    setPrototypeOf(obj, proto.__patchProto);
+	  }
+
+	  var common = {};
+
+	  // TODO(sorvell): actually rely on a real Promise polyfill...
+	  var promish;
+	  if (window.Promise) {
+	    promish = Promise.resolve();
+	  } else {
+	    promish = {
+	      then: function then(cb) {
+	        var twiddle = document.createTextNode('');
+	        var observer = new MutationObserver(function () {
+	          observer.disconnect();
+	          cb();
+	        });
+	        observer.observe(twiddle, { characterData: true });
+	      }
+	    };
+	  }
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  function newSplice(index, removed, addedCount) {
+	    return {
+	      index: index,
+	      removed: removed,
+	      addedCount: addedCount
+	    };
+	  }
+
+	  var EDIT_LEAVE = 0;
+	  var EDIT_UPDATE = 1;
+	  var EDIT_ADD = 2;
+	  var EDIT_DELETE = 3;
+
+	  var ArraySplice = {
+
+	    // Note: This function is *based* on the computation of the Levenshtein
+	    // "edit" distance. The one change is that "updates" are treated as two
+	    // edits - not one. With Array splices, an update is really a delete
+	    // followed by an add. By retaining this, we optimize for "keeping" the
+	    // maximum array items in the original array. For example:
+	    //
+	    //   'xxxx123' -> '123yyyy'
+	    //
+	    // With 1-edit updates, the shortest path would be just to update all seven
+	    // characters. With 2-edit updates, we delete 4, leave 3, and add 4. This
+	    // leaves the substring '123' intact.
+	    calcEditDistances: function calcEditDistances(current, currentStart, currentEnd, old, oldStart, oldEnd) {
+	      var this$1 = this;
+
+	      // "Deletion" columns
+	      var rowCount = oldEnd - oldStart + 1;
+	      var columnCount = currentEnd - currentStart + 1;
+	      var distances = new Array(rowCount);
+
+	      // "Addition" rows. Initialize null column.
+	      for (var i = 0; i < rowCount; i++) {
+	        distances[i] = new Array(columnCount);
+	        distances[i][0] = i;
+	      }
+
+	      // Initialize null row
+	      for (var j = 0; j < columnCount; j++) {
+	        distances[0][j] = j;
+	      }for (var i$1 = 1; i$1 < rowCount; i$1++) {
+	        for (var j$1 = 1; j$1 < columnCount; j$1++) {
+	          if (this$1.equals(current[currentStart + j$1 - 1], old[oldStart + i$1 - 1])) distances[i$1][j$1] = distances[i$1 - 1][j$1 - 1];else {
+	            var north = distances[i$1 - 1][j$1] + 1;
+	            var west = distances[i$1][j$1 - 1] + 1;
+	            distances[i$1][j$1] = north < west ? north : west;
+	          }
+	        }
+	      }
+
+	      return distances;
+	    },
+
+	    // This starts at the final weight, and walks "backward" by finding
+	    // the minimum previous weight recursively until the origin of the weight
+	    // matrix.
+	    spliceOperationsFromEditDistances: function spliceOperationsFromEditDistances(distances) {
+	      var i = distances.length - 1;
+	      var j = distances[0].length - 1;
+	      var current = distances[i][j];
+	      var edits = [];
+	      while (i > 0 || j > 0) {
+	        if (i == 0) {
+	          edits.push(EDIT_ADD);
+	          j--;
+	          continue;
+	        }
+	        if (j == 0) {
+	          edits.push(EDIT_DELETE);
+	          i--;
+	          continue;
+	        }
+	        var northWest = distances[i - 1][j - 1];
+	        var west = distances[i - 1][j];
+	        var north = distances[i][j - 1];
+
+	        var min;
+	        if (west < north) min = west < northWest ? west : northWest;else min = north < northWest ? north : northWest;
+
+	        if (min == northWest) {
+	          if (northWest == current) {
+	            edits.push(EDIT_LEAVE);
+	          } else {
+	            edits.push(EDIT_UPDATE);
+	            current = northWest;
+	          }
+	          i--;
+	          j--;
+	        } else if (min == west) {
+	          edits.push(EDIT_DELETE);
+	          i--;
+	          current = west;
+	        } else {
+	          edits.push(EDIT_ADD);
+	          j--;
+	          current = north;
+	        }
+	      }
+
+	      edits.reverse();
+	      return edits;
+	    },
+
+	    /**
+	     * Splice Projection functions:
+	     *
+	     * A splice map is a representation of how a previous array of items
+	     * was transformed into a new array of items. Conceptually it is a list of
+	     * tuples of
+	     *
+	     *   <index, removed, addedCount>
+	     *
+	     * which are kept in ascending index order of. The tuple represents that at
+	     * the |index|, |removed| sequence of items were removed, and counting forward
+	     * from |index|, |addedCount| items were added.
+	     */
+
+	    /**
+	     * Lacking individual splice mutation information, the minimal set of
+	     * splices can be synthesized given the previous state and final state of an
+	     * array. The basic approach is to calculate the edit distance matrix and
+	     * choose the shortest path through it.
+	     *
+	     * Complexity: O(l * p)
+	     *   l: The length of the current array
+	     *   p: The length of the old array
+	     */
+	    calcSplices: function calcSplices(current, currentStart, currentEnd, old, oldStart, oldEnd) {
+	      var prefixCount = 0;
+	      var suffixCount = 0;
+	      var splice;
+
+	      var minLength = Math.min(currentEnd - currentStart, oldEnd - oldStart);
+	      if (currentStart == 0 && oldStart == 0) prefixCount = this.sharedPrefix(current, old, minLength);
+
+	      if (currentEnd == current.length && oldEnd == old.length) suffixCount = this.sharedSuffix(current, old, minLength - prefixCount);
+
+	      currentStart += prefixCount;
+	      oldStart += prefixCount;
+	      currentEnd -= suffixCount;
+	      oldEnd -= suffixCount;
+
+	      if (currentEnd - currentStart == 0 && oldEnd - oldStart == 0) return [];
+
+	      if (currentStart == currentEnd) {
+	        splice = newSplice(currentStart, [], 0);
+	        while (oldStart < oldEnd) {
+	          splice.removed.push(old[oldStart++]);
+	        }return [splice];
+	      } else if (oldStart == oldEnd) return [newSplice(currentStart, [], currentEnd - currentStart)];
+
+	      var ops = this.spliceOperationsFromEditDistances(this.calcEditDistances(current, currentStart, currentEnd, old, oldStart, oldEnd));
+
+	      splice = undefined;
+	      var splices = [];
+	      var index = currentStart;
+	      var oldIndex = oldStart;
+	      for (var i = 0; i < ops.length; i++) {
+	        switch (ops[i]) {
+	          case EDIT_LEAVE:
+	            if (splice) {
+	              splices.push(splice);
+	              splice = undefined;
+	            }
+
+	            index++;
+	            oldIndex++;
+	            break;
+	          case EDIT_UPDATE:
+	            if (!splice) splice = newSplice(index, [], 0);
+
+	            splice.addedCount++;
+	            index++;
+
+	            splice.removed.push(old[oldIndex]);
+	            oldIndex++;
+	            break;
+	          case EDIT_ADD:
+	            if (!splice) splice = newSplice(index, [], 0);
+
+	            splice.addedCount++;
+	            index++;
+	            break;
+	          case EDIT_DELETE:
+	            if (!splice) splice = newSplice(index, [], 0);
+
+	            splice.removed.push(old[oldIndex]);
+	            oldIndex++;
+	            break;
+	        }
+	      }
+
+	      if (splice) {
+	        splices.push(splice);
+	      }
+	      return splices;
+	    },
+
+	    sharedPrefix: function sharedPrefix(current, old, searchLength) {
+	      var this$1 = this;
+
+	      for (var i = 0; i < searchLength; i++) {
+	        if (!this$1.equals(current[i], old[i])) return i;
+	      }return searchLength;
+	    },
+
+	    sharedSuffix: function sharedSuffix(current, old, searchLength) {
+	      var index1 = current.length;
+	      var index2 = old.length;
+	      var count = 0;
+	      while (count < searchLength && this.equals(current[--index1], old[--index2])) {
+	        count++;
+	      }return count;
+	    },
+
+	    calculateSplices: function calculateSplices$1(current, previous) {
+	      return this.calcSplices(current, 0, current.length, previous, 0, previous.length);
+	    },
+
+	    equals: function equals(currentValue, previousValue) {
+	      return currentValue === previousValue;
+	    }
+
+	  };
+
+	  var calculateSplices = function calculateSplices(current, previous) {
+	    return ArraySplice.calculateSplices(current, previous);
+	  };
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  // TODO(sorvell): circular (patch loads tree and tree loads patch)
+	  // for now this is stuck on `utils`
+	  //import {patchNode} from './patch'
+	  // native add/remove
+	  var nativeInsertBefore = Element.prototype.insertBefore;
+	  var nativeAppendChild = Element.prototype.appendChild;
+	  var nativeRemoveChild = Element.prototype.removeChild;
+
+	  /**
+	   * `tree` is a dom manipulation library used by ShadyDom to
+	   * manipulate composed and logical trees.
+	   */
+	  var tree = {
+
+	    // sad but faster than slice...
+	    arrayCopyChildNodes: function arrayCopyChildNodes(parent) {
+	      var copy = [],
+	          i = 0;
+	      for (var n = parent.firstChild; n; n = n.nextSibling) {
+	        copy[i++] = n;
+	      }
+	      return copy;
+	    },
+
+	    arrayCopyChildren: function arrayCopyChildren(parent) {
+	      var copy = [],
+	          i = 0;
+	      for (var n = parent.firstElementChild; n; n = n.nextElementSibling) {
+	        copy[i++] = n;
+	      }
+	      return copy;
+	    },
+
+	    arrayCopy: function arrayCopy(a$) {
+	      var l = a$.length;
+	      var copy = new Array(l);
+	      for (var i = 0; i < l; i++) {
+	        copy[i] = a$[i];
+	      }
+	      return copy;
+	    },
+
+	    saveChildNodes: function saveChildNodes(node) {
+	      tree.Logical.saveChildNodes(node);
+	      if (!tree.Composed.hasParentNode(node)) {
+	        tree.Composed.saveComposedData(node);
+	        //tree.Composed.saveParentNode(node);
+	      }
+	      tree.Composed.saveChildNodes(node);
+	    }
+
+	  };
+
+	  tree.Logical = {
+
+	    hasParentNode: function hasParentNode(node) {
+	      return Boolean(node.__dom && node.__dom.parentNode);
+	    },
+
+	    hasChildNodes: function hasChildNodes(node) {
+	      return Boolean(node.__dom && node.__dom.childNodes !== undefined);
+	    },
+
+	    getChildNodes: function getChildNodes(node) {
+	      // note: we're distinguishing here between undefined and false-y:
+	      // hasChildNodes uses undefined check to see if this element has logical
+	      // children; the false-y check indicates whether or not we should rebuild
+	      // the cached childNodes array.
+	      return this.hasChildNodes(node) ? this._getChildNodes(node) : tree.Composed.getChildNodes(node);
+	    },
+
+	    _getChildNodes: function _getChildNodes(node) {
+	      if (!node.__dom.childNodes) {
+	        node.__dom.childNodes = [];
+	        for (var n = this.getFirstChild(node); n; n = this.getNextSibling(n)) {
+	          node.__dom.childNodes.push(n);
+	        }
+	      }
+	      return node.__dom.childNodes;
+	    },
+
+	    // NOTE: __dom can be created under 2 conditions: (1) an element has a
+	    // logical tree, or (2) an element is in a logical tree. In case (1), the
+	    // element will store firstChild/lastChild, and in case (2), the element
+	    // will store parentNode, nextSibling, previousSibling. This means that
+	    // the mere existence of __dom is not enough to know if the requested
+	    // logical data is available and instead we do an explicit undefined check.
+	    getParentNode: function getParentNode(node) {
+	      return node.__dom && node.__dom.parentNode !== undefined ? node.__dom.parentNode : tree.Composed.getParentNode(node);
+	    },
+
+	    getFirstChild: function getFirstChild(node) {
+	      return node.__dom && node.__dom.firstChild !== undefined ? node.__dom.firstChild : tree.Composed.getFirstChild(node);
+	    },
+
+	    getLastChild: function getLastChild(node) {
+	      return node.__dom && node.__dom.lastChild !== undefined ? node.__dom.lastChild : tree.Composed.getLastChild(node);
+	    },
+
+	    getNextSibling: function getNextSibling(node) {
+	      return node.__dom && node.__dom.nextSibling !== undefined ? node.__dom.nextSibling : tree.Composed.getNextSibling(node);
+	    },
+
+	    getPreviousSibling: function getPreviousSibling(node) {
+	      return node.__dom && node.__dom.previousSibling !== undefined ? node.__dom.previousSibling : tree.Composed.getPreviousSibling(node);
+	    },
+
+	    getFirstElementChild: function getFirstElementChild(node) {
+	      return node.__dom && node.__dom.firstChild !== undefined ? this._getFirstElementChild(node) : tree.Composed.getFirstElementChild(node);
+	    },
+
+	    _getFirstElementChild: function _getFirstElementChild(node) {
+	      var n = node.__dom.firstChild;
+	      while (n && n.nodeType !== Node.ELEMENT_NODE) {
+	        n = n.__dom.nextSibling;
+	      }
+	      return n;
+	    },
+
+	    getLastElementChild: function getLastElementChild(node) {
+	      return node.__dom && node.__dom.lastChild !== undefined ? this._getLastElementChild(node) : tree.Composed.getLastElementChild(node);
+	    },
+
+	    _getLastElementChild: function _getLastElementChild(node) {
+	      var n = node.__dom.lastChild;
+	      while (n && n.nodeType !== Node.ELEMENT_NODE) {
+	        n = n.__dom.previousSibling;
+	      }
+	      return n;
+	    },
+
+	    getNextElementSibling: function getNextElementSibling(node) {
+	      return node.__dom && node.__dom.nextSibling !== undefined ? this._getNextElementSibling(node) : tree.Composed.getNextElementSibling(node);
+	    },
+
+	    _getNextElementSibling: function _getNextElementSibling(node) {
+	      var this$1 = this;
+
+	      var n = node.__dom.nextSibling;
+	      while (n && n.nodeType !== Node.ELEMENT_NODE) {
+	        n = this$1.getNextSibling(n);
+	      }
+	      return n;
+	    },
+
+	    getPreviousElementSibling: function getPreviousElementSibling(node) {
+	      return node.__dom && node.__dom.previousSibling !== undefined ? this._getPreviousElementSibling(node) : tree.Composed.getPreviousElementSibling(node);
+	    },
+
+	    _getPreviousElementSibling: function _getPreviousElementSibling(node) {
+	      var this$1 = this;
+
+	      var n = node.__dom.previousSibling;
+	      while (n && n.nodeType !== Node.ELEMENT_NODE) {
+	        n = this$1.getPreviousSibling(n);
+	      }
+	      return n;
+	    },
+
+	    // Capture the list of light children. It's important to do this before we
+	    // start transforming the DOM into "rendered" state.
+	    // Children may be added to this list dynamically. It will be treated as the
+	    // source of truth for the light children of the element. This element's
+	    // actual children will be treated as the rendered state once this function
+	    // has been called.
+	    saveChildNodes: function saveChildNodes$1(node) {
+	      if (!this.hasChildNodes(node)) {
+	        node.__dom = node.__dom || {};
+	        node.__dom.firstChild = node.firstChild;
+	        node.__dom.lastChild = node.lastChild;
+	        var c$ = node.__dom.childNodes = tree.arrayCopyChildNodes(node);
+	        for (var i = 0, n; i < c$.length && (n = c$[i]); i++) {
+	          n.__dom = n.__dom || {};
+	          n.__dom.parentNode = node;
+	          n.__dom.nextSibling = c$[i + 1] || null;
+	          n.__dom.previousSibling = c$[i - 1] || null;
+	          common.patchNode(n);
+	        }
+	      }
+	    },
+
+	    // TODO(sorvell): may need to patch saveChildNodes iff the tree has
+	    // already been distributed.
+	    // NOTE: ensure `node` is patched...
+	    recordInsertBefore: function recordInsertBefore(node, container, ref_node) {
+	      var this$1 = this;
+
+	      container.__dom.childNodes = null;
+	      // handle document fragments
+	      if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+	        var c$ = tree.arrayCopyChildNodes(node);
+	        for (var i = 0; i < c$.length; i++) {
+	          this$1._linkNode(c$[i], container, ref_node);
+	        }
+	        // cleanup logical dom in doc fragment.
+	        node.__dom = node.__dom || {};
+	        node.__dom.firstChild = node.__dom.lastChild = null;
+	        node.__dom.childNodes = null;
+	      } else {
+	        this._linkNode(node, container, ref_node);
+	      }
+	    },
+
+	    _linkNode: function _linkNode(node, container, ref_node) {
+	      common.patchNode(node);
+	      ref_node = ref_node || null;
+	      node.__dom = node.__dom || {};
+	      container.__dom = container.__dom || {};
+	      if (ref_node) {
+	        ref_node.__dom = ref_node.__dom || {};
+	      }
+	      // update ref_node.previousSibling <-> node
+	      node.__dom.previousSibling = ref_node ? ref_node.__dom.previousSibling : container.__dom.lastChild;
+	      if (node.__dom.previousSibling) {
+	        node.__dom.previousSibling.__dom.nextSibling = node;
+	      }
+	      // update node <-> ref_node
+	      node.__dom.nextSibling = ref_node;
+	      if (node.__dom.nextSibling) {
+	        node.__dom.nextSibling.__dom.previousSibling = node;
+	      }
+	      // update node <-> container
+	      node.__dom.parentNode = container;
+	      if (ref_node) {
+	        if (ref_node === container.__dom.firstChild) {
+	          container.__dom.firstChild = node;
+	        }
+	      } else {
+	        container.__dom.lastChild = node;
+	        if (!container.__dom.firstChild) {
+	          container.__dom.firstChild = node;
+	        }
+	      }
+	      // remove caching of childNodes
+	      container.__dom.childNodes = null;
+	    },
+
+	    recordRemoveChild: function recordRemoveChild(node, container) {
+	      node.__dom = node.__dom || {};
+	      container.__dom = container.__dom || {};
+	      if (node === container.__dom.firstChild) {
+	        container.__dom.firstChild = node.__dom.nextSibling;
+	      }
+	      if (node === container.__dom.lastChild) {
+	        container.__dom.lastChild = node.__dom.previousSibling;
+	      }
+	      var p = node.__dom.previousSibling;
+	      var n = node.__dom.nextSibling;
+	      if (p) {
+	        p.__dom = p.__dom || {};
+	        p.__dom.nextSibling = n;
+	      }
+	      if (n) {
+	        n.__dom = n.__dom || {};
+	        n.__dom.previousSibling = p;
+	      }
+	      // When an element is removed, logical data is no longer tracked.
+	      // Explicitly set `undefined` here to indicate this. This is disginguished
+	      // from `null` which is set if info is null.
+	      node.__dom.parentNode = node.__dom.previousSibling = node.__dom.nextSibling = null;
+	      // remove caching of childNodes
+	      container.__dom.childNodes = null;
+	    }
+
+	  };
+
+	  // TODO(sorvell): composed tree manipulation is made available
+	  // (1) to maninpulate the composed tree, and (2) to track changes
+	  // to the tree for optional patching pluggability.
+	  tree.Composed = {
+
+	    hasParentNode: function hasParentNode$1(node) {
+	      return Boolean(node.__dom && node.__dom.$parentNode !== undefined);
+	    },
+
+	    hasChildNodes: function hasChildNodes$1(node) {
+	      return Boolean(node.__dom && node.__dom.$childNodes !== undefined);
+	    },
+
+	    getChildNodes: function getChildNodes$1(node) {
+	      return this.hasChildNodes(node) ? this._getChildNodes(node) : !node.__patched && tree.arrayCopy(node.childNodes);
+	    },
+
+	    _getChildNodes: function _getChildNodes$1(node) {
+	      if (!node.__dom.$childNodes) {
+	        node.__dom.$childNodes = [];
+	        for (var n = node.__dom.$firstChild; n; n = n.__dom.$nextSibling) {
+	          node.__dom.$childNodes.push(n);
+	        }
+	      }
+	      return node.__dom.$childNodes;
+	    },
+
+	    getComposedChildNodes: function getComposedChildNodes(node) {
+	      return node.__dom.$childNodes;
+	    },
+
+	    getParentNode: function getParentNode$1(node) {
+	      return this.hasParentNode(node) ? node.__dom.$parentNode : !node.__patched && node.parentNode;
+	    },
+
+	    getFirstChild: function getFirstChild$1(node) {
+	      return node.__patched ? node.__dom.$firstChild : node.firstChild;
+	    },
+
+	    getLastChild: function getLastChild$1(node) {
+	      return node.__patched ? node.__dom.$lastChild : node.lastChild;
+	    },
+
+	    getNextSibling: function getNextSibling$1(node) {
+	      return node.__patched ? node.__dom.$nextSibling : node.nextSibling;
+	    },
+
+	    getPreviousSibling: function getPreviousSibling$1(node) {
+	      return node.__patched ? node.__dom.$previousSibling : node.previousSibling;
+	    },
+
+	    getFirstElementChild: function getFirstElementChild$1(node) {
+	      return node.__patched ? this._getFirstElementChild(node) : node.firstElementChild;
+	    },
+
+	    _getFirstElementChild: function _getFirstElementChild$1(node) {
+	      var n = node.__dom.$firstChild;
+	      while (n && n.nodeType !== Node.ELEMENT_NODE) {
+	        n = n.__dom.$nextSibling;
+	      }
+	      return n;
+	    },
+
+	    getLastElementChild: function getLastElementChild$1(node) {
+	      return node.__patched ? this._getLastElementChild(node) : node.lastElementChild;
+	    },
+
+	    _getLastElementChild: function _getLastElementChild$1(node) {
+	      var n = node.__dom.$lastChild;
+	      while (n && n.nodeType !== Node.ELEMENT_NODE) {
+	        n = n.__dom.$previousSibling;
+	      }
+	      return n;
+	    },
+
+	    getNextElementSibling: function getNextElementSibling$1(node) {
+	      return node.__patched ? this._getNextElementSibling(node) : node.nextElementSibling;
+	    },
+
+	    _getNextElementSibling: function _getNextElementSibling$1(node) {
+	      var this$1 = this;
+
+	      var n = node.__dom.$nextSibling;
+	      while (n && n.nodeType !== Node.ELEMENT_NODE) {
+	        n = this$1.getNextSibling(n);
+	      }
+	      return n;
+	    },
+
+	    getPreviousElementSibling: function getPreviousElementSibling$1(node) {
+	      return node.__patched ? this._getPreviousElementSibling(node) : node.previousElementSibling;
+	    },
+
+	    _getPreviousElementSibling: function _getPreviousElementSibling$1(node) {
+	      var this$1 = this;
+
+	      var n = node.__dom.$previousSibling;
+	      while (n && n.nodeType !== Node.ELEMENT_NODE) {
+	        n = this$1.getPreviousSibling(n);
+	      }
+	      return n;
+	    },
+
+	    saveChildNodes: function saveChildNodes$2(node) {
+	      var this$1 = this;
+
+	      if (!this.hasChildNodes(node)) {
+	        node.__dom = node.__dom || {};
+	        node.__dom.$firstChild = node.firstChild;
+	        node.__dom.$lastChild = node.lastChild;
+	        var c$ = node.__dom.$childNodes = tree.arrayCopyChildNodes(node);
+	        for (var i = 0, n; i < c$.length && (n = c$[i]); i++) {
+	          this$1.saveComposedData(n);
+	        }
+	      }
+	    },
+
+	    saveComposedData: function saveComposedData(node) {
+	      node.__dom = node.__dom || {};
+	      if (node.__dom.$parentNode === undefined) {
+	        node.__dom.$parentNode = node.parentNode;
+	      }
+	      if (node.__dom.$nextSibling === undefined) {
+	        node.__dom.$nextSibling = node.nextSibling;
+	      }
+	      if (node.__dom.$previousSibling === undefined) {
+	        node.__dom.$previousSibling = node.previousSibling;
+	      }
+	    },
+
+	    recordInsertBefore: function recordInsertBefore$1(node, container, ref_node) {
+	      var this$1 = this;
+
+	      container.__dom.$childNodes = null;
+	      // handle document fragments
+	      if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+	        // TODO(sorvell): remember this for patching:
+	        // the act of setting this info can affect patched nodes
+	        // getters; therefore capture childNodes before patching.
+	        for (var n = this.getFirstChild(node); n; n = this.getNextSibling(n)) {
+	          this$1._linkNode(n, container, ref_node);
+	        }
+	      } else {
+	        this._linkNode(node, container, ref_node);
+	      }
+	    },
+
+	    _linkNode: function _linkNode$1(node, container, ref_node) {
+	      node.__dom = node.__dom || {};
+	      container.__dom = container.__dom || {};
+	      if (ref_node) {
+	        ref_node.__dom = ref_node.__dom || {};
+	      }
+	      // update ref_node.previousSibling <-> node
+	      node.__dom.$previousSibling = ref_node ? ref_node.__dom.$previousSibling : container.__dom.$lastChild;
+	      if (node.__dom.$previousSibling) {
+	        node.__dom.$previousSibling.__dom.$nextSibling = node;
+	      }
+	      // update node <-> ref_node
+	      node.__dom.$nextSibling = ref_node;
+	      if (node.__dom.$nextSibling) {
+	        node.__dom.$nextSibling.__dom.$previousSibling = node;
+	      }
+	      // update node <-> container
+	      node.__dom.$parentNode = container;
+	      if (ref_node) {
+	        if (ref_node === container.__dom.$firstChild) {
+	          container.__dom.$firstChild = node;
+	        }
+	      } else {
+	        container.__dom.$lastChild = node;
+	        if (!container.__dom.$firstChild) {
+	          container.__dom.$firstChild = node;
+	        }
+	      }
+	      // remove caching of childNodes
+	      container.__dom.$childNodes = null;
+	    },
+
+	    recordRemoveChild: function recordRemoveChild$1(node, container) {
+	      node.__dom = node.__dom || {};
+	      container.__dom = container.__dom || {};
+	      if (node === container.__dom.$firstChild) {
+	        container.__dom.$firstChild = node.__dom.$nextSibling;
+	      }
+	      if (node === container.__dom.$lastChild) {
+	        container.__dom.$lastChild = node.__dom.$previousSibling;
+	      }
+	      var p = node.__dom.$previousSibling;
+	      var n = node.__dom.$nextSibling;
+	      if (p) {
+	        p.__dom = p.__dom || {};
+	        p.__dom.$nextSibling = n;
+	      }
+	      if (n) {
+	        n.__dom = n.__dom || {};
+	        n.__dom.$previousSibling = p;
+	      }
+	      node.__dom.$parentNode = node.__dom.$previousSibling = node.__dom.$nextSibling = null;
+	      // remove caching of childNodes
+	      container.__dom.$childNodes = null;
+	    },
+
+	    clearChildNodes: function clearChildNodes(node) {
+	      var this$1 = this;
+
+	      var c$ = this.getChildNodes(node);
+	      for (var i = 0, c; i < c$.length; i++) {
+	        c = c$[i];
+	        this$1.recordRemoveChild(c, node);
+	        nativeRemoveChild.call(node, c);
+	      }
+	    },
+
+	    saveParentNode: function saveParentNode(node) {
+	      node.__dom = node.__dom || {};
+	      node.__dom.$parentNode = node.parentNode;
+	    },
+
+	    insertBefore: function insertBefore(parentNode, newChild, refChild) {
+	      this.saveChildNodes(parentNode);
+	      // remove from current location.
+	      this._addChild(parentNode, newChild, refChild);
+	      return nativeInsertBefore.call(parentNode, newChild, refChild || null);
+	    },
+
+	    appendChild: function appendChild(parentNode, newChild) {
+	      this.saveChildNodes(parentNode);
+	      this._addChild(parentNode, newChild);
+	      return nativeAppendChild.call(parentNode, newChild);
+	    },
+
+	    removeChild: function removeChild(parentNode, node) {
+	      var currentParent = this.getParentNode(node);
+	      this.saveChildNodes(parentNode);
+	      this._removeChild(parentNode, node);
+	      if (currentParent === parentNode) {
+	        return nativeRemoveChild.call(parentNode, node);
+	      }
+	    },
+
+	    _addChild: function _addChild(parentNode, newChild, refChild) {
+	      var this$1 = this;
+
+	      var isFrag = newChild.nodeType === Node.DOCUMENT_FRAGMENT_NODE;
+	      var oldParent = this.getParentNode(newChild);
+	      if (oldParent) {
+	        this._removeChild(oldParent, newChild);
+	      }
+	      if (isFrag) {
+	        var c$ = this.getChildNodes(newChild);
+	        for (var i = 0; i < c$.length; i++) {
+	          var c = c$[i];
+	          // unlink document fragment children
+	          this$1._removeChild(newChild, c);
+	          this$1.recordInsertBefore(c, parentNode, refChild);
+	        }
+	      } else {
+	        this.recordInsertBefore(newChild, parentNode, refChild);
+	      }
+	    },
+
+	    _removeChild: function _removeChild(parentNode, node) {
+	      this.recordRemoveChild(node, parentNode);
+	    }
+
+	  };
+
+	  // for testing...
+	  var descriptors = {};
+	  function getNativeProperty(element, property) {
+	    if (!descriptors[property]) {
+	      descriptors[property] = Object.getOwnPropertyDescriptor(HTMLElement.prototype, property) || Object.getOwnPropertyDescriptor(Element.prototype, property) || Object.getOwnPropertyDescriptor(Node.prototype, property);
+	    }
+	    return descriptors[property].get.call(element);
+	  }
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  // NOTE: normalize event contruction where necessary (IE11)
+	  var NormalizedEvent = typeof Event === 'function' ? Event : function (inType, params) {
+	    params = params || {};
+	    var e = document.createEvent('Event');
+	    e.initEvent(inType, Boolean(params.bubbles), Boolean(params.cancelable));
+	    return e;
+	  };
+
+	  var Distributor = function () {
+	    function anonymous(root) {
+	      this.root = root;
+	      this.insertionPointTag = 'slot';
+	    }
+
+	    anonymous.prototype.getInsertionPoints = function getInsertionPoints() {
+	      return this.root.querySelectorAll(this.insertionPointTag);
+	    };
+
+	    anonymous.prototype.hasInsertionPoint = function hasInsertionPoint() {
+	      return Boolean(this.root._insertionPoints && this.root._insertionPoints.length);
+	    };
+
+	    anonymous.prototype.isInsertionPoint = function isInsertionPoint(node) {
+	      return node.localName && node.localName == this.insertionPointTag;
+	    };
+
+	    anonymous.prototype.distribute = function distribute() {
+	      if (this.hasInsertionPoint()) {
+	        return this.distributePool(this.root, this.collectPool());
+	      }
+	      return [];
+	    };
+
+	    // Gather the pool of nodes that should be distributed. We will combine
+	    // these with the "content root" to arrive at the composed tree.
+	    anonymous.prototype.collectPool = function collectPool() {
+	      return tree.arrayCopy(tree.Logical.getChildNodes(this.root.host));
+	    };
+
+	    // perform "logical" distribution; note, no actual dom is moved here,
+	    // instead elements are distributed into storage
+	    // array where applicable.
+	    anonymous.prototype.distributePool = function distributePool(node, pool) {
+	      var this$1 = this;
+
+	      var dirtyRoots = [];
+	      var p$ = this.root._insertionPoints;
+	      for (var i = 0, l = p$.length, p; i < l && (p = p$[i]); i++) {
+	        this$1.distributeInsertionPoint(p, pool);
+	        // provoke redistribution on insertion point parents
+	        // must do this on all candidate hosts since distribution in this
+	        // scope invalidates their distribution.
+	        // only get logical parent.
+	        var parent = tree.Logical.getParentNode(p);
+	        if (parent && parent.shadyRoot && this$1.hasInsertionPoint(parent.shadyRoot)) {
+	          dirtyRoots.push(parent.shadyRoot);
+	        }
+	      }
+	      for (var i$1 = 0; i$1 < pool.length; i$1++) {
+	        var p$1 = pool[i$1];
+	        if (p$1) {
+	          p$1._assignedSlot = undefined;
+	          // remove undistributed elements from physical dom.
+	          var parent$1 = tree.Composed.getParentNode(p$1);
+	          if (parent$1) {
+	            tree.Composed.removeChild(parent$1, p$1);
+	          }
+	        }
+	      }
+	      return dirtyRoots;
+	    };
+
+	    anonymous.prototype.distributeInsertionPoint = function distributeInsertionPoint(insertionPoint, pool) {
+	      var this$1 = this;
+
+	      var prevAssignedNodes = insertionPoint._assignedNodes;
+	      if (prevAssignedNodes) {
+	        this.clearAssignedSlots(insertionPoint, true);
+	      }
+	      insertionPoint._assignedNodes = [];
+	      var needsSlotChange = false;
+	      // distribute nodes from the pool that this selector matches
+	      var anyDistributed = false;
+	      for (var i = 0, l = pool.length, node; i < l; i++) {
+	        node = pool[i];
+	        // skip nodes that were already used
+	        if (!node) {
+	          continue;
+	        }
+	        // distribute this node if it matches
+	        if (this$1.matchesInsertionPoint(node, insertionPoint)) {
+	          if (node.__prevAssignedSlot != insertionPoint) {
+	            needsSlotChange = true;
+	          }
+	          this$1.distributeNodeInto(node, insertionPoint);
+	          // remove this node from the pool
+	          pool[i] = undefined;
+	          // since at least one node matched, we won't need fallback content
+	          anyDistributed = true;
+	        }
+	      }
+	      // Fallback content if nothing was distributed here
+	      if (!anyDistributed) {
+	        var children = tree.Logical.getChildNodes(insertionPoint);
+	        for (var j = 0, node$1; j < children.length; j++) {
+	          node$1 = children[j];
+	          if (node$1.__prevAssignedSlot != insertionPoint) {
+	            needsSlotChange = true;
+	          }
+	          this$1.distributeNodeInto(node$1, insertionPoint);
+	        }
+	      }
+	      // we're already dirty if a node was newly added to the slot
+	      // and we're also dirty if the assigned count decreased.
+	      if (prevAssignedNodes) {
+	        // TODO(sorvell): the tracking of previously assigned slots
+	        // could instead by done with a Set and then we could
+	        // avoid needing to iterate here to clear the info.
+	        for (var i$1 = 0; i$1 < prevAssignedNodes.length; i$1++) {
+	          prevAssignedNodes[i$1].__prevAssignedSlot = null;
+	        }
+	        if (insertionPoint._assignedNodes.length < prevAssignedNodes.length) {
+	          needsSlotChange = true;
+	        }
+	      }
+	      this.setDistributedNodesOnInsertionPoint(insertionPoint);
+	      if (needsSlotChange) {
+	        this._fireSlotChange(insertionPoint);
+	      }
+	    };
+
+	    anonymous.prototype.clearAssignedSlots = function clearAssignedSlots(slot, savePrevious) {
+	      var n$ = slot._assignedNodes;
+	      if (n$) {
+	        for (var i = 0; i < n$.length; i++) {
+	          var n = n$[i];
+	          if (savePrevious) {
+	            n.__prevAssignedSlot = n._assignedSlot;
+	          }
+	          // only clear if it was previously set to this slot;
+	          // this helps ensure that if the node has otherwise been distributed
+	          // ignore it.
+	          if (n._assignedSlot === slot) {
+	            n._assignedSlot = null;
+	          }
+	        }
+	      }
+	    };
+
+	    anonymous.prototype.matchesInsertionPoint = function matchesInsertionPoint(node, insertionPoint) {
+	      var slotName = insertionPoint.getAttribute('name');
+	      slotName = slotName ? slotName.trim() : '';
+	      var slot = node.getAttribute && node.getAttribute('slot');
+	      slot = slot ? slot.trim() : '';
+	      return slot == slotName;
+	    };
+
+	    anonymous.prototype.distributeNodeInto = function distributeNodeInto(child, insertionPoint) {
+	      insertionPoint._assignedNodes.push(child);
+	      child._assignedSlot = insertionPoint;
+	    };
+
+	    anonymous.prototype.setDistributedNodesOnInsertionPoint = function setDistributedNodesOnInsertionPoint(insertionPoint) {
+	      var this$1 = this;
+
+	      var n$ = insertionPoint._assignedNodes;
+	      insertionPoint._distributedNodes = [];
+	      for (var i = 0, n; i < n$.length && (n = n$[i]); i++) {
+	        if (this$1.isInsertionPoint(n)) {
+	          var d$ = n._distributedNodes;
+	          if (d$) {
+	            for (var j = 0; j < d$.length; j++) {
+	              insertionPoint._distributedNodes.push(d$[j]);
+	            }
+	          }
+	        } else {
+	          insertionPoint._distributedNodes.push(n$[i]);
+	        }
+	      }
+	    };
+
+	    anonymous.prototype._fireSlotChange = function _fireSlotChange(insertionPoint) {
+	      // NOTE: cannot bubble correctly here so not setting bubbles: true
+	      // Safari tech preview does not bubble but chrome does
+	      // Spec says it bubbles (https://dom.spec.whatwg.org/#mutation-observers)
+	      insertionPoint.dispatchEvent(new NormalizedEvent('slotchange'));
+	      if (insertionPoint._assignedSlot) {
+	        this._fireSlotChange(insertionPoint._assignedSlot);
+	      }
+	    };
+
+	    anonymous.prototype.isFinalDestination = function isFinalDestination(insertionPoint) {
+	      return !insertionPoint._assignedSlot;
+	    };
+
+	    return anonymous;
+	  }();
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  /**
+	    Implements a pared down version of ShadowDOM's scoping, which is easy to
+	    polyfill across browsers.
+	  */
+	  var ShadyRoot = function ShadyRoot(host) {
+	    if (!host) {
+	      throw 'Must provide a host';
+	    }
+	    // NOTE: this strange construction is necessary because
+	    // DocumentFragment cannot be subclassed on older browsers.
+	    var frag = document.createDocumentFragment();
+	    frag.__proto__ = ShadyFragmentMixin;
+	    frag._init(host);
+	    return frag;
+	  };
+
+	  var ShadyMixin = {
+
+	    _init: function _init(host) {
+	      // NOTE: set a fake local name so this element can be
+	      // distinguished from a DocumentFragment when patching.
+	      // FF doesn't allow this to be `localName`
+	      this.__localName = 'ShadyRoot';
+	      // root <=> host
+	      host.shadyRoot = this;
+	      this.host = host;
+	      // logical dom setup
+	      tree.Logical.saveChildNodes(host);
+	      tree.Logical.saveChildNodes(this);
+	      // state flags
+	      this._clean = true;
+	      this._hasRendered = false;
+	      this._distributor = new Distributor(this);
+	      this.update();
+	    },
+
+	    // async render the "top" distributor (this is all that is needed to
+	    // distribute this host).
+	    update: function update() {
+	      // TODO(sorvell): instead the root should always be enqueued to helps record that it is dirty.
+	      // Then, in `render`, the top most (in the distribution tree) "dirty" root should be rendered.
+	      var distributionRoot = this._findDistributionRoot(this.host);
+	      //console.log('update from', this.host, 'root', distributionRoot.host, distributionRoot._clean);
+	      if (distributionRoot._clean) {
+	        distributionRoot._clean = false;
+	        enqueue(function () {
+	          distributionRoot.render();
+	        });
+	      }
+	    },
+
+	    // TODO(sorvell): this may not return a shadowRoot (for example if the element is in a docFragment)
+	    // this should only return a shadowRoot.
+	    // returns the host that's the top of this host's distribution tree
+	    _findDistributionRoot: function _findDistributionRoot(element) {
+	      var root = element.shadyRoot;
+	      while (element && this._elementNeedsDistribution(element)) {
+	        root = element.getRootNode();
+	        element = root && root.host;
+	      }
+	      return root;
+	    },
+
+	    // Return true if a host's children includes
+	    // an insertion point that selects selectively
+	    _elementNeedsDistribution: function _elementNeedsDistribution(element) {
+	      var this$1 = this;
+
+	      var c$ = tree.Logical.getChildNodes(element);
+	      for (var i = 0, c; i < c$.length; i++) {
+	        c = c$[i];
+	        if (this$1._distributor.isInsertionPoint(c)) {
+	          return element.getRootNode();
+	        }
+	      }
+	    },
+
+	    render: function render() {
+	      if (!this._clean) {
+	        this._clean = true;
+	        if (!this._skipUpdateInsertionPoints) {
+	          this.updateInsertionPoints();
+	        } else if (!this._hasRendered) {
+	          this._insertionPoints = [];
+	        }
+	        this._skipUpdateInsertionPoints = false;
+	        // TODO(sorvell): previous ShadyDom had a fast path here
+	        // that would avoid distribution for initial render if
+	        // no insertion points exist. We cannot currently do this because
+	        // it relies on elements being in the physical shadowRoot element
+	        // so that native methods will be used. The current append code
+	        // simply provokes distribution in this case and does not put the
+	        // nodes in the shadowRoot. This could be done but we'll need to
+	        // consider if the special processing is worth the perf gain.
+	        // if (!this._hasRendered && !this._insertionPoints.length) {
+	        //   tree.Composed.clearChildNodes(this.host);
+	        //   tree.Composed.appendChild(this.host, this);
+	        // } else {
+	        // logical
+	        this.distribute();
+	        // physical
+	        this.compose();
+	        this._hasRendered = true;
+	      }
+	    },
+
+	    forceRender: function forceRender() {
+	      this._clean = false;
+	      this.render();
+	    },
+
+	    distribute: function distribute() {
+	      var dirtyRoots = this._distributor.distribute();
+	      for (var i = 0; i < dirtyRoots.length; i++) {
+	        dirtyRoots[i].forceRender();
+	      }
+	    },
+
+	    updateInsertionPoints: function updateInsertionPoints() {
+	      var this$1 = this;
+
+	      var i$ = this.__insertionPoints;
+	      // if any insertion points have been removed, clear their distribution info
+	      if (i$) {
+	        for (var i = 0, c; i < i$.length; i++) {
+	          c = i$[i];
+	          if (c.getRootNode() !== this$1) {
+	            this$1._distributor.clearAssignedSlots(c);
+	          }
+	        }
+	      }
+	      i$ = this._insertionPoints = this._distributor.getInsertionPoints();
+	      // ensure insertionPoints's and their parents have logical dom info.
+	      // save logical tree info
+	      // a. for shadyRoot
+	      // b. for insertion points (fallback)
+	      // c. for parents of insertion points
+	      for (var i$1 = 0, c$1; i$1 < i$.length; i$1++) {
+	        c$1 = i$[i$1];
+	        tree.Logical.saveChildNodes(c$1);
+	        tree.Logical.saveChildNodes(tree.Logical.getParentNode(c$1));
+	      }
+	    },
+
+	    get _insertionPoints() {
+	      if (!this.__insertionPoints) {
+	        this.updateInsertionPoints();
+	      }
+	      return this.__insertionPoints || (this.__insertionPoints = []);
+	    },
+
+	    set _insertionPoints(insertionPoints) {
+	      this.__insertionPoints = insertionPoints;
+	    },
+
+	    hasInsertionPoint: function hasInsertionPoint() {
+	      return this._distributor.hasInsertionPoint();
+	    },
+
+	    compose: function compose() {
+	      // compose self
+	      // note: it's important to mark this clean before distribution
+	      // so that attachment that provokes additional distribution (e.g.
+	      // adding something to your parentNode) works
+	      this._composeTree();
+	      // TODO(sorvell): See fast paths here in Polymer v1
+	      // (these seem unnecessary)
+	    },
+
+	    // Reify dom such that it is at its correct rendering position
+	    // based on logical distribution.
+	    _composeTree: function _composeTree() {
+	      var this$1 = this;
+
+	      this._updateChildNodes(this.host, this._composeNode(this.host));
+	      var p$ = this._insertionPoints || [];
+	      for (var i = 0, l = p$.length, p, parent; i < l && (p = p$[i]); i++) {
+	        parent = tree.Logical.getParentNode(p);
+	        if (parent !== this$1.host && parent !== this$1) {
+	          this$1._updateChildNodes(parent, this$1._composeNode(parent));
+	        }
+	      }
+	    },
+
+	    // Returns the list of nodes which should be rendered inside `node`.
+	    _composeNode: function _composeNode(node) {
+	      var this$1 = this;
+
+	      var children = [];
+	      var c$ = tree.Logical.getChildNodes(node.shadyRoot || node);
+	      for (var i = 0; i < c$.length; i++) {
+	        var child = c$[i];
+	        if (this$1._distributor.isInsertionPoint(child)) {
+	          var distributedNodes = child._distributedNodes || (child._distributedNodes = []);
+	          for (var j = 0; j < distributedNodes.length; j++) {
+	            var distributedNode = distributedNodes[j];
+	            if (this$1.isFinalDestination(child, distributedNode)) {
+	              children.push(distributedNode);
+	            }
+	          }
+	        } else {
+	          children.push(child);
+	        }
+	      }
+	      return children;
+	    },
+
+	    isFinalDestination: function isFinalDestination(insertionPoint, node) {
+	      return this._distributor.isFinalDestination(insertionPoint, node);
+	    },
+
+	    // Ensures that the rendered node list inside `container` is `children`.
+	    _updateChildNodes: function _updateChildNodes(container, children) {
+	      var composed = tree.Composed.getChildNodes(container);
+	      var splices = calculateSplices(children, composed);
+	      // process removals
+	      for (var i = 0, d = 0, s; i < splices.length && (s = splices[i]); i++) {
+	        for (var j = 0, n; j < s.removed.length && (n = s.removed[j]); j++) {
+	          // check if the node is still where we expect it is before trying
+	          // to remove it; this can happen if we move a node and
+	          // then schedule its previous host for distribution resulting in
+	          // the node being removed here.
+	          if (tree.Composed.getParentNode(n) === container) {
+	            tree.Composed.removeChild(container, n);
+	          }
+	          composed.splice(s.index + d, 1);
+	        }
+	        d -= s.addedCount;
+	      }
+	      // process adds
+	      for (var i$1 = 0, s$1, next; i$1 < splices.length && (s$1 = splices[i$1]); i$1++) {
+	        //eslint-disable-line no-redeclare
+	        next = composed[s$1.index];
+	        for (var j$1 = s$1.index, n$1; j$1 < s$1.index + s$1.addedCount; j$1++) {
+	          n$1 = children[j$1];
+	          tree.Composed.insertBefore(container, n$1, next);
+	          // TODO(sorvell): is this splice strictly needed?
+	          composed.splice(j$1, 0, n$1);
+	        }
+	      }
+	    },
+
+	    getInsertionPointTag: function getInsertionPointTag() {
+	      return this._distributor.insertionPointTag;
+	    }
+
+	  };
+
+	  var ShadyFragmentMixin = Object.create(DocumentFragment.prototype);
+	  extend(ShadyFragmentMixin, ShadyMixin);
+
+	  // let needsUpgrade = window.CustomElements && !CustomElements.useNative;
+
+	  // function upgradeLogicalChildren(children) {
+	  //   if (needsUpgrade && children) {
+	  //     for (let i=0; i < children.length; i++) {
+	  //       CustomElements.upgrade(children[i]);
+	  //     }
+	  //   }
+	  // }
+
+	  // render enqueuer/flusher
+	  var customElements = window.customElements;
+	  var flushList = [];
+	  var scheduled;
+	  var flushCount = 0;
+	  var flushMax = 100;
+	  function enqueue(callback) {
+	    if (!scheduled) {
+	      scheduled = true;
+	      promish.then(flush$1);
+	    }
+	    flushList.push(callback);
+	  }
+
+	  function flush$1() {
+	    scheduled = false;
+	    flushCount++;
+	    while (flushList.length) {
+	      flushList.shift()();
+	    }
+	    if (customElements && customElements.flush) {
+	      customElements.flush();
+	    }
+	    // continue flushing after elements are upgraded...
+	    var isFlushedMaxed = flushCount > flushMax;
+	    if (flushList.length && !isFlushedMaxed) {
+	      flush$1();
+	    }
+	    flushCount = 0;
+	    if (isFlushedMaxed) {
+	      throw new Error('Loop detected in ShadyDOM distribution, aborting.');
+	    }
+	  }
+
+	  flush$1.list = flushList;
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  // Cribbed from ShadowDOM polyfill
+	  // https://github.com/webcomponents/webcomponentsjs/blob/master/src/ShadowDOM/wrappers/HTMLElement.js#L28
+	  /////////////////////////////////////////////////////////////////////////////
+	  // innerHTML and outerHTML
+
+	  // http://www.whatwg.org/specs/web-apps/current-work/multipage/the-end.html#escapingString
+	  var escapeAttrRegExp = /[&\u00A0"]/g;
+	  var escapeDataRegExp = /[&\u00A0<>]/g;
+
+	  function escapeReplace(c) {
+	    switch (c) {
+	      case '&':
+	        return '&amp;';
+	      case '<':
+	        return '&lt;';
+	      case '>':
+	        return '&gt;';
+	      case '"':
+	        return '&quot;';
+	      case '\xA0':
+	        return '&nbsp;';
+	    }
+	  }
+
+	  function escapeAttr(s) {
+	    return s.replace(escapeAttrRegExp, escapeReplace);
+	  }
+
+	  function escapeData(s) {
+	    return s.replace(escapeDataRegExp, escapeReplace);
+	  }
+
+	  function makeSet(arr) {
+	    var set = {};
+	    for (var i = 0; i < arr.length; i++) {
+	      set[arr[i]] = true;
+	    }
+	    return set;
+	  }
+
+	  // http://www.whatwg.org/specs/web-apps/current-work/#void-elements
+	  var voidElements = makeSet(['area', 'base', 'br', 'col', 'command', 'embed', 'hr', 'img', 'input', 'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+
+	  var plaintextParents = makeSet(['style', 'script', 'xmp', 'iframe', 'noembed', 'noframes', 'plaintext', 'noscript']);
+
+	  function getOuterHTML(node, parentNode, composed) {
+	    switch (node.nodeType) {
+	      case Node.ELEMENT_NODE:
+	        {
+	          var tagName = node.localName;
+	          var s = '<' + tagName;
+	          var attrs = node.attributes;
+	          for (var i = 0, attr; attr = attrs[i]; i++) {
+	            s += ' ' + attr.name + '="' + escapeAttr(attr.value) + '"';
+	          }
+	          s += '>';
+	          if (voidElements[tagName]) {
+	            return s;
+	          }
+	          return s + getInnerHTML(node, composed) + '</' + tagName + '>';
+	        }
+	      case Node.TEXT_NODE:
+	        {
+	          var data = node.data;
+	          if (parentNode && plaintextParents[parentNode.localName]) {
+	            return data;
+	          }
+	          return escapeData(data);
+	        }
+	      case Node.COMMENT_NODE:
+	        {
+	          return '<!--' + node.data + '-->';
+	        }
+	      default:
+	        {
+	          window.console.error(node);
+	          throw new Error('not implemented');
+	        }
+	    }
+	  }
+
+	  function getInnerHTML(node, composed) {
+	    if (node.localName === 'template') {
+	      node = node.content;
+	    }
+	    var s = '';
+	    var c$ = composed ? composed(node) : node.childNodes;
+	    for (var i = 0, l = c$.length, child; i < l && (child = c$[i]); i++) {
+	      s += getOuterHTML(child, node, composed);
+	    }
+	    return s;
+	  }
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  var mixinImpl = {
+
+	    // Try to add node. Record logical info, track insertion points, perform
+	    // distribution iff needed. Return true if the add is handled.
+	    addNode: function addNode(container, node, ref_node) {
+	      var ownerRoot = this.ownerShadyRootForNode(container);
+	      if (ownerRoot) {
+	        // optimization: special insertion point tracking
+	        if (node.__noInsertionPoint && ownerRoot._clean) {
+	          ownerRoot._skipUpdateInsertionPoints = true;
+	        }
+	        // note: we always need to see if an insertion point is added
+	        // since this saves logical tree info; however, invalidation state
+	        // needs
+	        var ipAdded = this._maybeAddInsertionPoint(node, container, ownerRoot);
+	        // invalidate insertion points IFF not already invalid!
+	        if (ipAdded) {
+	          ownerRoot._skipUpdateInsertionPoints = false;
+	        }
+	      }
+	      if (tree.Logical.hasChildNodes(container)) {
+	        tree.Logical.recordInsertBefore(node, container, ref_node);
+	      }
+	      // if not distributing and not adding to host, do a fast path addition
+	      var handled = this._maybeDistribute(node, container, ownerRoot) || container.shadyRoot;
+	      return handled;
+	    },
+
+	    // Try to remove node: update logical info and perform distribution iff
+	    // needed. Return true if the removal has been handled.
+	    // note that it's possible for both the node's host and its parent
+	    // to require distribution... both cases are handled here.
+	    removeNode: function removeNode(node) {
+	      // important that we want to do this only if the node has a logical parent
+	      var logicalParent = tree.Logical.hasParentNode(node) && tree.Logical.getParentNode(node);
+	      var distributed;
+	      var ownerRoot = this.ownerShadyRootForNode(node);
+	      if (logicalParent) {
+	        // distribute node's parent iff needed
+	        distributed = this.maybeDistributeParent(node);
+	        tree.Logical.recordRemoveChild(node, logicalParent);
+	        // remove node from root and distribute it iff needed
+	        if (ownerRoot && (this._removeDistributedChildren(ownerRoot, node) || logicalParent.localName === ownerRoot.getInsertionPointTag())) {
+	          ownerRoot._skipUpdateInsertionPoints = false;
+	          ownerRoot.update();
+	        }
+	      }
+	      this._removeOwnerShadyRoot(node);
+	      return distributed;
+	    },
+
+	    _scheduleObserver: function _scheduleObserver(node, addedNode, removedNode) {
+	      var observer = node.__dom && node.__dom.observer;
+	      if (observer) {
+	        if (addedNode) {
+	          observer.addedNodes.push(addedNode);
+	        }
+	        if (removedNode) {
+	          observer.removedNodes.push(removedNode);
+	        }
+	        observer.schedule();
+	      }
+	    },
+
+	    removeNodeFromParent: function removeNodeFromParent(node, parent) {
+	      if (parent) {
+	        this._scheduleObserver(parent, null, node);
+	        this.removeNode(node);
+	      } else {
+	        this._removeOwnerShadyRoot(node);
+	      }
+	    },
+
+	    _hasCachedOwnerRoot: function _hasCachedOwnerRoot(node) {
+	      return Boolean(node.__ownerShadyRoot !== undefined);
+	    },
+
+	    getRootNode: function getRootNode$1(node) {
+	      if (!node || !node.nodeType) {
+	        return;
+	      }
+	      var root = node.__ownerShadyRoot;
+	      if (root === undefined) {
+	        if (isShadyRoot(node)) {
+	          root = node;
+	        } else {
+	          var parent = tree.Logical.getParentNode(node);
+	          root = parent ? this.getRootNode(parent) : node;
+	        }
+	        // memo-ize result for performance but only memo-ize
+	        // result if node is in the document. This avoids a problem where a root
+	        // can be cached while an element is inside a fragment.
+	        // If this happens and we cache the result, the value can become stale
+	        // because for perf we avoid processing the subtree of added fragments.
+	        if (document.documentElement.contains(node)) {
+	          node.__ownerShadyRoot = root;
+	        }
+	      }
+	      return root;
+	    },
+
+	    ownerShadyRootForNode: function ownerShadyRootForNode(node) {
+	      var root = this.getRootNode(node);
+	      if (isShadyRoot(root)) {
+	        return root;
+	      }
+	    },
+
+	    _maybeDistribute: function _maybeDistribute(node, container, ownerRoot) {
+	      // TODO(sorvell): technically we should check non-fragment nodes for
+	      // <content> children but since this case is assumed to be exceedingly
+	      // rare, we avoid the cost and will address with some specific api
+	      // when the need arises.  For now, the user must call
+	      // distributeContent(true), which updates insertion points manually
+	      // and forces distribution.
+	      var insertionPointTag = ownerRoot && ownerRoot.getInsertionPointTag() || '';
+	      var fragContent = node.nodeType === Node.DOCUMENT_FRAGMENT_NODE && !node.__noInsertionPoint && insertionPointTag && node.querySelector(insertionPointTag);
+	      var wrappedContent = fragContent && tree.Logical.getParentNode(fragContent).nodeType !== Node.DOCUMENT_FRAGMENT_NODE;
+	      var hasContent = fragContent || node.localName === insertionPointTag;
+	      // There are 3 possible cases where a distribution may need to occur:
+	      // 1. <content> being inserted (the host of the shady root where
+	      //    content is inserted needs distribution)
+	      // 2. children being inserted into parent with a shady root (parent
+	      //    needs distribution)
+	      // 3. container is an insertionPoint
+	      if (hasContent || container.localName === insertionPointTag) {
+	        if (ownerRoot) {
+	          // note, insertion point list update is handled after node
+	          // mutations are complete
+	          ownerRoot.update();
+	        }
+	      }
+	      var needsDist = this._nodeNeedsDistribution(container);
+	      if (needsDist) {
+	        container.shadyRoot.update();
+	      }
+	      // Return true when distribution will fully handle the composition
+	      // Note that if a content was being inserted that was wrapped by a node,
+	      // and the parent does not need distribution, return false to allow
+	      // the nodes to be added directly, after which children may be
+	      // distributed and composed into the wrapping node(s)
+	      return needsDist || hasContent && !wrappedContent;
+	    },
+
+	    /* note: parent argument is required since node may have an out
+	    of date parent at this point; returns true if a <content> is being added */
+	    _maybeAddInsertionPoint: function _maybeAddInsertionPoint(node, parent, root) {
+	      var this$1 = this;
+
+	      var added;
+	      var insertionPointTag = root.getInsertionPointTag();
+	      if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE && !node.__noInsertionPoint) {
+	        var c$ = node.querySelectorAll(insertionPointTag);
+	        for (var i = 0, n, np, na; i < c$.length && (n = c$[i]); i++) {
+	          np = tree.Logical.getParentNode(n);
+	          // don't allow node's parent to be fragment itself
+	          if (np === node) {
+	            np = parent;
+	          }
+	          na = this$1._maybeAddInsertionPoint(n, np, root);
+	          added = added || na;
+	        }
+	      } else if (node.localName === insertionPointTag) {
+	        tree.Logical.saveChildNodes(parent);
+	        tree.Logical.saveChildNodes(node);
+	        added = true;
+	      }
+	      return added;
+	    },
+
+	    _nodeNeedsDistribution: function _nodeNeedsDistribution(node) {
+	      return node && node.shadyRoot && node.shadyRoot.hasInsertionPoint();
+	    },
+
+	    _removeDistributedChildren: function _removeDistributedChildren(root, container) {
+	      var this$1 = this;
+
+	      var hostNeedsDist;
+	      var ip$ = root._insertionPoints;
+	      for (var i = 0; i < ip$.length; i++) {
+	        var insertionPoint = ip$[i];
+	        if (this$1._contains(container, insertionPoint)) {
+	          var dc$ = insertionPoint.assignedNodes({ flatten: true });
+	          for (var j = 0; j < dc$.length; j++) {
+	            hostNeedsDist = true;
+	            var node = dc$[j];
+	            var parent = tree.Composed.getParentNode(node);
+	            if (parent) {
+	              tree.Composed.removeChild(parent, node);
+	            }
+	          }
+	        }
+	      }
+	      return hostNeedsDist;
+	    },
+
+	    _contains: function _contains(container, node) {
+	      while (node) {
+	        if (node == container) {
+	          return true;
+	        }
+	        node = tree.Logical.getParentNode(node);
+	      }
+	    },
+
+	    _removeOwnerShadyRoot: function _removeOwnerShadyRoot(node) {
+	      var this$1 = this;
+
+	      // optimization: only reset the tree if node is actually in a root
+	      if (this._hasCachedOwnerRoot(node)) {
+	        var c$ = tree.Logical.getChildNodes(node);
+	        for (var i = 0, l = c$.length, n; i < l && (n = c$[i]); i++) {
+	          this$1._removeOwnerShadyRoot(n);
+	        }
+	      }
+	      node.__ownerShadyRoot = undefined;
+	    },
+
+	    // TODO(sorvell): This will fail if distribution that affects this
+	    // question is pending; this is expected to be exceedingly rare, but if
+	    // the issue comes up, we can force a flush in this case.
+	    firstComposedNode: function firstComposedNode(insertionPoint) {
+	      var n$ = insertionPoint.assignedNodes({ flatten: true });
+	      var root = this.getRootNode(insertionPoint);
+	      for (var i = 0, l = n$.length, n; i < l && (n = n$[i]); i++) {
+	        // means that we're composed to this spot.
+	        if (root.isFinalDestination(insertionPoint, n)) {
+	          return n;
+	        }
+	      }
+	    },
+
+	    clearNode: function clearNode(node) {
+	      while (node.firstChild) {
+	        node.removeChild(node.firstChild);
+	      }
+	    },
+
+	    maybeDistributeParent: function maybeDistributeParent(node) {
+	      var parent = tree.Logical.getParentNode(node);
+	      if (this._nodeNeedsDistribution(parent)) {
+	        parent.shadyRoot.update();
+	        return true;
+	      }
+	    },
+
+	    maybeDistributeAttributeChange: function maybeDistributeAttributeChange(node, name) {
+	      if (name === 'slot') {
+	        this.maybeDistributeParent(node);
+	      } else if (node.localName === 'slot' && name === 'name') {
+	        var root = this.ownerShadyRootForNode(node);
+	        if (root) {
+	          root.update();
+	        }
+	      }
+	    },
+
+	    // NOTE: `query` is used primarily for ShadyDOM's querySelector impl,
+	    // but it's also generally useful to recurse through the element tree
+	    // and is used by Polymer's styling system.
+	    query: function query(node, matcher, halter) {
+	      var list = [];
+	      this._queryElements(tree.Logical.getChildNodes(node), matcher, halter, list);
+	      return list;
+	    },
+
+	    _queryElements: function _queryElements(elements, matcher, halter, list) {
+	      var this$1 = this;
+
+	      for (var i = 0, l = elements.length, c; i < l && (c = elements[i]); i++) {
+	        if (c.nodeType === Node.ELEMENT_NODE && this$1._queryElement(c, matcher, halter, list)) {
+	          return true;
+	        }
+	      }
+	    },
+
+	    _queryElement: function _queryElement(node, matcher, halter, list) {
+	      var result = matcher(node);
+	      if (result) {
+	        list.push(node);
+	      }
+	      if (halter && halter(result)) {
+	        return result;
+	      }
+	      this._queryElements(tree.Logical.getChildNodes(node), matcher, halter, list);
+	    },
+
+	    activeElementForNode: function activeElementForNode(node) {
+	      var this$1 = this;
+
+	      var active = document.activeElement;
+	      if (!active) {
+	        return null;
+	      }
+	      var isShadyRoot$$1 = !!isShadyRoot(node);
+	      if (node !== document) {
+	        // If this node isn't a document or shady root, then it doesn't have
+	        // an active element.
+	        if (!isShadyRoot$$1) {
+	          return null;
+	        }
+	        // If this shady root's host is the active element or the active
+	        // element is not a descendant of the host (in the composed tree),
+	        // then it doesn't have an active element.
+	        if (node.host === active || !node.host.contains(active)) {
+	          return null;
+	        }
+	      }
+	      // This node is either the document or a shady root of which the active
+	      // element is a (composed) descendant of its host; iterate upwards to
+	      // find the active element's most shallow host within it.
+	      var activeRoot = this.ownerShadyRootForNode(active);
+	      while (activeRoot && activeRoot !== node) {
+	        active = activeRoot.host;
+	        activeRoot = this$1.ownerShadyRootForNode(active);
+	      }
+	      if (node === document) {
+	        // This node is the document, so activeRoot should be null.
+	        return activeRoot ? null : active;
+	      } else {
+	        // This node is a non-document shady root, and it should be
+	        // activeRoot.
+	        return activeRoot === node ? active : null;
+	      }
+	    }
+
+	  };
+
+	  var nativeCloneNode = Element.prototype.cloneNode;
+	  var nativeImportNode = Document.prototype.importNode;
+	  var nativeSetAttribute$1 = Element.prototype.setAttribute;
+	  var nativeRemoveAttribute = Element.prototype.removeAttribute;
+
+	  var setAttribute = function setAttribute(attr, value) {
+	    // avoid scoping elements in non-main document to avoid template documents
+	    if (window.ShadyCSS && attr === 'class' && this.ownerDocument === document) {
+	      window.ShadyCSS.setElementClass(this, value);
+	    } else {
+	      nativeSetAttribute$1.call(this, attr, value);
+	    }
+	  };
+
+	  var NodeMixin = {};
+
+	  Object.defineProperties(NodeMixin, {
+
+	    parentElement: {
+	      get: function get() {
+	        return tree.Logical.getParentNode(this);
+	      },
+	      configurable: true
+	    },
+
+	    parentNode: {
+	      get: function get$1() {
+	        return tree.Logical.getParentNode(this);
+	      },
+	      configurable: true
+	    },
+
+	    nextSibling: {
+	      get: function get$2() {
+	        return tree.Logical.getNextSibling(this);
+	      },
+	      configurable: true
+	    },
+
+	    previousSibling: {
+	      get: function get$3() {
+	        return tree.Logical.getPreviousSibling(this);
+	      },
+	      configurable: true
+	    },
+
+	    nextElementSibling: {
+	      get: function get$4() {
+	        return tree.Logical.getNextElementSibling(this);
+	      },
+	      configurable: true
+	    },
+
+	    previousElementSibling: {
+	      get: function get$5() {
+	        return tree.Logical.getPreviousElementSibling(this);
+	      },
+	      configurable: true
+	    },
+
+	    assignedSlot: {
+	      get: function get$6() {
+	        return this._assignedSlot;
+	      },
+	      configurable: true
+	    }
+	  });
+
+	  var FragmentMixin = {
+
+	    appendChild: function appendChild(node) {
+	      return this.insertBefore(node);
+	    },
+
+	    // cases in which we may not be able to just do standard native call
+	    // 1. container has a shadyRoot (needsDistribution IFF the shadyRoot
+	    // has an insertion point)
+	    // 2. container is a shadyRoot (don't distribute, instead set
+	    // container to container.host.
+	    // 3. node is <content> (host of container needs distribution)
+	    insertBefore: function insertBefore(node, ref_node) {
+	      if (ref_node && tree.Logical.getParentNode(ref_node) !== this) {
+	        throw Error('The ref_node to be inserted before is not a child ' + 'of this node');
+	      }
+	      // remove node from its current position iff it's in a tree.
+	      if (node.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) {
+	        var parent = tree.Logical.getParentNode(node);
+	        mixinImpl.removeNodeFromParent(node, parent);
+	      }
+	      if (!mixinImpl.addNode(this, node, ref_node)) {
+	        if (ref_node) {
+	          // if ref_node is an insertion point replace with first distributed node
+	          var root = mixinImpl.ownerShadyRootForNode(ref_node);
+	          if (root) {
+	            ref_node = ref_node.localName === root.getInsertionPointTag() ? mixinImpl.firstComposedNode(ref_node) : ref_node;
+	          }
+	        }
+	        // if adding to a shadyRoot, add to host instead
+	        var container = isShadyRoot(this) ? this.host : this;
+	        if (ref_node) {
+	          tree.Composed.insertBefore(container, node, ref_node);
+	        } else {
+	          tree.Composed.appendChild(container, node);
+	        }
+	      }
+	      mixinImpl._scheduleObserver(this, node);
+	      return node;
+	    },
+
+	    /**
+	      Removes the given `node` from the element's `lightChildren`.
+	      This method also performs dom composition.
+	    */
+	    removeChild: function removeChild(node) {
+	      if (tree.Logical.getParentNode(node) !== this) {
+	        throw Error('The node to be removed is not a child of this node: ' + node);
+	      }
+	      if (!mixinImpl.removeNode(node)) {
+	        // if removing from a shadyRoot, remove form host instead
+	        var container = isShadyRoot(this) ? this.host : this;
+	        // not guaranteed to physically be in container; e.g.
+	        // undistributed nodes.
+	        var parent = tree.Composed.getParentNode(node);
+	        if (container === parent) {
+	          tree.Composed.removeChild(container, node);
+	        }
+	      }
+	      mixinImpl._scheduleObserver(this, null, node);
+	      return node;
+	    },
+
+	    replaceChild: function replaceChild(node, ref_node) {
+	      this.insertBefore(node, ref_node);
+	      this.removeChild(ref_node);
+	      return node;
+	    },
+
+	    // TODO(sorvell): consider doing native QSA and filtering results.
+	    querySelector: function querySelector(selector) {
+	      // match selector and halt on first result.
+	      var result = mixinImpl.query(this, function (n) {
+	        return matchesSelector(n, selector);
+	      }, function (n) {
+	        return Boolean(n);
+	      })[0];
+	      return result || null;
+	    },
+
+	    querySelectorAll: function querySelectorAll(selector) {
+	      return mixinImpl.query(this, function (n) {
+	        return matchesSelector(n, selector);
+	      });
+	    },
+
+	    cloneNode: function cloneNode(deep) {
+	      if (this.localName == 'template') {
+	        return nativeCloneNode.call(this, deep);
+	      } else {
+	        var n = nativeCloneNode.call(this, false);
+	        if (deep) {
+	          var c$ = this.childNodes;
+	          for (var i = 0, nc; i < c$.length; i++) {
+	            nc = c$[i].cloneNode(true);
+	            n.appendChild(nc);
+	          }
+	        }
+	        return n;
+	      }
+	    },
+
+	    importNode: function importNode(externalNode, deep) {
+	      // for convenience use this node's ownerDoc if the node isn't a document
+	      var doc = this instanceof Document ? this : this.ownerDocument;
+	      var n = nativeImportNode.call(doc, externalNode, false);
+	      if (deep) {
+	        var c$ = tree.Logical.getChildNodes(externalNode);
+	        common.patchNode(n);
+	        for (var i = 0, nc; i < c$.length; i++) {
+	          nc = doc.importNode(c$[i], true);
+	          n.appendChild(nc);
+	        }
+	      }
+	      return n;
+	    }
+	  };
+
+	  Object.defineProperties(FragmentMixin, {
+
+	    childNodes: {
+	      get: function get$7() {
+	        var c$ = tree.Logical.getChildNodes(this);
+	        return Array.isArray(c$) ? c$ : tree.arrayCopyChildNodes(this);
+	      },
+	      configurable: true
+	    },
+
+	    children: {
+	      get: function get$8() {
+	        if (tree.Logical.hasChildNodes(this)) {
+	          return Array.prototype.filter.call(this.childNodes, function (n) {
+	            return n.nodeType === Node.ELEMENT_NODE;
+	          });
+	        } else {
+	          return tree.arrayCopyChildren(this);
+	        }
+	      },
+	      configurable: true
+	    },
+
+	    firstChild: {
+	      get: function get$9() {
+	        return tree.Logical.getFirstChild(this);
+	      },
+	      configurable: true
+	    },
+
+	    lastChild: {
+	      get: function get$10() {
+	        return tree.Logical.getLastChild(this);
+	      },
+	      configurable: true
+	    },
+
+	    firstElementChild: {
+	      get: function get$11() {
+	        return tree.Logical.getFirstElementChild(this);
+	      },
+	      configurable: true
+	    },
+
+	    lastElementChild: {
+	      get: function get$12() {
+	        return tree.Logical.getLastElementChild(this);
+	      },
+	      configurable: true
+	    },
+
+	    // TODO(srovell): strictly speaking fragments do not have textContent
+	    // or innerHTML but ShadowRoots do and are not easily distinguishable.
+	    // textContent / innerHTML
+	    textContent: {
+	      get: function get$13() {
+	        if (this.childNodes) {
+	          var tc = [];
+	          for (var i = 0, cn = this.childNodes, c; c = cn[i]; i++) {
+	            if (c.nodeType !== Node.COMMENT_NODE) {
+	              tc.push(c.textContent);
+	            }
+	          }
+	          return tc.join('');
+	        }
+	        return '';
+	      },
+	      set: function set(text) {
+	        mixinImpl.clearNode(this);
+	        if (text) {
+	          this.appendChild(document.createTextNode(text));
+	        }
+	      },
+	      configurable: true
+	    },
+
+	    innerHTML: {
+	      get: function get$14() {
+	        return getInnerHTML(this);
+	      },
+	      set: function set$1(text) {
+	        var this$1 = this;
+
+	        mixinImpl.clearNode(this);
+	        var d = document.createElement('div');
+	        d.innerHTML = text;
+	        // here, appendChild may move nodes async so we cannot rely
+	        // on node position when copying
+	        var c$ = tree.arrayCopyChildNodes(d);
+	        for (var i = 0; i < c$.length; i++) {
+	          this$1.appendChild(c$[i]);
+	        }
+	      },
+	      configurable: true
+	    }
+
+	  });
+
+	  var ElementMixin = {
+
+	    // TODO(sorvell): should only exist on <slot>
+	    assignedNodes: function assignedNodes(options) {
+	      return (options && options.flatten ? this._distributedNodes : this._assignedNodes) || [];
+	    },
+
+	    setAttribute: function setAttribute$1(name, value) {
+	      setAttribute.call(this, name, value);
+	      mixinImpl.maybeDistributeAttributeChange(this, name);
+	    },
+
+	    removeAttribute: function removeAttribute(name) {
+	      nativeRemoveAttribute.call(this, name);
+	      mixinImpl.maybeDistributeAttributeChange(this, name);
+	    }
+
+	  };
+
+	  Object.defineProperties(ElementMixin, {
+
+	    shadowRoot: {
+	      get: function get$15() {
+	        return this.shadyRoot;
+	      }
+	    },
+
+	    slot: {
+	      get: function get$16() {
+	        return this.getAttribute('slot');
+	      },
+	      set: function set$2(value) {
+	        this.setAttribute('slot', value);
+	      }
+	    }
+
+	  });
+
+	  var activeElementDescriptor = {
+	    get: function get$17() {
+	      return mixinImpl.activeElementForNode(this);
+	    }
+	  };
+
+	  var ActiveElementMixin = {};
+	  Object.defineProperties(ActiveElementMixin, {
+	    activeElement: activeElementDescriptor
+	  });
+
+	  var UnderActiveElementMixin = {};
+	  Object.defineProperties(UnderActiveElementMixin, {
+	    _activeElement: activeElementDescriptor
+	  });
+
+	  var Mixins = {
+
+	    Node: extendAll({ __patched: 'Node' }, NodeMixin),
+
+	    Fragment: extendAll({ __patched: 'Fragment' }, NodeMixin, FragmentMixin, ActiveElementMixin),
+
+	    Element: extendAll({ __patched: 'Element' }, NodeMixin, FragmentMixin, ElementMixin, ActiveElementMixin),
+
+	    // Note: activeElement cannot be patched on document!
+	    Document: extendAll({ __patched: 'Document' }, NodeMixin, FragmentMixin, ElementMixin, UnderActiveElementMixin)
+
+	  };
+
+	  var getRootNode = function getRootNode(node) {
+	    return mixinImpl.getRootNode(node);
+	  };
+
+	  function filterMutations(mutations, target) {
+	    var targetRootNode = getRootNode(target);
+	    return mutations.map(function (mutation) {
+	      var mutationInScope = targetRootNode === getRootNode(mutation.target);
+	      if (mutationInScope && mutation.addedNodes) {
+	        var nodes = Array.from(mutation.addedNodes).filter(function (n) {
+	          return targetRootNode === getRootNode(n);
+	        });
+	        if (nodes.length) {
+	          mutation = Object.create(mutation);
+	          Object.defineProperty(mutation, 'addedNodes', {
+	            value: nodes,
+	            configurable: true
+	          });
+	          return mutation;
+	        }
+	      } else if (mutationInScope) {
+	        return mutation;
+	      }
+	    }).filter(function (m) {
+	      return m;
+	    });
+	  }
+
+	  // const promise = Promise.resolve();
+
+	  var AsyncObserver = function AsyncObserver() {
+	    this._scheduled = false;
+	    this.addedNodes = [];
+	    this.removedNodes = [];
+	    this.callbacks = new Set();
+	  };
+
+	  AsyncObserver.prototype.schedule = function schedule() {
+	    var this$1 = this;
+
+	    if (!this._scheduled) {
+	      this._scheduled = true;
+	      promish.then(function () {
+	        this$1.flush();
+	      });
+	    }
+	  };
+
+	  AsyncObserver.prototype.flush = function flush() {
+	    if (this._scheduled) {
+	      this._scheduled = false;
+	      var mutations = this.takeRecords();
+	      if (mutations.length) {
+	        this.callbacks.forEach(function (cb) {
+	          cb(mutations);
+	        });
+	      }
+	    }
+	  };
+
+	  AsyncObserver.prototype.takeRecords = function takeRecords() {
+	    if (this.addedNodes.length || this.removedNodes.length) {
+	      var mutations = [{
+	        addedNodes: this.addedNodes,
+	        removedNodes: this.removedNodes
+	      }];
+	      this.addedNodes = [];
+	      this.removedNodes = [];
+	      return mutations;
+	    }
+	    return [];
+	  };
+
+	  var getComposedInnerHTML = function getComposedInnerHTML(node) {
+	    if (common.isNodePatched(node)) {
+	      return getInnerHTML(node, function (n) {
+	        return tree.Composed.getChildNodes(n);
+	      });
+	    } else {
+	      return node.innerHTML;
+	    }
+	  };
+
+	  var getComposedChildNodes$1 = function getComposedChildNodes$1(node) {
+	    return common.isNodePatched(node) ? tree.Composed.getChildNodes(node) : node.childNodes;
+	  };
+
+	  // TODO(sorvell): consider instead polyfilling MutationObserver
+	  // directly so that users do not have to fork their code.
+	  // Supporting the entire api may be challenging: e.g. filtering out
+	  // removed nodes in the wrong scope and seeing non-distributing
+	  // subtree child mutations.
+	  var observeChildren = function observeChildren(node, callback) {
+	    common.patchNode(node);
+	    if (!node.__dom.observer) {
+	      node.__dom.observer = new AsyncObserver();
+	    }
+	    node.__dom.observer.callbacks.add(callback);
+	    var observer = node.__dom.observer;
+	    return {
+	      _callback: callback,
+	      _observer: observer,
+	      _node: node,
+	      takeRecords: function takeRecords() {
+	        return observer.takeRecords();
+	      }
+	    };
+	  };
+
+	  var unobserveChildren = function unobserveChildren(handle) {
+	    var observer = handle && handle._observer;
+	    if (observer) {
+	      observer.callbacks.delete(handle._callback);
+	      if (!observer.callbacks.size) {
+	        handle._node.__dom.observer = null;
+	      }
+	    }
+	  };
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  /**
+	   * Patches elements that interacts with ShadyDOM
+	   * such that tree traversal and mutation apis act like they would under
+	   * ShadowDOM.
+	   *
+	   * This import enables seemless interaction with ShadyDOM powered
+	   * custom elements, enabling better interoperation with 3rd party code,
+	   * libraries, and frameworks that use DOM tree manipulation apis.
+	   */
+
+	  var patchedCount = 0;
+
+	  var log = false;
+
+	  var patchImpl = {
+
+	    canPatchNode: function canPatchNode(node) {
+	      switch (node) {
+	        case document.head:
+	        case document.documentElement:
+	          return false;
+	        default:
+	          return true;
+	      }
+	    },
+
+	    hasPrototypeDescriptors: Boolean(Object.getOwnPropertyDescriptor(window.Node.prototype, 'textContent')),
+
+	    patch: function patch(node) {
+	      patchedCount++;
+	      log && window.console.warn('patch node', node);
+	      if (this.hasPrototypeDescriptors) {
+	        patchPrototype(node, this.mixinForObject(node));
+	      } else {
+	        window.console.warn('Patching instance rather than prototype', node);
+	        extend(node, this.mixinForObject(node));
+	      }
+	    },
+
+	    mixinForObject: function mixinForObject(obj) {
+	      switch (obj.nodeType) {
+	        case Node.ELEMENT_NODE:
+	          return Mixins.Element;
+	        case Node.DOCUMENT_FRAGMENT_NODE:
+	          return Mixins.Fragment;
+	        case Node.DOCUMENT_NODE:
+	          return Mixins.Document;
+	        case Node.TEXT_NODE:
+	        case Node.COMMENT_NODE:
+	          return Mixins.Node;
+	      }
+	    },
+
+	    unpatch: function unpatch(obj) {
+	      if (obj.__sourceProto) {
+	        obj.__proto__ = obj.__sourceProto;
+	      }
+	      // TODO(sorvell): implement unpatching for non-proto patchable browsers
+	    }
+
+	  };
+
+	  function patchNode(node) {
+	    if (!settings.inUse) {
+	      return;
+	    }
+	    if (!isNodePatched(node) && patchImpl.canPatchNode(node)) {
+	      tree.saveChildNodes(node);
+	      patchImpl.patch(node);
+	    }
+	  }
+
+	  function canUnpatchNode() {
+	    return Boolean(patchImpl.hasPrototypeDescriptors);
+	  }
+
+	  function unpatchNode(node) {
+	    patchImpl.unpatch(node);
+	  }
+
+	  function isNodePatched(node) {
+	    return Boolean(node.__patched);
+	  }
+
+	  // TODO(sorvell): fake export
+	  common.patchNode = patchNode;
+	  common.canUnpatchNode = canUnpatchNode;
+	  common.isNodePatched = isNodePatched;
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  var origAddEventListener = Element.prototype.addEventListener;
+	  var origRemoveEventListener = Element.prototype.removeEventListener;
+
+	  // https://github.com/w3c/webcomponents/issues/513#issuecomment-224183937
+	  var alwaysComposed = {
+	    blur: true,
+	    focus: true,
+	    focusin: true,
+	    focusout: true,
+	    click: true,
+	    dblclick: true,
+	    mousedown: true,
+	    mouseenter: true,
+	    mouseleave: true,
+	    mousemove: true,
+	    mouseout: true,
+	    mouseover: true,
+	    mouseup: true,
+	    wheel: true,
+	    beforeinput: true,
+	    input: true,
+	    keydown: true,
+	    keyup: true,
+	    compositionstart: true,
+	    compositionupdate: true,
+	    compositionend: true,
+	    touchstart: true,
+	    touchend: true,
+	    touchmove: true,
+	    touchcancel: true,
+	    pointerover: true,
+	    pointerenter: true,
+	    pointerdown: true,
+	    pointermove: true,
+	    pointerup: true,
+	    pointercancel: true,
+	    pointerout: true,
+	    pointerleave: true,
+	    gotpointercapture: true,
+	    lostpointercapture: true,
+	    dragstart: true,
+	    drag: true,
+	    dragenter: true,
+	    dragleave: true,
+	    dragover: true,
+	    drop: true,
+	    dragend: true,
+	    DOMActivate: true,
+	    DOMFocusIn: true,
+	    DOMFocusOut: true,
+	    keypress: true
+	  };
+
+	  function pathComposer(startNode, composed) {
+	    var composedPath = [];
+	    var current = startNode;
+	    var startRoot = startNode === window ? window : startNode.getRootNode();
+	    while (current) {
+	      composedPath.push(current);
+	      if (current.assignedSlot) {
+	        current = current.assignedSlot;
+	      } else if (current.nodeType === Node.DOCUMENT_FRAGMENT_NODE && current.host && (composed || current !== startRoot)) {
+	        current = current.host;
+	      } else {
+	        current = current.parentNode;
+	      }
+	    }
+	    // event composedPath includes window when startNode's ownerRoot is document
+	    if (composedPath[composedPath.length - 1] === document) {
+	      composedPath.push(window);
+	    }
+	    return composedPath;
+	  }
+
+	  function retarget(refNode, path) {
+	    if (!isShadyRoot) {
+	      return refNode;
+	    }
+	    // If ANCESTOR's root is not a shadow root or ANCESTOR's root is BASE's
+	    // shadow-including inclusive ancestor, return ANCESTOR.
+	    var refNodePath = pathComposer(refNode, true);
+	    var p$ = path;
+	    for (var i = 0, ancestor, lastRoot, root, rootIdx; i < p$.length; i++) {
+	      ancestor = p$[i];
+	      root = ancestor === window ? window : ancestor.getRootNode();
+	      if (root !== lastRoot) {
+	        rootIdx = refNodePath.indexOf(root);
+	        lastRoot = root;
+	      }
+	      if (!isShadyRoot(root) || rootIdx > -1) {
+	        return ancestor;
+	      }
+	    }
+	  }
+
+	  var EventMixin = {
+
+	    __patched: 'Event',
+
+	    get composed() {
+	      if (this.isTrusted && this.__composed === undefined) {
+	        this.__composed = alwaysComposed[this.type];
+	      }
+	      return this.__composed || false;
+	    },
+
+	    composedPath: function composedPath() {
+	      if (!this.__composedPath) {
+	        this.__composedPath = pathComposer(this.__target, this.composed);
+	      }
+	      return this.__composedPath;
+	    },
+
+	    get target() {
+	      return retarget(this.currentTarget, this.composedPath());
+	    },
+
+	    // http://w3c.github.io/webcomponents/spec/shadow/#event-relatedtarget-retargeting
+	    get relatedTarget() {
+	      if (!this.__relatedTarget) {
+	        return null;
+	      }
+	      if (!this.__relatedTargetComposedPath) {
+	        this.__relatedTargetComposedPath = pathComposer(this.__relatedTarget, true);
+	      }
+	      // find the deepest node in relatedTarget composed path that is in the same root with the currentTarget
+	      return retarget(this.currentTarget, this.__relatedTargetComposedPath);
+	    },
+	    stopPropagation: function stopPropagation() {
+	      Event.prototype.stopPropagation.call(this);
+	      this.__propagationStopped = true;
+	    },
+	    stopImmediatePropagation: function stopImmediatePropagation() {
+	      Event.prototype.stopImmediatePropagation.call(this);
+	      this.__immediatePropagationStopped = true;
+	      this.__propagationStopped = true;
+	    }
+
+	  };
+
+	  function mixinComposedFlag(Base) {
+	    // NOTE: avoiding use of `class` here so that transpiled output does not
+	    // try to do `Base.call` with a dom construtor.
+	    var klazz = function klazz(type, options) {
+	      var event = new Base(type, options);
+	      event.__composed = options && Boolean(options.composed);
+	      return event;
+	    };
+	    // put constructor properties on subclass
+	    mixin(klazz, Base);
+	    klazz.prototype = Base.prototype;
+	    return klazz;
+	  }
+
+	  var nonBubblingEventsToRetarget = {
+	    focus: true,
+	    blur: true
+	  };
+
+	  function fireHandlers(event, node, phase) {
+	    var hs = node.__handlers && node.__handlers[event.type] && node.__handlers[event.type][phase];
+	    if (hs) {
+	      for (var i = 0, fn; fn = hs[i]; i++) {
+	        fn.call(node, event);
+	        if (event.__immediatePropagationStopped) {
+	          return;
+	        }
+	      }
+	    }
+	  }
+
+	  function retargetNonBubblingEvent(e) {
+	    var path = e.composedPath();
+	    var node;
+	    // override `currentTarget` to let patched `target` calculate correctly
+	    Object.defineProperty(e, 'currentTarget', {
+	      get: function get() {
+	        return node;
+	      },
+	      configurable: true
+	    });
+	    for (var i = path.length - 1; i >= 0; i--) {
+	      node = path[i];
+	      // capture phase fires all capture handlers
+	      fireHandlers(e, node, 'capture');
+	      if (e.__propagationStopped) {
+	        return;
+	      }
+	    }
+
+	    // set the event phase to `AT_TARGET` as in spec
+	    Object.defineProperty(e, 'eventPhase', { value: Event.AT_TARGET });
+
+	    // the event only needs to be fired when owner roots change when iterating the event path
+	    // keep track of the last seen owner root
+	    var lastFiredRoot;
+	    for (var i$1 = 0; i$1 < path.length; i$1++) {
+	      node = path[i$1];
+	      if (i$1 === 0 || node.shadowRoot && node.shadowRoot === lastFiredRoot) {
+	        fireHandlers(e, node, 'bubble');
+	        // don't bother with window, it doesn't have `getRootNode` and will be last in the path anyway
+	        if (node !== window) {
+	          lastFiredRoot = node.getRootNode();
+	        }
+	        if (e.__propagationStopped) {
+	          return;
+	        }
+	      }
+	    }
+	  }
+
+	  function addEventListener(type, fn, optionsOrCapture) {
+	    var this$1 = this;
+
+	    if (!fn) {
+	      return;
+	    }
+
+	    // The callback `fn` might be used for multiple nodes/events. Since we generate
+	    // a wrapper function, we need to keep track of it when we remove the listener.
+	    // It's more efficient to store the node/type/options information as Array in
+	    // `fn` itself rather than the node (we assume that the same callback is used
+	    // for few nodes at most, whereas a node will likely have many event listeners).
+	    // NOTE(valdrin) invoking external functions is costly, inline has better perf.
+	    var capture, once, passive;
+	    if ((typeof optionsOrCapture === 'undefined' ? 'undefined' : _typeof(optionsOrCapture)) === 'object') {
+	      capture = Boolean(optionsOrCapture.capture);
+	      once = Boolean(optionsOrCapture.once);
+	      passive = Boolean(optionsOrCapture.passive);
+	    } else {
+	      capture = Boolean(optionsOrCapture);
+	      once = false;
+	      passive = false;
+	    }
+	    if (fn.__eventWrappers) {
+	      // Stop if the wrapper function has already been created.
+	      for (var i = 0; i < fn.__eventWrappers.length; i++) {
+	        if (fn.__eventWrappers[i].node === this$1 && fn.__eventWrappers[i].type === type && fn.__eventWrappers[i].capture === capture && fn.__eventWrappers[i].once === once && fn.__eventWrappers[i].passive === passive) {
+	          return;
+	        }
+	      }
+	    } else {
+	      fn.__eventWrappers = [];
+	    }
+
+	    var wrapperFn = function wrapperFn(e) {
+	      // Support `once` option.
+	      if (once) {
+	        this.removeEventListener(type, fn, optionsOrCapture);
+	      }
+	      if (!e.__target) {
+	        e.__target = e.target;
+	        e.__relatedTarget = e.relatedTarget;
+	        patchPrototype(e, EventMixin);
+	      }
+	      // There are two critera that should stop events from firing on this node
+	      // 1. the event is not composed and the current node is not in the same root as the target
+	      // 2. when bubbling, if after retargeting, relatedTarget and target point to the same node
+	      if (e.composed || e.composedPath().indexOf(this) > -1) {
+	        if (e.eventPhase === Event.BUBBLING_PHASE) {
+	          if (e.target === e.relatedTarget) {
+	            e.stopImmediatePropagation();
+	            return;
+	          }
+	        }
+	        return fn(e);
+	      }
+	    };
+	    // Store the wrapper information.
+	    fn.__eventWrappers.push({
+	      node: this,
+	      type: type,
+	      capture: capture,
+	      once: once,
+	      passive: passive,
+	      wrapperFn: wrapperFn
+	    });
+
+	    if (nonBubblingEventsToRetarget[type]) {
+	      this.__handlers = this.__handlers || {};
+	      this.__handlers[type] = this.__handlers[type] || { capture: [], bubble: [] };
+	      this.__handlers[type][capture ? 'capture' : 'bubble'].push(wrapperFn);
+	    } else {
+	      origAddEventListener.call(this, type, wrapperFn, optionsOrCapture);
+	    }
+	  }
+
+	  function removeEventListener(type, fn, optionsOrCapture) {
+	    var this$1 = this;
+
+	    if (!fn) {
+	      return;
+	    }
+
+	    // NOTE(valdrin) invoking external functions is costly, inline has better perf.
+	    var capture, once, passive;
+	    if ((typeof optionsOrCapture === 'undefined' ? 'undefined' : _typeof(optionsOrCapture)) === 'object') {
+	      capture = Boolean(optionsOrCapture.capture);
+	      once = Boolean(optionsOrCapture.once);
+	      passive = Boolean(optionsOrCapture.passive);
+	    } else {
+	      capture = Boolean(optionsOrCapture);
+	      once = false;
+	      passive = false;
+	    }
+	    // Search the wrapped function.
+	    var wrapperFn = undefined;
+	    if (fn.__eventWrappers) {
+	      for (var i = 0; i < fn.__eventWrappers.length; i++) {
+	        if (fn.__eventWrappers[i].node === this$1 && fn.__eventWrappers[i].type === type && fn.__eventWrappers[i].capture === capture && fn.__eventWrappers[i].once === once && fn.__eventWrappers[i].passive === passive) {
+	          wrapperFn = fn.__eventWrappers.splice(i, 1)[0].wrapperFn;
+	          // Cleanup.
+	          if (!fn.__eventWrappers.length) {
+	            fn.__eventWrappers = undefined;
+	          }
+	          break;
+	        }
+	      }
+	    }
+
+	    origRemoveEventListener.call(this, type, wrapperFn || fn, optionsOrCapture);
+	    if (wrapperFn && nonBubblingEventsToRetarget[type] && this.__handlers && this.__handlers[type]) {
+	      var arr = this.__handlers[type][capture ? 'capture' : 'bubble'];
+	      var idx = arr.indexOf(wrapperFn);
+	      if (idx > -1) {
+	        arr.splice(idx, 1);
+	      }
+	    }
+	  }
+
+	  function activateFocusEventOverrides() {
+	    for (var ev in nonBubblingEventsToRetarget) {
+	      window.addEventListener(ev, function (e) {
+	        if (!e.__target) {
+	          e.__target = e.target;
+	          e.__relatedTarget = e.relatedTarget;
+	          patchPrototype(e, EventMixin);
+	          retargetNonBubblingEvent(e);
+	          e.stopImmediatePropagation();
+	        }
+	      }, true);
+	    }
+	  }
+
+	  var PatchedEvent = mixinComposedFlag(Event);
+	  var PatchedCustomEvent = mixinComposedFlag(CustomEvent);
+	  var PatchedMouseEvent = mixinComposedFlag(MouseEvent);
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  /**
+	   * Patches elements that interacts with ShadyDOM
+	   * such that tree traversal and mutation apis act like they would under
+	   * ShadowDOM.
+	   *
+	   * This import enables seemless interaction with ShadyDOM powered
+	   * custom elements, enabling better interoperation with 3rd party code,
+	   * libraries, and frameworks that use DOM tree manipulation apis.
+	   */
+
+	  if (settings.inUse) {
+
+	    window.ShadyDOM = {
+	      tree: tree,
+	      getNativeProperty: getNativeProperty,
+	      patch: patchNode,
+	      isPatched: isNodePatched,
+	      getComposedInnerHTML: getComposedInnerHTML,
+	      getComposedChildNodes: getComposedChildNodes$1,
+	      unpatch: unpatchNode,
+	      canUnpatch: canUnpatchNode,
+	      isShadyRoot: isShadyRoot,
+	      enqueue: enqueue,
+	      flush: flush$1,
+	      inUse: settings.inUse,
+	      filterMutations: filterMutations,
+	      observeChildren: observeChildren,
+	      unobserveChildren: unobserveChildren
+	    };
+
+	    var createRootAndEnsurePatched = function createRootAndEnsurePatched(node) {
+	      // TODO(sorvell): need to ensure ancestors are patched but this introduces
+	      // a timing problem with gathering composed children.
+	      // (1) currently the child list is crawled and patched when patching occurs
+	      // (this needs to change)
+	      // (2) we can only patch when an element has received its parsed children
+	      // because we cannot detect them when inserted by parser.
+	      // let ancestor = node;
+	      // while (ancestor) {
+	      //   patchNode(ancestor);
+	      //   ancestor = ancestor.parentNode || ancestor.host;
+	      // }
+	      patchNode(node);
+	      var root = new ShadyRoot(node);
+	      patchNode(root);
+	      return root;
+	    };
+
+	    Element.prototype.attachShadow = function () {
+	      return createRootAndEnsurePatched(this);
+	    };
+
+	    Node.prototype.addEventListener = addEventListener;
+	    Node.prototype.removeEventListener = removeEventListener;
+	    Event = PatchedEvent;
+	    CustomEvent = PatchedCustomEvent;
+	    MouseEvent = PatchedMouseEvent;
+	    activateFocusEventOverrides();
+
+	    Object.defineProperty(Node.prototype, 'isConnected', {
+	      get: function get() {
+	        return document.documentElement.contains(this);
+	      },
+	      configurable: true
+	    });
+
+	    Node.prototype.getRootNode = function (options) {
+	      return getRootNode(this, options);
+	    };
+
+	    Object.defineProperty(Element.prototype, 'slot', {
+	      get: function get$1() {
+	        return this.getAttribute('slot');
+	      },
+	      set: function set(value) {
+	        this.setAttribute('slot', value);
+	      },
+	      configurable: true
+	    });
+
+	    Object.defineProperty(Node.prototype, 'assignedSlot', {
+	      get: function get$2() {
+	        return this._assignedSlot || null;
+	      },
+	      configurable: true
+	    });
+
+	    var nativeSetAttribute = Element.prototype.setAttribute;
+	    Element.prototype.setAttribute = setAttribute;
+	    // NOTE: expose native setAttribute to allow hooking native method
+	    // (e.g. this is done in ShadyCSS)
+	    Element.prototype.__nativeSetAttribute = nativeSetAttribute;
+
+	    var classNameDescriptor = {
+	      get: function get$3() {
+	        return this.getAttribute('class');
+	      },
+	      set: function set$1(value) {
+	        this.setAttribute('class', value);
+	      },
+	      configurable: true
+	    };
+
+	    // Safari 9 `className` is not configurable
+	    var cn = Object.getOwnPropertyDescriptor(Element.prototype, 'className');
+	    if (cn && cn.configurable) {
+	      Object.defineProperty(Element.prototype, 'className', classNameDescriptor);
+	    } else {
+	      // on IE `className` is on Element
+	      var h = window.customElements && window.customElements.nativeHTMLElement || HTMLElement;
+	      cn = Object.getOwnPropertyDescriptor(h.prototype, 'className');
+	      if (cn && cn.configurable) {
+	        Object.defineProperty(h.prototype, 'className', classNameDescriptor);
+	      }
+	    }
+	  }
+	})();
+
+	(function () {
+	  'use strict';
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  /*
+	  Extremely simple css parser. Intended to be not more than what we need
+	  and definitely not necessarily correct =).
+	  */
+
+	  // given a string of css, return a simple rule tree
+
+	  function parse(text) {
+	    text = clean(text);
+	    return parseCss(lex(text), text);
+	  }
+
+	  // remove stuff we don't care about that may hinder parsing
+	  function clean(cssText) {
+	    return cssText.replace(RX.comments, '').replace(RX.port, '');
+	  }
+
+	  // super simple {...} lexer that returns a node tree
+	  function lex(text) {
+	    var root = {
+	      start: 0,
+	      end: text.length
+	    };
+	    var n = root;
+	    for (var i = 0, l = text.length; i < l; i++) {
+	      if (text[i] === OPEN_BRACE) {
+	        if (!n.rules) {
+	          n.rules = [];
+	        }
+	        var p = n;
+	        var previous = p.rules[p.rules.length - 1];
+	        n = {
+	          start: i + 1,
+	          parent: p,
+	          previous: previous
+	        };
+	        p.rules.push(n);
+	      } else if (text[i] === CLOSE_BRACE) {
+	        n.end = i + 1;
+	        n = n.parent || root;
+	      }
+	    }
+	    return root;
+	  }
+
+	  // add selectors/cssText to node tree
+	  function parseCss(node, text) {
+	    var t = text.substring(node.start, node.end - 1);
+	    node.parsedCssText = node.cssText = t.trim();
+	    if (node.parent) {
+	      var ss = node.previous ? node.previous.end : node.parent.start;
+	      t = text.substring(ss, node.start - 1);
+	      t = _expandUnicodeEscapes(t);
+	      t = t.replace(RX.multipleSpaces, ' ');
+	      // TODO(sorvell): ad hoc; make selector include only after last ;
+	      // helps with mixin syntax
+	      t = t.substring(t.lastIndexOf(';') + 1);
+	      var s = node.parsedSelector = node.selector = t.trim();
+	      node.atRule = s.indexOf(AT_START) === 0;
+	      // note, support a subset of rule types...
+	      if (node.atRule) {
+	        if (s.indexOf(MEDIA_START) === 0) {
+	          node.type = types.MEDIA_RULE;
+	        } else if (s.match(RX.keyframesRule)) {
+	          node.type = types.KEYFRAMES_RULE;
+	          node.keyframesName = node.selector.split(RX.multipleSpaces).pop();
+	        }
+	      } else {
+	        if (s.indexOf(VAR_START) === 0) {
+	          node.type = types.MIXIN_RULE;
+	        } else {
+	          node.type = types.STYLE_RULE;
+	        }
+	      }
+	    }
+	    var r$ = node.rules;
+	    if (r$) {
+	      for (var i = 0, l = r$.length, r; i < l && (r = r$[i]); i++) {
+	        parseCss(r, text);
+	      }
+	    }
+	    return node;
+	  }
+
+	  // conversion of sort unicode escapes with spaces like `\33 ` (and longer) into
+	  // expanded form that doesn't require trailing space `\000033`
+	  function _expandUnicodeEscapes(s) {
+	    return s.replace(/\\([0-9a-f]{1,6})\s/gi, function () {
+	      var code = arguments[1],
+	          repeat = 6 - code.length;
+	      while (repeat--) {
+	        code = '0' + code;
+	      }
+	      return '\\' + code;
+	    });
+	  }
+
+	  // stringify parsed css.
+	  function stringify(node, preserveProperties, text) {
+	    text = text || '';
+	    // calc rule cssText
+	    var cssText = '';
+	    if (node.cssText || node.rules) {
+	      var r$ = node.rules;
+	      if (r$ && !_hasMixinRules(r$)) {
+	        for (var i = 0, l = r$.length, r; i < l && (r = r$[i]); i++) {
+	          cssText = stringify(r, preserveProperties, cssText);
+	        }
+	      } else {
+	        cssText = preserveProperties ? node.cssText : removeCustomProps(node.cssText);
+	        cssText = cssText.trim();
+	        if (cssText) {
+	          cssText = '  ' + cssText + '\n';
+	        }
+	      }
+	    }
+	    // emit rule if there is cssText
+	    if (cssText) {
+	      if (node.selector) {
+	        text += node.selector + ' ' + OPEN_BRACE + '\n';
+	      }
+	      text += cssText;
+	      if (node.selector) {
+	        text += CLOSE_BRACE + '\n\n';
+	      }
+	    }
+	    return text;
+	  }
+
+	  function _hasMixinRules(rules) {
+	    return rules[0].selector.indexOf(VAR_START) === 0;
+	  }
+
+	  function removeCustomProps(cssText) {
+	    cssText = removeCustomPropAssignment(cssText);
+	    return removeCustomPropApply(cssText);
+	  }
+
+	  function removeCustomPropAssignment(cssText) {
+	    return cssText.replace(RX.customProp, '').replace(RX.mixinProp, '');
+	  }
+
+	  function removeCustomPropApply(cssText) {
+	    return cssText.replace(RX.mixinApply, '').replace(RX.varApply, '');
+	  }
+
+	  var types = {
+	    STYLE_RULE: 1,
+	    KEYFRAMES_RULE: 7,
+	    MEDIA_RULE: 4,
+	    MIXIN_RULE: 1000
+	  };
+
+	  var OPEN_BRACE = '{';
+	  var CLOSE_BRACE = '}';
+
+	  // helper regexp's
+	  var RX = {
+	    comments: /\/\*[^*]*\*+([^/*][^*]*\*+)*\//gim,
+	    port: /@import[^;]*;/gim,
+	    customProp: /(?:^[^;\-\s}]+)?--[^;{}]*?:[^{};]*?(?:[;\n]|$)/gim,
+	    mixinProp: /(?:^[^;\-\s}]+)?--[^;{}]*?:[^{};]*?{[^}]*?}(?:[;\n]|$)?/gim,
+	    mixinApply: /@apply\s*\(?[^);]*\)?\s*(?:[;\n]|$)?/gim,
+	    varApply: /[^;:]*?:[^;]*?var\([^;]*\)(?:[;\n]|$)?/gim,
+	    keyframesRule: /^@[^\s]*keyframes/,
+	    multipleSpaces: /\s+/g
+	  };
+
+	  var VAR_START = '--';
+	  var MEDIA_START = '@media';
+	  var AT_START = '@';
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  var nativeShadow = !(window.ShadyDOM && window.ShadyDOM.inUse);
+	  // chrome 49 has semi-working css vars, check if box-shadow works
+	  // safari 9.1 has a recalc bug: https://bugs.webkit.org/show_bug.cgi?id=155782
+	  var nativeCssVariables = !navigator.userAgent.match('AppleWebKit/601') && window.CSS && CSS.supports && CSS.supports('box-shadow', '0 0 0 var(--foo)');
+
+	  // experimental support for native @apply
+	  function detectNativeApply() {
+	    var style = document.createElement('style');
+	    style.textContent = '.foo { @apply --foo }';
+	    document.head.appendChild(style);
+	    var nativeCssApply = style.sheet.cssRules[0].cssText.indexOf('apply') >= 0;
+	    document.head.removeChild(style);
+	    return nativeCssApply;
+	  }
+
+	  var nativeCssApply = false && detectNativeApply();
+
+	  function parseSettings(settings) {
+	    if (settings) {
+	      nativeCssVariables = nativeCssVariables && !settings.shimcssproperties;
+	      nativeShadow = nativeShadow && !settings.shimshadow;
+	    }
+	  }
+
+	  if (window.ShadyCSS) {
+	    parseSettings(window.ShadyCSS);
+	  } else if (window.WebComponents) {
+	    parseSettings(window.WebComponents.flags);
+	  }
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  function toCssText(rules, callback) {
+	    if (typeof rules === 'string') {
+	      rules = parse(rules);
+	    }
+	    if (callback) {
+	      forEachRule(rules, callback);
+	    }
+	    return stringify(rules, nativeCssVariables);
+	  }
+
+	  function rulesForStyle(style) {
+	    if (!style.__cssRules && style.textContent) {
+	      style.__cssRules = parse(style.textContent);
+	    }
+	    return style.__cssRules;
+	  }
+
+	  // Tests if a rule is a keyframes selector, which looks almost exactly
+	  // like a normal selector but is not (it has nothing to do with scoping
+	  // for example).
+	  function isKeyframesSelector(rule) {
+	    return rule.parent && rule.parent.type === types.KEYFRAMES_RULE;
+	  }
+
+	  function forEachRule(node, styleRuleCallback, keyframesRuleCallback, onlyActiveRules) {
+	    if (!node) {
+	      return;
+	    }
+	    var skipRules = false;
+	    if (onlyActiveRules) {
+	      if (node.type === types.MEDIA_RULE) {
+	        var matchMedia = node.selector.match(rx.MEDIA_MATCH);
+	        if (matchMedia) {
+	          // if rule is a non matching @media rule, skip subrules
+	          if (!window.matchMedia(matchMedia[1]).matches) {
+	            skipRules = true;
+	          }
+	        }
+	      }
+	    }
+	    if (node.type === types.STYLE_RULE) {
+	      styleRuleCallback(node);
+	    } else if (keyframesRuleCallback && node.type === types.KEYFRAMES_RULE) {
+	      keyframesRuleCallback(node);
+	    } else if (node.type === types.MIXIN_RULE) {
+	      skipRules = true;
+	    }
+	    var r$ = node.rules;
+	    if (r$ && !skipRules) {
+	      for (var i = 0, l = r$.length, r; i < l && (r = r$[i]); i++) {
+	        forEachRule(r, styleRuleCallback, keyframesRuleCallback, onlyActiveRules);
+	      }
+	    }
+	  }
+
+	  // add a string of cssText to the document.
+	  function applyCss(cssText, moniker, target, contextNode) {
+	    var style = createScopeStyle(cssText, moniker);
+	    return applyStyle$1(style, target, contextNode);
+	  }
+
+	  function applyStyle$1(style, target, contextNode) {
+	    target = target || document.head;
+	    var after = contextNode && contextNode.nextSibling || target.firstChild;
+	    lastHeadApplyNode = style;
+	    return target.insertBefore(style, after);
+	  }
+
+	  function createScopeStyle(cssText, moniker) {
+	    var style = document.createElement('style');
+	    if (moniker) {
+	      style.setAttribute('scope', moniker);
+	    }
+	    style.textContent = cssText;
+	    return style;
+	  }
+
+	  var lastHeadApplyNode = null;
+
+	  // insert a comment node as a styling position placeholder.
+	  function applyStylePlaceHolder(moniker) {
+	    var placeHolder = document.createComment(' Shady DOM styles for ' + moniker + ' ');
+	    var after = lastHeadApplyNode ? lastHeadApplyNode.nextSibling : null;
+	    var scope = document.head;
+	    scope.insertBefore(placeHolder, after || scope.firstChild);
+	    lastHeadApplyNode = placeHolder;
+	    return placeHolder;
+	  }
+
+	  // cssBuildTypeForModule: function (module) {
+	  //   let dm = Polymer.DomModule.import(module);
+	  //   if (dm) {
+	  //     return getCssBuildType(dm);
+	  //   }
+	  // },
+	  //
+
+
+	  // Walk from text[start] matching parens
+	  // returns position of the outer end paren
+	  function findMatchingParen(text, start) {
+	    var level = 0;
+	    for (var i = start, l = text.length; i < l; i++) {
+	      if (text[i] === '(') {
+	        level++;
+	      } else if (text[i] === ')') {
+	        if (--level === 0) {
+	          return i;
+	        }
+	      }
+	    }
+	    return -1;
+	  }
+
+	  function processVariableAndFallback(str, callback) {
+	    // find 'var('
+	    var start = str.indexOf('var(');
+	    if (start === -1) {
+	      // no var?, everything is prefix
+	      return callback(str, '', '', '');
+	    }
+	    //${prefix}var(${inner})${suffix}
+	    var end = findMatchingParen(str, start + 3);
+	    var inner = str.substring(start + 4, end);
+	    var prefix = str.substring(0, start);
+	    // suffix may have other variables
+	    var suffix = processVariableAndFallback(str.substring(end + 1), callback);
+	    var comma = inner.indexOf(',');
+	    // value and fallback args should be trimmed to match in property lookup
+	    if (comma === -1) {
+	      // variable, no fallback
+	      return callback(prefix, inner.trim(), '', suffix);
+	    }
+	    // var(${value},${fallback})
+	    var value = inner.substring(0, comma).trim();
+	    var fallback = inner.substring(comma + 1).trim();
+	    return callback(prefix, value, fallback, suffix);
+	  }
+
+	  function setElementClassRaw(element, value) {
+	    // use native setAttribute provided by ShadyDOM when setAttribute is patched
+	    if (element.__nativeSetAttribute) {
+	      element.__nativeSetAttribute('class', value);
+	    } else {
+	      element.setAttribute('class', value);
+	    }
+	  }
+
+	  var rx = {
+	    VAR_ASSIGN: /(?:^|[;\s{]\s*)(--[\w-]*?)\s*:\s*(?:([^;{]*)|{([^}]*)})(?:(?=[;\s}])|$)/gi,
+	    MIXIN_MATCH: /(?:^|\W+)@apply\s*\(?([^);\n]*)\)?/gi,
+	    VAR_CONSUMED: /(--[\w-]+)\s*([:,;)]|$)/gi,
+	    ANIMATION_MATCH: /(animation\s*:)|(animation-name\s*:)/,
+	    MEDIA_MATCH: /@media[^(]*(\([^)]*\))/,
+	    IS_VAR: /^--/,
+	    BRACKETED: /\{[^}]*\}/g,
+	    HOST_PREFIX: '(?:^|[^.#[:])',
+	    HOST_SUFFIX: '($|[.:[\\s>+~])'
+	  };
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  /* Transforms ShadowDOM styling into ShadyDOM styling
+	  
+	  * scoping:
+	  
+	    * elements in scope get scoping selector class="x-foo-scope"
+	    * selectors re-written as follows:
+	  
+	      div button -> div.x-foo-scope button.x-foo-scope
+	  
+	  * :host -> scopeName
+	  
+	  * :host(...) -> scopeName...
+	  
+	  * ::slotted(...) -> scopeName > ...
+	  
+	  * ...:dir(ltr|rtl) -> [dir="ltr|rtl"] ..., ...[dir="ltr|rtl"]
+	  
+	  * :host(:dir[rtl]) -> scopeName:dir(rtl) -> [dir="rtl"] scopeName, scopeName[dir="rtl"]
+	  
+	  */
+	  var SCOPE_NAME = 'style-scope';
+
+	  var StyleTransformer = {
+
+	    // Given a node and scope name, add a scoping class to each node
+	    // in the tree. This facilitates transforming css into scoped rules.
+	    dom: function dom(node, scope, shouldRemoveScope) {
+	      // one time optimization to skip scoping...
+	      if (node.__styleScoped) {
+	        node.__styleScoped = null;
+	      } else {
+	        this._transformDom(node, scope || '', shouldRemoveScope);
+	      }
+	    },
+
+	    _transformDom: function _transformDom(node, selector, shouldRemoveScope) {
+	      if (node.nodeType === Node.ELEMENT_NODE) {
+	        this.element(node, selector, shouldRemoveScope);
+	      }
+	      var c$ = node.localName === 'template' ? (node.content || node._content).childNodes : node.children || node.childNodes;
+	      if (c$) {
+	        for (var i = 0; i < c$.length; i++) {
+	          this._transformDom(c$[i], selector, shouldRemoveScope);
+	        }
+	      }
+	    },
+
+	    element: function element(_element, scope, shouldRemoveScope) {
+	      // note: if using classes, we add both the general 'style-scope' class
+	      // as well as the specific scope. This enables easy filtering of all
+	      // `style-scope` elements
+	      if (scope) {
+	        // note: svg on IE does not have classList so fallback to class
+	        if (_element.classList) {
+	          if (shouldRemoveScope) {
+	            _element.classList.remove(SCOPE_NAME);
+	            _element.classList.remove(scope);
+	          } else {
+	            _element.classList.add(SCOPE_NAME);
+	            _element.classList.add(scope);
+	          }
+	        } else if (_element.getAttribute) {
+	          var c = _element.getAttribute(CLASS);
+	          if (shouldRemoveScope) {
+	            if (c) {
+	              var newValue = c.replace(SCOPE_NAME, '').replace(scope, '');
+	              setElementClassRaw(_element, newValue);
+	            }
+	          } else {
+	            var _newValue = (c ? c + ' ' : '') + SCOPE_NAME + ' ' + scope;
+	            setElementClassRaw(_element, _newValue);
+	          }
+	        }
+	      }
+	    },
+
+	    elementStyles: function elementStyles(element, styleRules, callback) {
+	      var cssBuildType = element.__cssBuild;
+	      // no need to shim selectors if settings.useNativeShadow, also
+	      // a shady css build will already have transformed selectors
+	      // NOTE: This method may be called as part of static or property shimming.
+	      // When there is a targeted build it will not be called for static shimming,
+	      // but when the property shim is used it is called and should opt out of
+	      // static shimming work when a proper build exists.
+	      var cssText = nativeShadow || cssBuildType === 'shady' ? toCssText(styleRules, callback) : this.css(styleRules, element.is, element.extends, callback) + '\n\n';
+	      return cssText.trim();
+	    },
+
+	    // Given a string of cssText and a scoping string (scope), returns
+	    // a string of scoped css where each selector is transformed to include
+	    // a class created from the scope. ShadowDOM selectors are also transformed
+	    // (e.g. :host) to use the scoping selector.
+	    css: function css(rules, scope, ext, callback) {
+	      var hostScope = this._calcHostScope(scope, ext);
+	      scope = this._calcElementScope(scope);
+	      var self = this;
+	      return toCssText(rules, function (rule) {
+	        if (!rule.isScoped) {
+	          self.rule(rule, scope, hostScope);
+	          rule.isScoped = true;
+	        }
+	        if (callback) {
+	          callback(rule, scope, hostScope);
+	        }
+	      });
+	    },
+
+	    _calcElementScope: function _calcElementScope(scope) {
+	      if (scope) {
+	        return CSS_CLASS_PREFIX + scope;
+	      } else {
+	        return '';
+	      }
+	    },
+
+	    _calcHostScope: function _calcHostScope(scope, ext) {
+	      return ext ? '[is=' + scope + ']' : scope;
+	    },
+
+	    rule: function rule(_rule, scope, hostScope) {
+	      this._transformRule(_rule, this._transformComplexSelector, scope, hostScope);
+	    },
+
+	    // transforms a css rule to a scoped rule.
+	    _transformRule: function _transformRule(rule, transformer, scope, hostScope) {
+	      // NOTE: save transformedSelector for subsequent matching of elements
+	      // against selectors (e.g. when calculating style properties)
+	      rule.selector = rule.transformedSelector = this._transformRuleCss(rule, transformer, scope, hostScope);
+	    },
+
+	    _transformRuleCss: function _transformRuleCss(rule, transformer, scope, hostScope) {
+	      var p$ = rule.selector.split(COMPLEX_SELECTOR_SEP);
+	      // we want to skip transformation of rules that appear in keyframes,
+	      // because they are keyframe selectors, not element selectors.
+	      if (!isKeyframesSelector(rule)) {
+	        for (var i = 0, l = p$.length, p; i < l && (p = p$[i]); i++) {
+	          p$[i] = transformer.call(this, p, scope, hostScope);
+	        }
+	      }
+	      return p$.join(COMPLEX_SELECTOR_SEP);
+	    },
+
+	    _transformComplexSelector: function _transformComplexSelector(selector, scope, hostScope) {
+	      var _this = this;
+
+	      var stop = false;
+	      selector = selector.trim();
+	      // Remove spaces inside of selectors like `:nth-of-type` because it confuses SIMPLE_SELECTOR_SEP
+	      selector = selector.replace(NTH, function (m, type, inner) {
+	        return ':' + type + '(' + inner.replace(/\s/g, '') + ')';
+	      });
+	      selector = selector.replace(SLOTTED_START, HOST + ' $1');
+	      selector = selector.replace(SIMPLE_SELECTOR_SEP, function (m, c, s) {
+	        if (!stop) {
+	          var info = _this._transformCompoundSelector(s, c, scope, hostScope);
+	          stop = stop || info.stop;
+	          c = info.combinator;
+	          s = info.value;
+	        }
+	        return c + s;
+	      });
+	      return selector;
+	    },
+
+	    _transformCompoundSelector: function _transformCompoundSelector(selector, combinator, scope, hostScope) {
+	      // replace :host with host scoping class
+	      var slottedIndex = selector.indexOf(SLOTTED);
+	      if (selector.indexOf(HOST) >= 0) {
+	        selector = this._transformHostSelector(selector, hostScope);
+	        // replace other selectors with scoping class
+	      } else if (slottedIndex !== 0) {
+	        selector = scope ? this._transformSimpleSelector(selector, scope) : selector;
+	      }
+	      // mark ::slotted() scope jump to replace with descendant selector + arg
+	      // also ignore left-side combinator
+	      var slotted = false;
+	      if (slottedIndex >= 0) {
+	        combinator = '';
+	        slotted = true;
+	      }
+	      // process scope jumping selectors up to the scope jump and then stop
+	      var stop = void 0;
+	      if (slotted) {
+	        stop = true;
+	        if (slotted) {
+	          // .zonk ::slotted(.foo) -> .zonk.scope > .foo
+	          selector = selector.replace(SLOTTED_PAREN, function (m, paren) {
+	            return ' > ' + paren;
+	          });
+	        }
+	      }
+	      selector = selector.replace(DIR_PAREN, function (m, before, dir) {
+	        return '[dir="' + dir + '"] ' + before + ', ' + before + '[dir="' + dir + '"]';
+	      });
+	      return { value: selector, combinator: combinator, stop: stop };
+	    },
+
+	    _transformSimpleSelector: function _transformSimpleSelector(selector, scope) {
+	      var p$ = selector.split(PSEUDO_PREFIX);
+	      p$[0] += scope;
+	      return p$.join(PSEUDO_PREFIX);
+	    },
+
+	    // :host(...) -> scopeName...
+	    _transformHostSelector: function _transformHostSelector(selector, hostScope) {
+	      var m = selector.match(HOST_PAREN);
+	      var paren = m && m[2].trim() || '';
+	      if (paren) {
+	        if (!paren[0].match(SIMPLE_SELECTOR_PREFIX)) {
+	          // paren starts with a type selector
+	          var typeSelector = paren.split(SIMPLE_SELECTOR_PREFIX)[0];
+	          // if the type selector is our hostScope then avoid pre-pending it
+	          if (typeSelector === hostScope) {
+	            return paren;
+	            // otherwise, this selector should not match in this scope so
+	            // output a bogus selector.
+	          } else {
+	            return SELECTOR_NO_MATCH;
+	          }
+	        } else {
+	          // make sure to do a replace here to catch selectors like:
+	          // `:host(.foo)::before`
+	          return selector.replace(HOST_PAREN, function (m, host, paren) {
+	            return hostScope + paren;
+	          });
+	        }
+	        // if no paren, do a straight :host replacement.
+	        // TODO(sorvell): this should not strictly be necessary but
+	        // it's needed to maintain support for `:host[foo]` type selectors
+	        // which have been improperly used under Shady DOM. This should be
+	        // deprecated.
+	      } else {
+	        return selector.replace(HOST, hostScope);
+	      }
+	    },
+
+	    documentRule: function documentRule(rule) {
+	      // reset selector in case this is redone.
+	      rule.selector = rule.parsedSelector;
+	      this.normalizeRootSelector(rule);
+	      this._transformRule(rule, this._transformDocumentSelector);
+	    },
+
+	    normalizeRootSelector: function normalizeRootSelector(rule) {
+	      if (rule.selector === ROOT) {
+	        rule.selector = 'html';
+	      }
+	    },
+
+	    _transformDocumentSelector: function _transformDocumentSelector(selector) {
+	      return selector.match(SLOTTED) ? this._transformComplexSelector(selector, SCOPE_DOC_SELECTOR) : this._transformSimpleSelector(selector.trim(), SCOPE_DOC_SELECTOR);
+	    },
+	    SCOPE_NAME: SCOPE_NAME
+	  };
+
+	  var NTH = /:(nth[-\w]+)\(([^)]+)\)/;
+	  var SCOPE_DOC_SELECTOR = ':not(.' + SCOPE_NAME + ')';
+	  var COMPLEX_SELECTOR_SEP = ',';
+	  var SIMPLE_SELECTOR_SEP = /(^|[\s>+~]+)((?:\[.+?\]|[^\s>+~=\[])+)/g;
+	  var SIMPLE_SELECTOR_PREFIX = /[[.:#*]/;
+	  var HOST = ':host';
+	  var ROOT = ':root';
+	  var SLOTTED = '::slotted';
+	  var SLOTTED_START = new RegExp('^(' + SLOTTED + ')');
+	  // NOTE: this supports 1 nested () pair for things like
+	  // :host(:not([selected]), more general support requires
+	  // parsing which seems like overkill
+	  var HOST_PAREN = /(:host)(?:\(((?:\([^)(]*\)|[^)(]*)+?)\))/;
+	  // similar to HOST_PAREN
+	  var SLOTTED_PAREN = /(?:::slotted)(?:\(((?:\([^)(]*\)|[^)(]*)+?)\))/;
+	  var DIR_PAREN = /(.*):dir\((?:(ltr|rtl))\)/;
+	  var CSS_CLASS_PREFIX = '.';
+	  var PSEUDO_PREFIX = ':';
+	  var CLASS = 'class';
+	  var SELECTOR_NO_MATCH = 'should_not_match';
+
+	  var asyncGenerator = function () {
+	    function AwaitValue(value) {
+	      this.value = value;
+	    }
+
+	    function AsyncGenerator(gen) {
+	      var front, back;
+
+	      function send(key, arg) {
+	        return new Promise(function (resolve, reject) {
+	          var request = {
+	            key: key,
+	            arg: arg,
+	            resolve: resolve,
+	            reject: reject,
+	            next: null
+	          };
+
+	          if (back) {
+	            back = back.next = request;
+	          } else {
+	            front = back = request;
+	            resume(key, arg);
+	          }
+	        });
+	      }
+
+	      function resume(key, arg) {
+	        try {
+	          var result = gen[key](arg);
+	          var value = result.value;
+
+	          if (value instanceof AwaitValue) {
+	            Promise.resolve(value.value).then(function (arg) {
+	              resume("next", arg);
+	            }, function (arg) {
+	              resume("throw", arg);
+	            });
+	          } else {
+	            settle(result.done ? "return" : "normal", result.value);
+	          }
+	        } catch (err) {
+	          settle("throw", err);
+	        }
+	      }
+
+	      function settle(type, value) {
+	        switch (type) {
+	          case "return":
+	            front.resolve({
+	              value: value,
+	              done: true
+	            });
+	            break;
+
+	          case "throw":
+	            front.reject(value);
+	            break;
+
+	          default:
+	            front.resolve({
+	              value: value,
+	              done: false
+	            });
+	            break;
+	        }
+
+	        front = front.next;
+
+	        if (front) {
+	          resume(front.key, front.arg);
+	        } else {
+	          back = null;
+	        }
+	      }
+
+	      this._invoke = send;
+
+	      if (typeof gen.return !== "function") {
+	        this.return = undefined;
+	      }
+	    }
+
+	    if (typeof Symbol === "function" && Symbol.asyncIterator) {
+	      AsyncGenerator.prototype[Symbol.asyncIterator] = function () {
+	        return this;
+	      };
+	    }
+
+	    AsyncGenerator.prototype.next = function (arg) {
+	      return this._invoke("next", arg);
+	    };
+
+	    AsyncGenerator.prototype.throw = function (arg) {
+	      return this._invoke("throw", arg);
+	    };
+
+	    AsyncGenerator.prototype.return = function (arg) {
+	      return this._invoke("return", arg);
+	    };
+
+	    return {
+	      wrap: function wrap(fn) {
+	        return function () {
+	          return new AsyncGenerator(fn.apply(this, arguments));
+	        };
+	      },
+	      await: function await(value) {
+	        return new AwaitValue(value);
+	      }
+	    };
+	  }();
+
+	  var classCallCheck = function classCallCheck(instance, Constructor) {
+	    if (!(instance instanceof Constructor)) {
+	      throw new TypeError("Cannot call a class as a function");
+	    }
+	  };
+
+	  var createClass = function () {
+	    function defineProperties(target, props) {
+	      for (var i = 0; i < props.length; i++) {
+	        var descriptor = props[i];
+	        descriptor.enumerable = descriptor.enumerable || false;
+	        descriptor.configurable = true;
+	        if ("value" in descriptor) descriptor.writable = true;
+	        Object.defineProperty(target, descriptor.key, descriptor);
+	      }
+	    }
+
+	    return function (Constructor, protoProps, staticProps) {
+	      if (protoProps) defineProperties(Constructor.prototype, protoProps);
+	      if (staticProps) defineProperties(Constructor, staticProps);
+	      return Constructor;
+	    };
+	  }();
+
+	  var get$1 = function get$1(object, property, receiver) {
+	    if (object === null) object = Function.prototype;
+	    var desc = Object.getOwnPropertyDescriptor(object, property);
+
+	    if (desc === undefined) {
+	      var parent = Object.getPrototypeOf(object);
+
+	      if (parent === null) {
+	        return undefined;
+	      } else {
+	        return get$1(parent, property, receiver);
+	      }
+	    } else if ("value" in desc) {
+	      return desc.value;
+	    } else {
+	      var getter = desc.get;
+
+	      if (getter === undefined) {
+	        return undefined;
+	      }
+
+	      return getter.call(receiver);
+	    }
+	  };
+
+	  var set$1 = function set$1(object, property, value, receiver) {
+	    var desc = Object.getOwnPropertyDescriptor(object, property);
+
+	    if (desc === undefined) {
+	      var parent = Object.getPrototypeOf(object);
+
+	      if (parent !== null) {
+	        set$1(parent, property, value, receiver);
+	      }
+	    } else if ("value" in desc && desc.writable) {
+	      desc.value = value;
+	    } else {
+	      var setter = desc.set;
+
+	      if (setter !== undefined) {
+	        setter.call(receiver, value);
+	      }
+	    }
+
+	    return value;
+	  };
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  var StyleInfo = function () {
+	    createClass(StyleInfo, null, [{
+	      key: 'get',
+	      value: function get(node) {
+	        return node.__styleInfo;
+	      }
+	    }, {
+	      key: 'set',
+	      value: function set(node, styleInfo) {
+	        node.__styleInfo = styleInfo;
+	        return styleInfo;
+	      }
+	    }]);
+
+	    function StyleInfo(ast, placeholder, ownStylePropertyNames, elementName, typeExtension, cssBuild) {
+	      classCallCheck(this, StyleInfo);
+
+	      this.styleRules = ast || null;
+	      this.placeholder = placeholder || null;
+	      this.ownStylePropertyNames = ownStylePropertyNames || [];
+	      this.overrideStyleProperties = null;
+	      this.elementName = elementName || '';
+	      this.cssBuild = cssBuild || '';
+	      this.typeExtension = typeExtension || '';
+	      this.styleProperties = null;
+	      this.scopeSelector = null;
+	      this.customStyle = null;
+	    }
+
+	    return StyleInfo;
+	  }();
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  // TODO: dedupe with shady
+	  var p = window.Element.prototype;
+	  var matchesSelector = p.matches || p.matchesSelector || p.mozMatchesSelector || p.msMatchesSelector || p.oMatchesSelector || p.webkitMatchesSelector;
+
+	  var IS_IE = navigator.userAgent.match('Trident');
+
+	  var StyleProperties = {
+
+	    // decorates styles with rule info and returns an array of used style
+	    // property names
+	    decorateStyles: function decorateStyles(rules) {
+	      var self = this,
+	          props = {},
+	          keyframes = [],
+	          ruleIndex = 0;
+	      forEachRule(rules, function (rule) {
+	        self.decorateRule(rule);
+	        // mark in-order position of ast rule in styles block, used for cache key
+	        rule.index = ruleIndex++;
+	        self.collectPropertiesInCssText(rule.propertyInfo.cssText, props);
+	      }, function onKeyframesRule(rule) {
+	        keyframes.push(rule);
+	      });
+	      // Cache all found keyframes rules for later reference:
+	      rules._keyframes = keyframes;
+	      // return this list of property names *consumes* in these styles.
+	      var names = [];
+	      for (var i in props) {
+	        names.push(i);
+	      }
+	      return names;
+	    },
+
+	    // decorate a single rule with property info
+	    decorateRule: function decorateRule(rule) {
+	      if (rule.propertyInfo) {
+	        return rule.propertyInfo;
+	      }
+	      var info = {},
+	          properties = {};
+	      var hasProperties = this.collectProperties(rule, properties);
+	      if (hasProperties) {
+	        info.properties = properties;
+	        // TODO(sorvell): workaround parser seeing mixins as additional rules
+	        rule.rules = null;
+	      }
+	      info.cssText = this.collectCssText(rule);
+	      rule.propertyInfo = info;
+	      return info;
+	    },
+
+	    // collects the custom properties from a rule's cssText
+	    collectProperties: function collectProperties(rule, properties) {
+	      var info = rule.propertyInfo;
+	      if (info) {
+	        if (info.properties) {
+	          Object.assign(properties, info.properties);
+	          return true;
+	        }
+	      } else {
+	        var m = void 0,
+	            rx$$1 = this.rx.VAR_ASSIGN;
+	        var cssText = rule.parsedCssText;
+	        var value = void 0;
+	        var any = void 0;
+	        while (m = rx$$1.exec(cssText)) {
+	          // note: group 2 is var, 3 is mixin
+	          value = (m[2] || m[3]).trim();
+	          // value of 'inherit' or 'unset' is equivalent to not setting the property here
+	          if (value !== 'inherit' || value !== 'unset') {
+	            properties[m[1].trim()] = value;
+	          }
+	          any = true;
+	        }
+	        return any;
+	      }
+	    },
+
+	    // returns cssText of properties that consume variables/mixins
+	    collectCssText: function collectCssText(rule) {
+	      return this.collectConsumingCssText(rule.parsedCssText);
+	    },
+
+	    // NOTE: we support consumption inside mixin assignment
+	    // but not production, so strip out {...}
+	    collectConsumingCssText: function collectConsumingCssText(cssText) {
+	      return cssText.replace(this.rx.BRACKETED, '').replace(this.rx.VAR_ASSIGN, '');
+	    },
+
+	    collectPropertiesInCssText: function collectPropertiesInCssText(cssText, props) {
+	      var m = void 0;
+	      while (m = this.rx.VAR_CONSUMED.exec(cssText)) {
+	        var name = m[1];
+	        // This regex catches all variable names, and following non-whitespace char
+	        // If next char is not ':', then variable is a consumer
+	        if (m[2] !== ':') {
+	          props[name] = true;
+	        }
+	      }
+	    },
+
+	    // turns custom properties into realized values.
+	    reify: function reify(props) {
+	      // big perf optimization here: reify only *own* properties
+	      // since this object has __proto__ of the element's scope properties
+	      var names = Object.getOwnPropertyNames(props);
+	      for (var i = 0, n; i < names.length; i++) {
+	        n = names[i];
+	        props[n] = this.valueForProperty(props[n], props);
+	      }
+	    },
+
+	    // given a property value, returns the reified value
+	    // a property value may be:
+	    // (1) a literal value like: red or 5px;
+	    // (2) a variable value like: var(--a), var(--a, red), or var(--a, --b) or
+	    // var(--a, var(--b));
+	    // (3) a literal mixin value like { properties }. Each of these properties
+	    // can have values that are: (a) literal, (b) variables, (c) @apply mixins.
+	    valueForProperty: function valueForProperty(property, props) {
+	      var _this = this;
+
+	      // case (1) default
+	      // case (3) defines a mixin and we have to reify the internals
+	      if (property) {
+	        if (property.indexOf(';') >= 0) {
+	          property = this.valueForProperties(property, props);
+	        } else {
+	          (function () {
+	            // case (2) variable
+	            var self = _this;
+	            var fn = function fn(prefix, value, fallback, suffix) {
+	              if (!value) {
+	                return prefix + suffix;
+	              }
+	              var propertyValue = self.valueForProperty(props[value], props);
+	              // if value is "initial", then the variable should be treated as unset
+	              if (!propertyValue || propertyValue === 'initial') {
+	                // fallback may be --a or var(--a) or literal
+	                propertyValue = self.valueForProperty(props[fallback] || fallback, props) || fallback;
+	              } else if (propertyValue === 'apply-shim-inherit') {
+	                // CSS build will replace `inherit` with `apply-shim-inherit`
+	                // for use with native css variables.
+	                // Since we have full control, we can use `inherit` directly.
+	                propertyValue = 'inherit';
+	              }
+	              return prefix + (propertyValue || '') + suffix;
+	            };
+	            property = processVariableAndFallback(property, fn);
+	          })();
+	        }
+	      }
+	      return property && property.trim() || '';
+	    },
+
+	    // note: we do not yet support mixin within mixin
+	    valueForProperties: function valueForProperties(property, props) {
+	      var parts = property.split(';');
+	      for (var i = 0, _p, m; i < parts.length; i++) {
+	        if (_p = parts[i]) {
+	          this.rx.MIXIN_MATCH.lastIndex = 0;
+	          m = this.rx.MIXIN_MATCH.exec(_p);
+	          if (m) {
+	            _p = this.valueForProperty(props[m[1]], props);
+	          } else {
+	            var colon = _p.indexOf(':');
+	            if (colon !== -1) {
+	              var pp = _p.substring(colon);
+	              pp = pp.trim();
+	              pp = this.valueForProperty(pp, props) || pp;
+	              _p = _p.substring(0, colon) + pp;
+	            }
+	          }
+	          parts[i] = _p && _p.lastIndexOf(';') === _p.length - 1 ?
+	          // strip trailing ;
+	          _p.slice(0, -1) : _p || '';
+	        }
+	      }
+	      return parts.join(';');
+	    },
+
+	    applyProperties: function applyProperties(rule, props) {
+	      var output = '';
+	      // dynamically added sheets may not be decorated so ensure they are.
+	      if (!rule.propertyInfo) {
+	        this.decorateRule(rule);
+	      }
+	      if (rule.propertyInfo.cssText) {
+	        output = this.valueForProperties(rule.propertyInfo.cssText, props);
+	      }
+	      rule.cssText = output;
+	    },
+
+	    // Apply keyframe transformations to the cssText of a given rule. The
+	    // keyframeTransforms object is a map of keyframe names to transformer
+	    // functions which take in cssText and spit out transformed cssText.
+	    applyKeyframeTransforms: function applyKeyframeTransforms(rule, keyframeTransforms) {
+	      var input = rule.cssText;
+	      var output = rule.cssText;
+	      if (rule.hasAnimations == null) {
+	        // Cache whether or not the rule has any animations to begin with:
+	        rule.hasAnimations = this.rx.ANIMATION_MATCH.test(input);
+	      }
+	      // If there are no animations referenced, we can skip transforms:
+	      if (rule.hasAnimations) {
+	        var transform = void 0;
+	        // If we haven't transformed this rule before, we iterate over all
+	        // transforms:
+	        if (rule.keyframeNamesToTransform == null) {
+	          rule.keyframeNamesToTransform = [];
+	          for (var keyframe in keyframeTransforms) {
+	            transform = keyframeTransforms[keyframe];
+	            output = transform(input);
+	            // If the transform actually changed the CSS text, we cache the
+	            // transform name for future use:
+	            if (input !== output) {
+	              input = output;
+	              rule.keyframeNamesToTransform.push(keyframe);
+	            }
+	          }
+	        } else {
+	          // If we already have a list of keyframe names that apply to this
+	          // rule, we apply only those keyframe name transforms:
+	          for (var i = 0; i < rule.keyframeNamesToTransform.length; ++i) {
+	            transform = keyframeTransforms[rule.keyframeNamesToTransform[i]];
+	            input = transform(input);
+	          }
+	          output = input;
+	        }
+	      }
+	      rule.cssText = output;
+	    },
+
+	    // Test if the rules in these styles matches the given `element` and if so,
+	    // collect any custom properties into `props`.
+	    propertyDataFromStyles: function propertyDataFromStyles(rules, element) {
+	      var props = {},
+	          self = this;
+	      // generates a unique key for these matches
+	      var o = [];
+	      // note: active rules excludes non-matching @media rules
+	      forEachRule(rules, function (rule) {
+	        // TODO(sorvell): we could trim the set of rules at declaration
+	        // time to only include ones that have properties
+	        if (!rule.propertyInfo) {
+	          self.decorateRule(rule);
+	        }
+	        // match element against transformedSelector: selector may contain
+	        // unwanted uniquification and parsedSelector does not directly match
+	        // for :host selectors.
+	        var selectorToMatch = rule.transformedSelector || rule.parsedSelector;
+	        if (element && rule.propertyInfo.properties && selectorToMatch) {
+	          if (matchesSelector.call(element, selectorToMatch)) {
+	            self.collectProperties(rule, props);
+	            // produce numeric key for these matches for lookup
+	            addToBitMask(rule.index, o);
+	          }
+	        }
+	      }, null, true);
+	      return { properties: props, key: o };
+	    },
+
+	    whenHostOrRootRule: function whenHostOrRootRule(scope, rule, cssBuild, callback) {
+	      if (!rule.propertyInfo) {
+	        this.decorateRule(rule);
+	      }
+	      if (!rule.propertyInfo.properties) {
+	        return;
+	      }
+	      var hostScope = scope.is ? StyleTransformer._calcHostScope(scope.is, scope.extends) : 'html';
+	      var parsedSelector = rule.parsedSelector;
+	      var isRoot = parsedSelector === ':host > *' || parsedSelector === 'html';
+	      var isHost = parsedSelector.indexOf(':host') === 0 && !isRoot;
+	      // build info is either in scope (when scope is an element) or in the style
+	      // when scope is the default scope; note: this allows default scope to have
+	      // mixed mode built and unbuilt styles.
+	      if (cssBuild === 'shady') {
+	        // :root -> x-foo > *.x-foo for elements and html for custom-style
+	        isRoot = parsedSelector === hostScope + ' > *.' + hostScope || parsedSelector.indexOf('html') !== -1;
+	        // :host -> x-foo for elements, but sub-rules have .x-foo in them
+	        isHost = !isRoot && parsedSelector.indexOf(hostScope) === 0;
+	      }
+	      if (cssBuild === 'shadow') {
+	        isRoot = parsedSelector === ':host > *' || parsedSelector === 'html';
+	        isHost = isHost && !isRoot;
+	      }
+	      if (!isRoot && !isHost) {
+	        return;
+	      }
+	      var selectorToMatch = hostScope;
+	      if (isHost) {
+	        // need to transform :host under ShadowDOM because `:host` does not work with `matches`
+	        if (nativeShadow && !rule.transformedSelector) {
+	          // transform :host into a matchable selector
+	          rule.transformedSelector = StyleTransformer._transformRuleCss(rule, StyleTransformer._transformComplexSelector, StyleTransformer._calcElementScope(scope.is), hostScope);
+	        }
+	        selectorToMatch = rule.transformedSelector || hostScope;
+	      }
+	      callback({
+	        selector: selectorToMatch,
+	        isHost: isHost,
+	        isRoot: isRoot
+	      });
+	    },
+
+	    hostAndRootPropertiesForScope: function hostAndRootPropertiesForScope(scope, rules) {
+	      var hostProps = {},
+	          rootProps = {},
+	          self = this;
+	      // note: active rules excludes non-matching @media rules
+	      var cssBuild = rules && rules.__cssBuild;
+	      forEachRule(rules, function (rule) {
+	        // if scope is StyleDefaults, use _element for matchesSelector
+	        self.whenHostOrRootRule(scope, rule, cssBuild, function (info) {
+	          var element = scope._element || scope;
+	          if (matchesSelector.call(element, info.selector)) {
+	            if (info.isHost) {
+	              self.collectProperties(rule, hostProps);
+	            } else {
+	              self.collectProperties(rule, rootProps);
+	            }
+	          }
+	        });
+	      }, null, true);
+	      return { rootProps: rootProps, hostProps: hostProps };
+	    },
+
+	    transformStyles: function transformStyles(element, properties, scopeSelector) {
+	      var self = this;
+	      var hostSelector = StyleTransformer._calcHostScope(element.is, element.extends);
+	      var rxHostSelector = element.extends ? '\\' + hostSelector.slice(0, -1) + '\\]' : hostSelector;
+	      var hostRx = new RegExp(this.rx.HOST_PREFIX + rxHostSelector + this.rx.HOST_SUFFIX);
+	      var rules = StyleInfo.get(element).styleRules;
+	      var keyframeTransforms = this._elementKeyframeTransforms(element, rules, scopeSelector);
+	      return StyleTransformer.elementStyles(element, rules, function (rule) {
+	        self.applyProperties(rule, properties);
+	        if (!nativeShadow && !isKeyframesSelector(rule) && rule.cssText) {
+	          // NOTE: keyframe transforms only scope munge animation names, so it
+	          // is not necessary to apply them in ShadowDOM.
+	          self.applyKeyframeTransforms(rule, keyframeTransforms);
+	          self._scopeSelector(rule, hostRx, hostSelector, scopeSelector);
+	        }
+	      });
+	    },
+
+	    _elementKeyframeTransforms: function _elementKeyframeTransforms(element, rules, scopeSelector) {
+	      var keyframesRules = rules._keyframes;
+	      var keyframeTransforms = {};
+	      if (!nativeShadow && keyframesRules) {
+	        // For non-ShadowDOM, we transform all known keyframes rules in
+	        // advance for the current scope. This allows us to catch keyframes
+	        // rules that appear anywhere in the stylesheet:
+	        for (var i = 0, keyframesRule = keyframesRules[i]; i < keyframesRules.length; keyframesRule = keyframesRules[++i]) {
+	          this._scopeKeyframes(keyframesRule, scopeSelector);
+	          keyframeTransforms[keyframesRule.keyframesName] = this._keyframesRuleTransformer(keyframesRule);
+	        }
+	      }
+	      return keyframeTransforms;
+	    },
+
+	    // Generate a factory for transforming a chunk of CSS text to handle a
+	    // particular scoped keyframes rule.
+	    _keyframesRuleTransformer: function _keyframesRuleTransformer(keyframesRule) {
+	      return function (cssText) {
+	        return cssText.replace(keyframesRule.keyframesNameRx, keyframesRule.transformedKeyframesName);
+	      };
+	    },
+
+	    // Transforms `@keyframes` names to be unique for the current host.
+	    // Example: @keyframes foo-anim -> @keyframes foo-anim-x-foo-0
+	    _scopeKeyframes: function _scopeKeyframes(rule, scopeId) {
+	      rule.keyframesNameRx = new RegExp(rule.keyframesName, 'g');
+	      rule.transformedKeyframesName = rule.keyframesName + '-' + scopeId;
+	      rule.transformedSelector = rule.transformedSelector || rule.selector;
+	      rule.selector = rule.transformedSelector.replace(rule.keyframesName, rule.transformedKeyframesName);
+	    },
+
+	    // Strategy: x scope shim a selector e.g. to scope `.x-foo-42` (via classes):
+	    // non-host selector: .a.x-foo -> .x-foo-42 .a.x-foo
+	    // host selector: x-foo.wide -> .x-foo-42.wide
+	    // note: we use only the scope class (.x-foo-42) and not the hostSelector
+	    // (x-foo) to scope :host rules; this helps make property host rules
+	    // have low specificity. They are overrideable by class selectors but,
+	    // unfortunately, not by type selectors (e.g. overriding via
+	    // `.special` is ok, but not by `x-foo`).
+	    _scopeSelector: function _scopeSelector(rule, hostRx, hostSelector, scopeId) {
+	      rule.transformedSelector = rule.transformedSelector || rule.selector;
+	      var selector = rule.transformedSelector;
+	      var scope = '.' + scopeId;
+	      var parts = selector.split(',');
+	      for (var i = 0, l = parts.length, _p2; i < l && (_p2 = parts[i]); i++) {
+	        parts[i] = _p2.match(hostRx) ? _p2.replace(hostSelector, scope) : scope + ' ' + _p2;
+	      }
+	      rule.selector = parts.join(',');
+	    },
+
+	    applyElementScopeSelector: function applyElementScopeSelector(element, selector, old) {
+	      var c = element.getAttribute('class') || '';
+	      var v = c;
+	      if (old) {
+	        v = c.replace(new RegExp('\\s*' + this.XSCOPE_NAME + '\\s*' + old + '\\s*', 'g'), ' ');
+	      }
+	      v += (v ? ' ' : '') + this.XSCOPE_NAME + ' ' + selector;
+	      if (c !== v) {
+	        // hook from ShadyDOM
+	        if (element.__nativeSetAttribute) {
+	          element.__nativeSetAttribute('class', v);
+	        } else {
+	          element.setAttribute('class', v);
+	        }
+	      }
+	    },
+
+	    applyElementStyle: function applyElementStyle(element, properties, selector, style) {
+	      // calculate cssText to apply
+	      var cssText = style ? style.textContent || '' : this.transformStyles(element, properties, selector);
+	      // if shady and we have a cached style that is not style, decrement
+	      var styleInfo = StyleInfo.get(element);
+	      var s = styleInfo.customStyle;
+	      if (s && !nativeShadow && s !== style) {
+	        s._useCount--;
+	        if (s._useCount <= 0 && s.parentNode) {
+	          s.parentNode.removeChild(s);
+	        }
+	      }
+	      // apply styling always under native or if we generated style
+	      // or the cached style is not in document(!)
+	      if (nativeShadow) {
+	        // update existing style only under native
+	        if (styleInfo.customStyle) {
+	          styleInfo.customStyle.textContent = cssText;
+	          style = styleInfo.customStyle;
+	          // otherwise, if we have css to apply, do so
+	        } else if (cssText) {
+	          // apply css after the scope style of the element to help with
+	          // style precedence rules.
+	          style = applyCss(cssText, selector, element.shadowRoot, styleInfo.placeholder);
+	        }
+	      } else {
+	        // shady and no cache hit
+	        if (!style) {
+	          // apply css after the scope style of the element to help with
+	          // style precedence rules.
+	          if (cssText) {
+	            style = applyCss(cssText, selector, null, styleInfo.placeholder);
+	          }
+	          // shady and cache hit but not in document
+	        } else if (!style.parentNode) {
+	          applyStyle$1(style, null, styleInfo.placeholder);
+	        }
+	      }
+	      // ensure this style is our custom style and increment its use count.
+	      if (style) {
+	        style._useCount = style._useCount || 0;
+	        // increment use count if we changed styles
+	        if (styleInfo.customStyle != style) {
+	          style._useCount++;
+	        }
+	        styleInfo.customStyle = style;
+	      }
+	      // @media rules may be stale in IE 10 and 11
+	      if (IS_IE) {
+	        style.textContent = style.textContent;
+	      }
+	      return style;
+	    },
+
+	    applyCustomStyle: function applyCustomStyle(style, properties) {
+	      var rules = rulesForStyle(style);
+	      var self = this;
+	      style.textContent = toCssText(rules, function (rule) {
+	        var css = rule.cssText = rule.parsedCssText;
+	        if (rule.propertyInfo && rule.propertyInfo.cssText) {
+	          // remove property assignments
+	          // so next function isn't confused
+	          // NOTE: we have 3 categories of css:
+	          // (1) normal properties,
+	          // (2) custom property assignments (--foo: red;),
+	          // (3) custom property usage: border: var(--foo); @apply(--foo);
+	          // In elements, 1 and 3 are separated for efficiency; here they
+	          // are not and this makes this case unique.
+	          css = removeCustomPropAssignment(css);
+	          // replace with reified properties, scenario is same as mixin
+	          rule.cssText = self.valueForProperties(css, properties);
+	        }
+	      });
+	    },
+
+	    rx: rx,
+	    XSCOPE_NAME: 'x-scope'
+	  };
+
+	  function addToBitMask(n, bits) {
+	    var o = parseInt(n / 32);
+	    var v = 1 << n % 32;
+	    bits[o] = (bits[o] || 0) | v;
+	  }
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  var templateMap = {};
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  var placeholderMap = {};
+
+	  var ce = window.customElements;
+	  if (ce && !nativeShadow) {
+	    (function () {
+	      var origDefine = ce.define;
+	      ce.define = function (name, clazz, options) {
+	        placeholderMap[name] = applyStylePlaceHolder(name);
+	        return origDefine.call(ce, name, clazz, options);
+	      };
+	    })();
+	  }
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+	  var StyleCache = function () {
+	    function StyleCache() {
+	      var typeMax = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 100;
+	      classCallCheck(this, StyleCache);
+
+	      // map element name -> [{properties, styleElement, scopeSelector}]
+	      this.cache = {};
+	      this.typeMax = typeMax;
+	    }
+
+	    createClass(StyleCache, [{
+	      key: '_validate',
+	      value: function _validate(cacheEntry, properties, ownPropertyNames) {
+	        for (var idx = 0; idx < ownPropertyNames.length; idx++) {
+	          var pn = ownPropertyNames[idx];
+	          if (cacheEntry.properties[pn] !== properties[pn]) {
+	            return false;
+	          }
+	        }
+	        return true;
+	      }
+	    }, {
+	      key: 'store',
+	      value: function store(tagname, properties, styleElement, scopeSelector) {
+	        var list = this.cache[tagname] || [];
+	        list.push({ properties: properties, styleElement: styleElement, scopeSelector: scopeSelector });
+	        if (list.length > this.typeMax) {
+	          list.shift();
+	        }
+	        this.cache[tagname] = list;
+	      }
+	    }, {
+	      key: 'fetch',
+	      value: function fetch(tagname, properties, ownPropertyNames) {
+	        var list = this.cache[tagname];
+	        if (!list) {
+	          return;
+	        }
+	        // reverse list for most-recent lookups
+	        for (var idx = list.length - 1; idx >= 0; idx--) {
+	          var entry = list[idx];
+	          if (this._validate(entry, properties, ownPropertyNames)) {
+	            return entry;
+	          }
+	        }
+	      }
+	    }]);
+	    return StyleCache;
+	  }();
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+	  /**
+	   * The apply shim simulates the behavior of `@apply` proposed at
+	   * https://tabatkins.github.io/specs/css-apply-rule/.
+	   * The approach is to convert a property like this:
+	   *
+	   *    --foo: {color: red; background: blue;}
+	   *
+	   * to this:
+	   *
+	   *    --foo_-_color: red;
+	   *    --foo_-_background: blue;
+	   *
+	   * Then where `@apply --foo` is used, that is converted to:
+	   *
+	   *    color: var(--foo_-_color);
+	   *    background: var(--foo_-_background);
+	   *
+	   * This approach generally works but there are some issues and limitations.
+	   * Consider, for example, that somewhere *between* where `--foo` is set and used,
+	   * another element sets it to:
+	   *
+	   *    --foo: { border: 2px solid red; }
+	   *
+	   * We must now ensure that the color and background from the previous setting
+	   * do not apply. This is accomplished by changing the property set to this:
+	   *
+	   *    --foo_-_border: 2px solid red;
+	   *    --foo_-_color: initial;
+	   *    --foo_-_background: initial;
+	   *
+	   * This works but introduces one new issue.
+	   * Consider this setup at the point where the `@apply` is used:
+	   *
+	   *    background: orange;
+	   *    @apply --foo;
+	   *
+	   * In this case the background will be unset (initial) rather than the desired
+	   * `orange`. We address this by altering the property set to use a fallback
+	   * value like this:
+	   *
+	   *    color: var(--foo_-_color);
+	   *    background: var(--foo_-_background, orange);
+	   *    border: var(--foo_-_border);
+	   *
+	   * Note that the default is retained in the property set and the `background` is
+	   * the desired `orange`. This leads us to a limitation.
+	   *
+	   * Limitation 1:
+	  
+	   * Only properties in the rule where the `@apply`
+	   * is used are considered as default values.
+	   * If another rule matches the element and sets `background` with
+	   * less specificity than the rule in which `@apply` appears,
+	   * the `background` will not be set.
+	   *
+	   * Limitation 2:
+	   *
+	   * When using Polymer's `updateStyles` api, new properties may not be set for
+	   * `@apply` properties.
+	  
+	  */
+
+	  var MIXIN_MATCH = rx.MIXIN_MATCH;
+	  var VAR_ASSIGN = rx.VAR_ASSIGN;
+
+	  var APPLY_NAME_CLEAN = /;\s*/m;
+	  var INITIAL_INHERIT = /^\s*(initial)|(inherit)\s*$/;
+
+	  // separator used between mixin-name and mixin-property-name when producing properties
+	  // NOTE: plain '-' may cause collisions in user styles
+	  var MIXIN_VAR_SEP = '_-_';
+
+	  // map of mixin to property names
+	  // --foo: {border: 2px} -> {properties: {(--foo, ['border'])}, dependants: {'element-name': proto}}
+
+	  var MixinMap = function () {
+	    function MixinMap() {
+	      classCallCheck(this, MixinMap);
+
+	      this._map = {};
+	    }
+
+	    createClass(MixinMap, [{
+	      key: 'set',
+	      value: function set(name, props) {
+	        name = name.trim();
+	        this._map[name] = {
+	          properties: props,
+	          dependants: {}
+	        };
+	      }
+	    }, {
+	      key: 'get',
+	      value: function get(name) {
+	        name = name.trim();
+	        return this._map[name];
+	      }
+	    }]);
+	    return MixinMap;
+	  }();
+
+	  var ApplyShim = function () {
+	    function ApplyShim() {
+	      var _this = this;
+
+	      classCallCheck(this, ApplyShim);
+
+	      this._currentTemplate = null;
+	      this._measureElement = null;
+	      this._map = new MixinMap();
+	      this._separator = MIXIN_VAR_SEP;
+	      this._boundProduceCssProperties = function (matchText, propertyName, valueProperty, valueMixin) {
+	        return _this._produceCssProperties(matchText, propertyName, valueProperty, valueMixin);
+	      };
+	    }
+
+	    createClass(ApplyShim, [{
+	      key: 'transformStyle',
+	      value: function transformStyle(style, elementName) {
+	        var ast = rulesForStyle(style);
+	        this.transformRules(ast, elementName);
+	        return ast;
+	      }
+	    }, {
+	      key: 'transformRules',
+	      value: function transformRules(rules, elementName) {
+	        var _this2 = this;
+
+	        this._currentTemplate = templateMap[elementName];
+	        forEachRule(rules, function (r) {
+	          _this2.transformRule(r);
+	        });
+	        if (this._currentTemplate) {
+	          this._currentTemplate.__applyShimInvalid = false;
+	        }
+	        this._currentTemplate = null;
+	      }
+	    }, {
+	      key: 'transformRule',
+	      value: function transformRule(rule) {
+	        rule.cssText = this.transformCssText(rule.parsedCssText);
+	        // :root was only used for variable assignment in property shim,
+	        // but generates invalid selectors with real properties.
+	        // replace with `:host > *`, which serves the same effect
+	        if (rule.selector === ':root') {
+	          rule.selector = ':host > *';
+	        }
+	      }
+	    }, {
+	      key: 'transformCssText',
+	      value: function transformCssText(cssText) {
+	        // produce variables
+	        cssText = cssText.replace(VAR_ASSIGN, this._boundProduceCssProperties);
+	        // consume mixins
+	        return this._consumeCssProperties(cssText);
+	      }
+	    }, {
+	      key: '_getInitialValueForProperty',
+	      value: function _getInitialValueForProperty(property) {
+	        if (!this._measureElement) {
+	          this._measureElement = document.createElement('meta');
+	          this._measureElement.style.all = 'initial';
+	          document.head.appendChild(this._measureElement);
+	        }
+	        return window.getComputedStyle(this._measureElement).getPropertyValue(property);
+	      }
+	      // replace mixin consumption with variable consumption
+
+	    }, {
+	      key: '_consumeCssProperties',
+	      value: function _consumeCssProperties(text) {
+	        var m = void 0;
+	        // loop over text until all mixins with defintions have been applied
+	        while (m = MIXIN_MATCH.exec(text)) {
+	          var matchText = m[0];
+	          var mixinName = m[1];
+	          var idx = m.index;
+	          // collect properties before apply to be "defaults" if mixin might override them
+	          // match includes a "prefix", so find the start and end positions of @apply
+	          var applyPos = idx + matchText.indexOf('@apply');
+	          var afterApplyPos = idx + matchText.length;
+	          // find props defined before this @apply
+	          var textBeforeApply = text.slice(0, applyPos);
+	          var textAfterApply = text.slice(afterApplyPos);
+	          var defaults$$1 = this._cssTextToMap(textBeforeApply);
+	          var replacement = this._atApplyToCssProperties(mixinName, defaults$$1);
+	          // use regex match position to replace mixin, keep linear processing time
+	          text = [textBeforeApply, replacement, textAfterApply].join('');
+	          // move regex search to _after_ replacement
+	          MIXIN_MATCH.lastIndex = idx + replacement.length;
+	        }
+	        return text;
+	      }
+	      // produce variable consumption at the site of mixin consumption
+	      // @apply --foo; -> for all props (${propname}: var(--foo_-_${propname}, ${fallback[propname]}}))
+	      // Example:
+	      // border: var(--foo_-_border); padding: var(--foo_-_padding, 2px)
+
+	    }, {
+	      key: '_atApplyToCssProperties',
+	      value: function _atApplyToCssProperties(mixinName, fallbacks) {
+	        mixinName = mixinName.replace(APPLY_NAME_CLEAN, '');
+	        var vars = [];
+	        var mixinEntry = this._map.get(mixinName);
+	        // if we depend on a mixin before it is created
+	        // make a sentinel entry in the map to add this element as a dependency for when it is defined.
+	        if (!mixinEntry) {
+	          this._map.set(mixinName, {});
+	          mixinEntry = this._map.get(mixinName);
+	        }
+	        if (mixinEntry) {
+	          if (this._currentTemplate) {
+	            mixinEntry.dependants[this._currentTemplate.name] = this._currentTemplate;
+	          }
+	          var p = void 0,
+	              parts = void 0,
+	              f = void 0;
+	          for (p in mixinEntry.properties) {
+	            f = fallbacks && fallbacks[p];
+	            parts = [p, ': var(', mixinName, MIXIN_VAR_SEP, p];
+	            if (f) {
+	              parts.push(',', f);
+	            }
+	            parts.push(')');
+	            vars.push(parts.join(''));
+	          }
+	        }
+	        return vars.join('; ');
+	      }
+	    }, {
+	      key: '_replaceInitialOrInherit',
+	      value: function _replaceInitialOrInherit(property, value) {
+	        var match = INITIAL_INHERIT.exec(value);
+	        if (match) {
+	          if (match[1]) {
+	            // initial
+	            // replace `initial` with the concrete initial value for this property
+	            value = ApplyShim._getInitialValueForProperty(property);
+	          } else {
+	            // inherit
+	            // with this purposfully illegal value, the variable will be invalid at
+	            // compute time (https://www.w3.org/TR/css-variables/#invalid-at-computed-value-time)
+	            // and for inheriting values, will behave similarly
+	            // we cannot support the same behavior for non inheriting values like 'border'
+	            value = 'apply-shim-inherit';
+	          }
+	        }
+	        return value;
+	      }
+
+	      // "parse" a mixin definition into a map of properties and values
+	      // cssTextToMap('border: 2px solid black') -> ('border', '2px solid black')
+
+	    }, {
+	      key: '_cssTextToMap',
+	      value: function _cssTextToMap(text) {
+	        var props = text.split(';');
+	        var property = void 0,
+	            value = void 0;
+	        var out = {};
+	        for (var i = 0, p, sp; i < props.length; i++) {
+	          p = props[i];
+	          if (p) {
+	            sp = p.split(':');
+	            // ignore lines that aren't definitions like @media
+	            if (sp.length > 1) {
+	              property = sp[0].trim();
+	              // some properties may have ':' in the value, like data urls
+	              value = this._replaceInitialOrInherit(property, sp.slice(1).join(':'));
+	              out[property] = value;
+	            }
+	          }
+	        }
+	        return out;
+	      }
+	    }, {
+	      key: '_invalidateMixinEntry',
+	      value: function _invalidateMixinEntry(mixinEntry) {
+	        for (var elementName in mixinEntry.dependants) {
+	          if (elementName !== this._currentTemplate) {
+	            mixinEntry.dependants[elementName].__applyShimInvalid = true;
+	          }
+	        }
+	      }
+	    }, {
+	      key: '_produceCssProperties',
+	      value: function _produceCssProperties(matchText, propertyName, valueProperty, valueMixin) {
+	        var _this3 = this;
+
+	        // handle case where property value is a mixin
+	        if (valueProperty) {
+	          // form: --mixin2: var(--mixin1), where --mixin1 is in the map
+	          processVariableAndFallback(valueProperty, function (prefix, value) {
+	            if (value && _this3._map.get(value)) {
+	              valueMixin = '@apply ' + value + ';';
+	            }
+	          });
+	        }
+	        if (!valueMixin) {
+	          return matchText;
+	        }
+	        var mixinAsProperties = this._consumeCssProperties(valueMixin);
+	        var prefix = matchText.slice(0, matchText.indexOf('--'));
+	        var mixinValues = this._cssTextToMap(mixinAsProperties);
+	        var combinedProps = mixinValues;
+	        var mixinEntry = this._map.get(propertyName);
+	        var oldProps = mixinEntry && mixinEntry.properties;
+	        if (oldProps) {
+	          // NOTE: since we use mixin, the map of properties is updated here
+	          // and this is what we want.
+	          combinedProps = Object.assign(Object.create(oldProps), mixinValues);
+	        } else {
+	          this._map.set(propertyName, combinedProps);
+	        }
+	        var out = [];
+	        var p = void 0,
+	            v = void 0;
+	        // set variables defined by current mixin
+	        var needToInvalidate = false;
+	        for (p in combinedProps) {
+	          v = mixinValues[p];
+	          // if property not defined by current mixin, set initial
+	          if (v === undefined) {
+	            v = 'initial';
+	          }
+	          if (oldProps && !(p in oldProps)) {
+	            needToInvalidate = true;
+	          }
+	          out.push(propertyName + MIXIN_VAR_SEP + p + ': ' + v);
+	        }
+	        if (needToInvalidate) {
+	          this._invalidateMixinEntry(mixinEntry);
+	        }
+	        if (mixinEntry) {
+	          mixinEntry.properties = combinedProps;
+	        }
+	        // because the mixinMap is global, the mixin might conflict with
+	        // a different scope's simple variable definition:
+	        // Example:
+	        // some style somewhere:
+	        // --mixin1:{ ... }
+	        // --mixin2: var(--mixin1);
+	        // some other element:
+	        // --mixin1: 10px solid red;
+	        // --foo: var(--mixin1);
+	        // In this case, we leave the original variable definition in place.
+	        if (valueProperty) {
+	          prefix = matchText + ';' + prefix;
+	        }
+	        return prefix + out.join('; ') + ';';
+	      }
+	    }]);
+	    return ApplyShim;
+	  }();
+
+	  var applyShim = new ApplyShim();
+	  window['ApplyShim'] = applyShim;
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  var flush = function flush() {};
+
+	  if (!nativeShadow) {
+	    (function () {
+	      var elementNeedsScoping = function elementNeedsScoping(element) {
+	        return element.classList && !element.classList.contains(StyleTransformer.SCOPE_NAME) ||
+	        // note: necessary for IE11
+	        element instanceof SVGElement && (!element.hasAttribute('class') || element.getAttribute('class').indexOf(StyleTransformer.SCOPE_NAME) < 0);
+	      };
+
+	      var handler = function handler(mxns) {
+	        for (var x = 0; x < mxns.length; x++) {
+	          var mxn = mxns[x];
+	          if (mxn.target === document.documentElement || mxn.target === document.head) {
+	            continue;
+	          }
+	          for (var i = 0; i < mxn.addedNodes.length; i++) {
+	            var n = mxn.addedNodes[i];
+	            if (elementNeedsScoping(n)) {
+	              var root = n.getRootNode();
+	              if (root.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+	                // may no longer be in a shadowroot
+	                var host = root.host;
+	                if (host) {
+	                  var scope = host.is || host.localName;
+	                  StyleTransformer.dom(n, scope);
+	                }
+	              }
+	            }
+	          }
+	          for (var _i = 0; _i < mxn.removedNodes.length; _i++) {
+	            var _n = mxn.removedNodes[_i];
+	            if (_n.nodeType === Node.ELEMENT_NODE) {
+	              var classes = undefined;
+	              if (_n.classList) {
+	                classes = Array.from(_n.classList);
+	              } else if (_n.hasAttribute('class')) {
+	                classes = _n.getAttribute('class').split(/\s+/);
+	              }
+	              if (classes !== undefined) {
+	                // NOTE: relies on the scoping class always being adjacent to the
+	                // SCOPE_NAME class.
+	                var classIdx = classes.indexOf(StyleTransformer.SCOPE_NAME);
+	                if (classIdx >= 0) {
+	                  var _scope = classes[classIdx + 1];
+	                  if (_scope) {
+	                    StyleTransformer.dom(_n, _scope, true);
+	                  }
+	                }
+	              }
+	            }
+	          }
+	        }
+	      };
+
+	      var observer = new MutationObserver(handler);
+	      var start = function start(node) {
+	        observer.observe(node, { childList: true, subtree: true });
+	      };
+	      var nativeCustomElements = window.customElements && !window.customElements.flush;
+	      // need to start immediately with native custom elements
+	      // TODO(dfreedm): with polyfilled HTMLImports and native custom elements
+	      // excessive mutations may be observed; this can be optimized via cooperation
+	      // with the HTMLImports polyfill.
+	      if (nativeCustomElements) {
+	        start(document);
+	      } else {
+	        (function () {
+	          var delayedStart = function delayedStart() {
+	            start(document.body);
+	          };
+	          // use polyfill timing if it's available
+	          if (window.HTMLImports) {
+	            window.HTMLImports.whenReady(delayedStart);
+	            // otherwise push beyond native imports being ready
+	            // which requires RAF + readystate interactive.
+	          } else {
+	            requestAnimationFrame(function () {
+	              if (document.readyState === 'loading') {
+	                (function () {
+	                  var listener = function listener() {
+	                    delayedStart();
+	                    document.removeEventListener('readystatechange', listener);
+	                  };
+	                  document.addEventListener('readystatechange', listener);
+	                })();
+	              } else {
+	                delayedStart();
+	              }
+	            });
+	          }
+	        })();
+	      }
+
+	      flush = function flush() {
+	        handler(observer.takeRecords());
+	      };
+	    })();
+	  }
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  // TODO(dfreedm): consider spliting into separate global
+	  var styleCache = new StyleCache();
+
+	  var ShadyCSS = {
+	    flush: flush,
+	    scopeCounter: {},
+	    nativeShadow: nativeShadow,
+	    nativeCss: nativeCssVariables,
+	    nativeCssApply: nativeCssApply,
+	    _documentOwner: document.documentElement,
+	    _documentOwnerStyleInfo: StyleInfo.set(document.documentElement, new StyleInfo({ rules: [] })),
+	    _generateScopeSelector: function _generateScopeSelector(name) {
+	      var id = this.scopeCounter[name] = (this.scopeCounter[name] || 0) + 1;
+	      return name + '-' + id;
+	    },
+	    getStyleAst: function getStyleAst(style) {
+	      return rulesForStyle(style);
+	    },
+	    styleAstToString: function styleAstToString(ast) {
+	      return toCssText(ast);
+	    },
+	    _gatherStyles: function _gatherStyles(template) {
+	      var styles = template.content.querySelectorAll('style');
+	      var cssText = [];
+	      for (var i = 0; i < styles.length; i++) {
+	        var s = styles[i];
+	        cssText.push(s.textContent);
+	        s.parentNode.removeChild(s);
+	      }
+	      return cssText.join('').trim();
+	    },
+	    _getCssBuild: function _getCssBuild(template) {
+	      var style = template.content.querySelector('style');
+	      if (!style) {
+	        return '';
+	      }
+	      return style.getAttribute('css-build') || '';
+	    },
+	    prepareTemplate: function prepareTemplate(template, elementName, typeExtension) {
+	      if (template._prepared) {
+	        return;
+	      }
+	      template._prepared = true;
+	      template.name = elementName;
+	      template.extends = typeExtension;
+	      templateMap[elementName] = template;
+	      var cssBuild = this._getCssBuild(template);
+	      var cssText = this._gatherStyles(template);
+	      var info = {
+	        is: elementName,
+	        extends: typeExtension,
+	        __cssBuild: cssBuild
+	      };
+	      if (!this.nativeShadow) {
+	        StyleTransformer.dom(template.content, elementName);
+	      }
+	      var ast = parse(cssText);
+	      if (this.nativeCss && !this.nativeCssApply) {
+	        applyShim.transformRules(ast, elementName);
+	      }
+	      template._styleAst = ast;
+
+	      var ownPropertyNames = [];
+	      if (!this.nativeCss) {
+	        ownPropertyNames = StyleProperties.decorateStyles(template._styleAst, info);
+	      }
+	      if (!ownPropertyNames.length || this.nativeCss) {
+	        var root = this.nativeShadow ? template.content : null;
+	        var placeholder = placeholderMap[elementName];
+	        var style = this._generateStaticStyle(info, template._styleAst, root, placeholder);
+	        template._style = style;
+	      }
+	      template._ownPropertyNames = ownPropertyNames;
+	    },
+	    _generateStaticStyle: function _generateStaticStyle(info, rules, shadowroot, placeholder) {
+	      var cssText = StyleTransformer.elementStyles(info, rules);
+	      if (cssText.length) {
+	        return applyCss(cssText, info.is, shadowroot, placeholder);
+	      }
+	    },
+	    _prepareHost: function _prepareHost(host) {
+	      var is = host.getAttribute('is') || host.localName;
+	      var typeExtension = void 0;
+	      if (is !== host.localName) {
+	        typeExtension = host.localName;
+	      }
+	      var placeholder = placeholderMap[is];
+	      var template = templateMap[is];
+	      var ast = void 0;
+	      var ownStylePropertyNames = void 0;
+	      var cssBuild = void 0;
+	      if (template) {
+	        ast = template._styleAst;
+	        ownStylePropertyNames = template._ownPropertyNames;
+	        cssBuild = template._cssBuild;
+	      }
+	      return StyleInfo.set(host, new StyleInfo(ast, placeholder, ownStylePropertyNames, is, typeExtension, cssBuild));
+	    },
+	    applyStyle: function applyStyle(host, overrideProps) {
+	      var is = host.getAttribute('is') || host.localName;
+	      if (window.CustomStyle) {
+	        var CS = window.CustomStyle;
+	        if (CS._documentDirty) {
+	          CS.findStyles();
+	          if (!this.nativeCss) {
+	            this._updateProperties(this._documentOwner, this._documentOwnerStyleInfo);
+	          } else if (!this.nativeCssApply) {
+	            CS._revalidateApplyShim();
+	          }
+	          CS.applyStyles();
+	          CS._documentDirty = false;
+	        }
+	      }
+	      var styleInfo = StyleInfo.get(host);
+	      var hasApplied = Boolean(styleInfo);
+	      if (!styleInfo) {
+	        styleInfo = this._prepareHost(host);
+	      }
+	      if (overrideProps) {
+	        styleInfo.overrideStyleProperties = styleInfo.overrideStyleProperties || {};
+	        Object.assign(styleInfo.overrideStyleProperties, overrideProps);
+	      }
+	      if (this.nativeCss) {
+	        var template = templateMap[is];
+	        if (template && template.__applyShimInvalid && template._style) {
+	          // update template
+	          applyShim.transformRules(template._styleAst, is);
+	          template._style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+	          // update instance if native shadowdom
+	          if (this.nativeShadow) {
+	            var style = host.shadowRoot.querySelector('style');
+	            style.textContent = StyleTransformer.elementStyles(host, styleInfo.styleRules);
+	          }
+	          styleInfo.styleRules = template._styleAst;
+	        }
+	        this._updateNativeProperties(host, styleInfo.overrideStyleProperties);
+	      } else {
+	        this._updateProperties(host, styleInfo);
+	        if (styleInfo.ownStylePropertyNames && styleInfo.ownStylePropertyNames.length) {
+	          // TODO: use caching
+	          this._applyStyleProperties(host, styleInfo);
+	        }
+	      }
+	      if (hasApplied) {
+	        var root = this._isRootOwner(host) ? host : host.shadowRoot;
+	        // note: some elements may not have a root!
+	        if (root) {
+	          this._applyToDescendants(root);
+	        }
+	      }
+	    },
+	    _applyToDescendants: function _applyToDescendants(root) {
+	      var c$ = root.children;
+	      for (var i = 0, c; i < c$.length; i++) {
+	        c = c$[i];
+	        if (c.shadowRoot) {
+	          this.applyStyle(c);
+	        }
+	        this._applyToDescendants(c);
+	      }
+	    },
+	    _styleOwnerForNode: function _styleOwnerForNode(node) {
+	      var root = node.getRootNode();
+	      var host = root.host;
+	      if (host) {
+	        if (StyleInfo.get(host)) {
+	          return host;
+	        } else {
+	          return this._styleOwnerForNode(host);
+	        }
+	      }
+	      return this._documentOwner;
+	    },
+	    _isRootOwner: function _isRootOwner(node) {
+	      return node === this._documentOwner;
+	    },
+	    _applyStyleProperties: function _applyStyleProperties(host, styleInfo) {
+	      var is = host.getAttribute('is') || host.localName;
+	      var cacheEntry = styleCache.fetch(is, styleInfo.styleProperties, styleInfo.ownStylePropertyNames);
+	      var cachedScopeSelector = cacheEntry && cacheEntry.scopeSelector;
+	      var cachedStyle = cacheEntry ? cacheEntry.styleElement : null;
+	      var oldScopeSelector = styleInfo.scopeSelector;
+	      // only generate new scope if cached style is not found
+	      styleInfo.scopeSelector = cachedScopeSelector || this._generateScopeSelector(is);
+	      var style = StyleProperties.applyElementStyle(host, styleInfo.styleProperties, styleInfo.scopeSelector, cachedStyle);
+	      if (!this.nativeShadow) {
+	        StyleProperties.applyElementScopeSelector(host, styleInfo.scopeSelector, oldScopeSelector);
+	      }
+	      if (!cacheEntry) {
+	        styleCache.store(is, styleInfo.styleProperties, style, styleInfo.scopeSelector);
+	      }
+	      return style;
+	    },
+	    _updateProperties: function _updateProperties(host, styleInfo) {
+	      var owner = this._styleOwnerForNode(host);
+	      var ownerStyleInfo = StyleInfo.get(owner);
+	      var ownerProperties = ownerStyleInfo.styleProperties;
+	      var props = Object.create(ownerProperties || null);
+	      var hostAndRootProps = StyleProperties.hostAndRootPropertiesForScope(host, styleInfo.styleRules);
+	      var propertyData = StyleProperties.propertyDataFromStyles(ownerStyleInfo.styleRules, host);
+	      var propertiesMatchingHost = propertyData.properties;
+	      Object.assign(props, hostAndRootProps.hostProps, propertiesMatchingHost, hostAndRootProps.rootProps);
+	      this._mixinOverrideStyles(props, styleInfo.overrideStyleProperties);
+	      StyleProperties.reify(props);
+	      styleInfo.styleProperties = props;
+	    },
+	    _mixinOverrideStyles: function _mixinOverrideStyles(props, overrides) {
+	      for (var p in overrides) {
+	        var v = overrides[p];
+	        // skip override props if they are not truthy or 0
+	        // in order to fall back to inherited values
+	        if (v || v === 0) {
+	          props[p] = v;
+	        }
+	      }
+	    },
+	    _updateNativeProperties: function _updateNativeProperties(element, properties) {
+	      // remove previous properties
+	      for (var p in properties) {
+	        // NOTE: for bc with shim, don't apply null values.
+	        if (p === null) {
+	          element.style.removeProperty(p);
+	        } else {
+	          element.style.setProperty(p, properties[p]);
+	        }
+	      }
+	    },
+	    updateStyles: function updateStyles(properties) {
+	      if (window.CustomStyle) {
+	        window.CustomStyle._documentDirty = true;
+	      }
+	      this.applyStyle(this._documentOwner, properties);
+	    },
+
+	    /* Custom Style operations */
+	    _transformCustomStyleForDocument: function _transformCustomStyleForDocument(style) {
+	      var _this = this;
+
+	      var ast = rulesForStyle(style);
+	      forEachRule(ast, function (rule) {
+	        if (nativeShadow) {
+	          StyleTransformer.normalizeRootSelector(rule);
+	        } else {
+	          StyleTransformer.documentRule(rule);
+	        }
+	        if (_this.nativeCss && !_this.nativeCssApply) {
+	          applyShim.transformRule(rule);
+	        }
+	      });
+	      if (this.nativeCss) {
+	        style.textContent = toCssText(ast);
+	      } else {
+	        this._documentOwnerStyleInfo.styleRules.rules.push(ast);
+	      }
+	    },
+	    _revalidateApplyShim: function _revalidateApplyShim(style) {
+	      if (this.nativeCss && !this.nativeCssApply) {
+	        var ast = rulesForStyle(style);
+	        applyShim.transformRules(ast);
+	        style.textContent = toCssText(ast);
+	      }
+	    },
+	    _applyCustomStyleToDocument: function _applyCustomStyleToDocument(style) {
+	      if (!this.nativeCss) {
+	        StyleProperties.applyCustomStyle(style, this._documentOwnerStyleInfo.styleProperties);
+	      }
+	    },
+	    getComputedStyleValue: function getComputedStyleValue(element, property) {
+	      var value = void 0;
+	      if (!this.nativeCss) {
+	        // element is either a style host, or an ancestor of a style host
+	        var styleInfo = StyleInfo.get(element) || StyleInfo.get(this._styleOwnerForNode(element));
+	        value = styleInfo.styleProperties[property];
+	      }
+	      // fall back to the property value from the computed styling
+	      value = value || window.getComputedStyle(element).getPropertyValue(property);
+	      // trim whitespace that can come after the `:` in css
+	      // example: padding: 2px -> " 2px"
+	      return value.trim();
+	    },
+
+	    // given an element and a classString, replaces
+	    // the element's class with the provided classString and adds
+	    // any necessary ShadyCSS static and property based scoping selectors
+	    setElementClass: function setElementClass(element, classString) {
+	      var root = element.getRootNode();
+	      var classes = classString ? classString.split(/\s/) : [];
+	      var scopeName = root.host && root.host.localName;
+	      // If no scope, try to discover scope name from existing class.
+	      // This can occur if, for example, a template stamped element that
+	      // has been scoped is manipulated when not in a root.
+	      if (!scopeName) {
+	        var classAttr = element.getAttribute('class');
+	        if (classAttr) {
+	          var k$ = classAttr.split(/\s/);
+	          for (var i = 0; i < k$.length; i++) {
+	            if (k$[i] === StyleTransformer.SCOPE_NAME) {
+	              scopeName = k$[i + 1];
+	              break;
+	            }
+	          }
+	        }
+	      }
+	      if (scopeName) {
+	        classes.push(StyleTransformer.SCOPE_NAME, scopeName);
+	      }
+	      if (!this.nativeCss) {
+	        var styleInfo = StyleInfo.get(element);
+	        if (styleInfo && styleInfo.scopeSelector) {
+	          classes.push(StyleProperties.XSCOPE_NAME, styleInfo.scopeSelector);
+	        }
+	      }
+	      setElementClassRaw(element, classes.join(' '));
+	    },
+	    _styleInfoForNode: function _styleInfoForNode(node) {
+	      return StyleInfo.get(node);
+	    }
+	  };
+
+	  window['ShadyCSS'] = ShadyCSS;
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+
+	  /*
+	  Wrapper over <style> elements to co-operate with ShadyCSS
+	  
+	  Example:
+	  <shady-style>
+	    <style>
+	    ...
+	    </style>
+	  </shady-style>
+	  */
+
+	  var ShadyCSS$1 = window.ShadyCSS;
+
+	  var enqueued = false;
+
+	  var customStyles = [];
+
+	  var hookFn = null;
+
+	  /*
+	  If a page only has <custom-style> elements, it will flash unstyled content,
+	  as all the instances will boot asynchronously after page load.
+	  
+	  Calling ShadyCSS.updateStyles() will force the work to happen synchronously
+	  */
+	  function enqueueDocumentValidation() {
+	    if (enqueued) {
+	      return;
+	    }
+	    enqueued = true;
+	    if (window.HTMLImports) {
+	      window.HTMLImports.whenReady(validateDocument);
+	    } else if (document.readyState === 'complete') {
+	      validateDocument();
+	    } else {
+	      document.addEventListener('readystatechange', function () {
+	        if (document.readyState === 'complete') {
+	          validateDocument();
+	        }
+	      });
+	    }
+	  }
+
+	  function validateDocument() {
+	    requestAnimationFrame(function () {
+	      if (enqueued) {
+	        ShadyCSS$1.updateStyles();
+	        enqueued = false;
+	      }
+	    });
+	  }
+
+	  function CustomStyle() {
+	    /*
+	    Use Reflect to invoke the HTMLElement constructor, or rely on the
+	    CustomElement polyfill replacement that can be `.call`ed
+	    */
+	    var self = window.Reflect && Reflect.construct ? Reflect.construct(HTMLElement, [], this.constructor || CustomStyle) : HTMLElement.call(this);
+	    customStyles.push(self);
+	    enqueueDocumentValidation();
+	    return self;
+	  }
+
+	  Object.defineProperties(CustomStyle, {
+	    /*
+	    CustomStyle.processHook is provided to customize the <style> element child of
+	    a <custom-style> element before the <style> is processed by ShadyCSS
+	     The function must take a <style> element as input, and return nothing.
+	    */
+	    processHook: {
+	      get: function get() {
+	        return hookFn;
+	      },
+	      set: function set(fn) {
+	        hookFn = fn;
+	        return fn;
+	      }
+	    },
+	    _customStyles: {
+	      get: function get() {
+	        return customStyles;
+	      }
+	    },
+	    _documentDirty: {
+	      get: function get() {
+	        return enqueued;
+	      },
+	      set: function set(value) {
+	        enqueued = value;
+	        return value;
+	      }
+	    }
+	  });
+
+	  CustomStyle.findStyles = function () {
+	    for (var i = 0; i < customStyles.length; i++) {
+	      customStyles[i]._findStyle();
+	    }
+	  };
+
+	  CustomStyle._revalidateApplyShim = function () {
+	    for (var i = 0; i < customStyles.length; i++) {
+	      var s = customStyles[i];
+	      if (s._style) {
+	        ShadyCSS$1._revalidateApplyShim(s._style);
+	      }
+	    }
+	  };
+
+	  CustomStyle.applyStyles = function () {
+	    for (var i = 0; i < customStyles.length; i++) {
+	      customStyles[i]._applyStyle();
+	    }
+	  };
+
+	  CustomStyle.prototype = Object.create(HTMLElement.prototype, {
+	    'constructor': {
+	      value: CustomStyle,
+	      configurable: true,
+	      writable: true
+	    }
+	  });
+
+	  CustomStyle.prototype._findStyle = function () {
+	    if (!this._style) {
+	      var style = this.querySelector('style');
+	      if (!style) {
+	        return;
+	      }
+	      // HTMLImports polyfill may have cloned the style into the main document,
+	      // which is referenced with __appliedElement.
+	      // Also, we must copy over the attributes.
+	      if (style.__appliedElement) {
+	        for (var i = 0; i < style.attributes.length; i++) {
+	          var attr = style.attributes[i];
+	          style.__appliedElement.setAttribute(attr.name, attr.value);
+	        }
+	      }
+	      this._style = style.__appliedElement || style;
+	      if (hookFn) {
+	        hookFn(this._style);
+	      }
+	      ShadyCSS$1._transformCustomStyleForDocument(this._style);
+	    }
+	  };
+
+	  CustomStyle.prototype._applyStyle = function () {
+	    if (this._style) {
+	      ShadyCSS$1._applyCustomStyleToDocument(this._style);
+	    }
+	  };
+
+	  window.customElements.define('custom-style', CustomStyle);
+	  window['CustomStyle'] = CustomStyle;
+
+	  /**
+	  @license
+	  Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+	  This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+	  The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+	  The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+	  Code distributed by Google as part of the polymer project is also
+	  subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+	  */
+	  /*
+	  Small module to load ShadyCSS and CustomStyle together
+	  */
+	})();
+
+	var index = createCommonjsModule(function (module) {
+	  // We load the Safari fix first because the custom element polyfill overrides
+	  // attachShadow() to observe the shadow root.
+
+
+	  // We have to include this first so that it can patch native.
+
+
+	  // These must appear in this order. The ShadyCSS polyfill requires that the
+	  // ShadyDOM polyfill be loaded first.
+	});
+
+	interopDefault(index);
+
+	var isFunction = function isFunction(val) {
+	  return typeof val === 'function';
+	};
+	var isObject = function isObject(val) {
+	  return (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object' && val !== null;
+	};
+	var isString = function isString(val) {
+	  return typeof val === 'string';
+	};
+	var isSymbol = function isSymbol(val) {
+	  return (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'symbol';
+	};
+	var isUndefined = function isUndefined(val) {
+	  return typeof val === 'undefined';
+	};
+
+	/**
+	 * Returns array of owned property names and symbols for the given object
+	 */
+	function getPropNamesAndSymbols() {
+	  var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	  var listOfKeys = Object.getOwnPropertyNames(obj);
+	  return isFunction(Object.getOwnPropertySymbols) ? listOfKeys.concat(Object.getOwnPropertySymbols(obj)) : listOfKeys;
+	}
+
+	// We are not using Object.assign if it is defined since it will cause problems when Symbol is polyfilled.
+	// Apparently Object.assign (or any polyfill for this method) does not copy non-native Symbols.
+	var assign = (function (obj) {
+	  for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+	    args[_key - 1] = arguments[_key];
+	  }
+
+	  args.forEach(function (arg) {
+	    return getPropNamesAndSymbols(arg).forEach(function (nameOrSymbol) {
+	      return obj[nameOrSymbol] = arg[nameOrSymbol];
+	    });
+	  }); // eslint-disable-line no-return-assign
+	  return obj;
+	});
+
+	function empty (val) {
+	  return typeof val === 'undefined' || val === null;
+	}
+
+	/**
+	 * Attributes value can only be null or string;
+	 */
+	var toNullOrString = function toNullOrString(val) {
+	  return empty(val) ? null : String(val);
+	};
+
+	var $connected = '____skate_connected';
+	var $created = '____skate_created';
+
+	// DEPRECATED
+	//
+	// This is the only "symbol" that must stay a string. This is because it is
+	// relied upon across several versions. We should remove it, but ensure that
+	// it's considered a breaking change that whatever version removes it cannot
+	// be passed to vdom functions as tag names.
+	var $name = '____skate_name';
+
+	// Used on the Constructor
+	var $ctorCreateInitProps = '____skate_ctor_createInitProps';
+	var $ctorObservedAttributes = '____skate_ctor_observedAttributes';
+	var $ctorProps = '____skate_ctor_props';
+	var $ctorPropsMap = '____skate_ctor_propsMap';
+
+	// Used on the Element
+	var $props = '____skate_props';
+	var $ref = '____skate_ref';
+	var $renderer = '____skate_renderer';
+	var $rendering = '____skate_rendering';
+	var $rendererDebounced = '____skate_rendererDebounced';
+	var $updated = '____skate_updated';
 
 	var incrementalDomCjs = createCommonjsModule(function (module, exports) {
 	  /**
@@ -4379,13 +7026,13 @@ var require$$0 = Object.freeze({
 	  };
 	}
 
-	var index$3 = createCommonjsModule(function (module) {
+	var index$2 = createCommonjsModule(function (module) {
 	  'use strict';
 
 	  module.exports = (typeof self === 'undefined' ? 'undefined' : _typeof(self)) === 'object' && self.self === self && self || _typeof(commonjsGlobal) === 'object' && commonjsGlobal.global === commonjsGlobal && commonjsGlobal || commonjsGlobal;
 	});
 
-	var root = interopDefault(index$3);
+	var root = interopDefault(index$2);
 
 	var customElements = root.customElements;
 	var HTMLElement$2 = root.HTMLElement;
@@ -4775,13 +7422,6 @@ var require$$0 = Object.freeze({
 	  return namespace && (data[namespace] || (data[namespace] = {})) || data; // eslint-disable-line no-mixed-operators
 	}
 
-	function dashCase (str) {
-	  return str.split(/([A-Z])/).reduce(function (one, two, idx) {
-	    var dash = !one || idx % 2 === 0 ? '' : '-';
-	    return '' + one + dash + two.toLowerCase();
-	  });
-	}
-
 	var nativeHints = ['native code', '[object MutationObserverConstructor]' // for mobile safari iOS 9.0
 	];
 	var native = (function (fn) {
@@ -4792,7 +7432,7 @@ var require$$0 = Object.freeze({
 	  });
 	});
 
-	var MutationObserver$1 = root.MutationObserver;
+	var MutationObserver$2 = root.MutationObserver;
 
 
 	function microtaskDebounce(cbFunc) {
@@ -4800,7 +7440,7 @@ var require$$0 = Object.freeze({
 	  var i = 0;
 	  var cbArgs = [];
 	  var elem = document.createElement('span');
-	  var observer = new MutationObserver$1(function () {
+	  var observer = new MutationObserver$2(function () {
 	    cbFunc.apply(undefined, toConsumableArray(cbArgs));
 	    scheduled = false;
 	    cbArgs = null;
@@ -4846,21 +7486,327 @@ var require$$0 = Object.freeze({
 	    }
 	  };
 	}
-	var debounce$1 = native(MutationObserver$1) ? microtaskDebounce : taskDebounce;
+	var debounce = native(MutationObserver$2) ? microtaskDebounce : taskDebounce;
+
+	function deprecated(elem, oldUsage, newUsage) {
+	  if (DEBUG) {
+	    var ownerName = elem.localName ? elem.localName : String(elem);
+	    console.warn(ownerName + " " + oldUsage + " is deprecated. Use " + newUsage + ".");
+	  }
+	}
+
+	/**
+	 * @internal
+	 * Attributes Manager
+	 *
+	 * Postpones attributes updates until when connected.
+	 */
+
+	var AttributesManager = function () {
+	  function AttributesManager(elem) {
+	    classCallCheck(this, AttributesManager);
+
+	    this.elem = elem;
+	    this.connected = false;
+	    this.pendingValues = {};
+	    this.lastSetValues = {};
+	  }
+
+	  /**
+	   * Called from disconnectedCallback
+	   */
+
+
+	  createClass(AttributesManager, [{
+	    key: 'suspendAttributesUpdates',
+	    value: function suspendAttributesUpdates() {
+	      this.connected = false;
+	    }
+
+	    /**
+	     * Called from connectedCallback
+	     */
+
+	  }, {
+	    key: 'resumeAttributesUpdates',
+	    value: function resumeAttributesUpdates() {
+	      var _this = this;
+
+	      this.connected = true;
+	      var names = Object.keys(this.pendingValues);
+	      names.forEach(function (name) {
+	        var value = _this.pendingValues[name];
+	        // Skip if already cleared
+	        if (!isUndefined(value)) {
+	          delete _this.pendingValues[name];
+	          _this._syncAttrValue(name, value);
+	        }
+	      });
+	    }
+
+	    /**
+	     * Returns true if the value is different from the one set internally
+	     * using setAttrValue()
+	     */
+
+	  }, {
+	    key: 'onAttributeChanged',
+	    value: function onAttributeChanged(name, value) {
+	      value = toNullOrString(value);
+
+	      // A new attribute value voids the pending one
+	      this._clearPendingValue(name);
+
+	      var changed = this.lastSetValues[name] !== value;
+	      this.lastSetValues[name] = value;
+	      return changed;
+	    }
+
+	    /**
+	     * Updates or removes the attribute if value === null.
+	     *
+	     * When the component is not connected the value is saved and
+	     * the attribute is only updated when the component is re-connected.
+	     */
+
+	  }, {
+	    key: 'setAttrValue',
+	    value: function setAttrValue(name, value) {
+	      value = toNullOrString(value);
+
+	      this.lastSetValues[name] = value;
+
+	      if (this.connected) {
+	        this._clearPendingValue(name);
+	        this._syncAttrValue(name, value);
+	      } else {
+	        this.pendingValues[name] = value;
+	      }
+	    }
+	  }, {
+	    key: '_syncAttrValue',
+	    value: function _syncAttrValue(name, value) {
+	      var currAttrValue = toNullOrString(this.elem.getAttribute(name));
+	      if (value !== currAttrValue) {
+	        if (value === null) {
+	          this.elem.removeAttribute(name);
+	        } else {
+	          this.elem.setAttribute(name, value);
+	        }
+	      }
+	    }
+	  }, {
+	    key: '_clearPendingValue',
+	    value: function _clearPendingValue(name) {
+	      if (name in this.pendingValues) {
+	        delete this.pendingValues[name];
+	      }
+	    }
+	  }]);
+	  return AttributesManager;
+	}();
+
+	// Only used by getAttrMgr
+
+
+	var $attributesMgr = '____skate_attributesMgr';
+
+	/**
+	 * @internal
+	 * Returns attribute manager instance for the given Component
+	 */
+	function getAttrMgr(elem) {
+	  var mgr = elem[$attributesMgr];
+	  if (!mgr) {
+	    mgr = new AttributesManager(elem);
+	    elem[$attributesMgr] = mgr;
+	  }
+	  return mgr;
+	}
 
 	function getOwnPropertyDescriptors () {
 	  var obj = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-	  return keys(obj).reduce(function (prev, curr) {
-	    prev[curr] = Object.getOwnPropertyDescriptor(obj, curr);
+	  return getPropNamesAndSymbols(obj).reduce(function (prev, nameOrSymbol) {
+	    prev[nameOrSymbol] = Object.getOwnPropertyDescriptor(obj, nameOrSymbol);
 	    return prev;
 	  }, {});
 	}
 
+	function dashCase (str) {
+	  return str.split(/([A-Z])/).reduce(function (one, two, idx) {
+	    var dash = !one || idx % 2 === 0 ? '' : '-';
+	    return '' + one + dash + two.toLowerCase();
+	  });
+	}
+
+	function error(message) {
+	  throw new Error(message);
+	}
+
+	/**
+	 * @internal
+	 * Property Definition
+	 *
+	 * Internal meta data and strategies for a property.
+	 * Created from the options of a PropOptions config object.
+	 *
+	 * Once created a PropDefinition should be treated as immutable and final.
+	 * 'getPropsMap' function memoizes PropDefinitions by Component's Class.
+	 *
+	 * The 'attribute' option is normalized to 'attrSource' and 'attrTarget' properties.
+	 */
+
+	var PropDefinition = function () {
+	  function PropDefinition(nameOrSymbol, propOptions) {
+	    var _this = this;
+
+	    classCallCheck(this, PropDefinition);
+
+	    this._nameOrSymbol = nameOrSymbol;
+
+	    propOptions = propOptions || {};
+
+	    // default 'attrSource': no observed source attribute (name)
+	    this.attrSource = null;
+
+	    // default 'attrTarget': no reflected target attribute (name)
+	    this.attrTarget = null;
+
+	    // default 'attrTargetIsNotSource'
+	    this.attrTargetIsNotSource = false;
+
+	    // default 'coerce': identity function
+	    this.coerce = function (value) {
+	      return value;
+	    };
+
+	    // default 'default': set prop to 'null'
+	    this.default = null;
+
+	    // default 'deserialize': return attribute's value (string or null)
+	    this.deserialize = function (value) {
+	      return value;
+	    };
+
+	    // default 'get': no function
+	    this.get = null;
+
+	    // 'initial' default: unspecified
+	    // 'initial' option is truly optional and it cannot be initialized.
+	    // Its presence is tested using: ('initial' in propDef)
+
+	    // 'serialize' default: return string value or null
+	    this.serialize = function (value) {
+	      return empty(value) ? null : String(value);
+	    };
+
+	    // default 'set': no function
+	    this.set = null;
+
+	    // Note: option key is always a string (no symbols here)
+	    Object.keys(propOptions).forEach(function (option) {
+	      var optVal = propOptions[option];
+
+	      // Only accept documented options and perform minimal input validation.
+	      switch (option) {
+	        case 'attribute':
+	          if (!isObject(optVal)) {
+	            _this.attrSource = _this.attrTarget = resolveAttrName(optVal, nameOrSymbol);
+	          } else {
+	            var source = optVal.source;
+	            var target = optVal.target;
+
+	            if (!source && !target) {
+	              error(option + ' \'source\' or \'target\' is missing.');
+	            }
+	            _this.attrSource = resolveAttrName(source, nameOrSymbol);
+	            _this.attrTarget = resolveAttrName(target, nameOrSymbol);
+	            _this.attrTargetIsNotSource = _this.attrTarget !== _this.attrSource;
+	          }
+	          break;
+	        case 'coerce':
+	        case 'deserialize':
+	        case 'get':
+	        case 'serialize':
+	        case 'set':
+	          if (isFunction(optVal)) {
+	            _this[option] = optVal;
+	          } else {
+	            error(option + ' must be a function.');
+	          }
+	          break;
+	        case 'default':
+	        case 'initial':
+	          _this[option] = optVal;
+	          break;
+	        default:
+	          // TODO: undocumented options?
+	          _this[option] = optVal;
+	          break;
+	      }
+	    });
+	  }
+
+	  createClass(PropDefinition, [{
+	    key: 'nameOrSymbol',
+	    get: function get() {
+	      return this._nameOrSymbol;
+	    }
+	  }]);
+	  return PropDefinition;
+	}();
+
+	function resolveAttrName(attrOption, nameOrSymbol) {
+	  if (isSymbol(nameOrSymbol)) {
+	    error(nameOrSymbol.toString() + ' symbol property cannot have an attribute.');
+	  } else {
+	    if (attrOption === true) {
+	      return dashCase(String(nameOrSymbol));
+	    }
+	    if (isString(attrOption)) {
+	      return attrOption;
+	    }
+	  }
+	  return null;
+	}
+
+	/**
+	 * This is needed to avoid IE11 "stack size errors" when creating
+	 * a new property on the constructor of an HTMLElement
+	 */
+	function setCtorNativeProperty(Ctor, propName, value) {
+	  Object.defineProperty(Ctor, propName, { configurable: true, value: value });
+	}
+
+	/**
+	 * Memoizes a map of PropDefinition for the given component class.
+	 * Keys in the map are the properties name which can a string or a symbol.
+	 *
+	 * The map is created from the result of: static get props
+	 */
+	function getPropsMap(Ctor) {
+	  // Must be defined on constructor and not from a superclass
+	  if (!Ctor.hasOwnProperty($ctorPropsMap)) {
+	    (function () {
+	      var props = Ctor.props || {};
+
+	      var propsMap = getPropNamesAndSymbols(props).reduce(function (result, nameOrSymbol) {
+	        result[nameOrSymbol] = new PropDefinition(nameOrSymbol, props[nameOrSymbol]);
+	        return result;
+	      }, {});
+	      setCtorNativeProperty(Ctor, $ctorPropsMap, propsMap);
+	    })();
+	  }
+
+	  return Ctor[$ctorPropsMap];
+	}
+
 	function get$1(elem) {
 	  var props = {};
-	  keys(elem.constructor.props).forEach(function (key) {
-	    props[key] = elem[key];
+
+	  getPropNamesAndSymbols(getPropsMap(elem.constructor)).forEach(function (nameOrSymbol) {
+	    props[nameOrSymbol] = elem[nameOrSymbol];
 	  });
 
 	  return props;
@@ -4874,15 +7820,15 @@ var require$$0 = Object.freeze({
 	}
 
 	function props (elem, newProps) {
-	  return typeof newProps === 'undefined' ? get$1(elem) : set$1(elem, newProps);
+	  return isUndefined(newProps) ? get$1(elem) : set$1(elem, newProps);
 	}
 
-	function getDefaultValue(elem, name, opts) {
-	  return typeof opts.default === 'function' ? opts.default(elem, { name: name }) : opts.default;
+	function getDefaultValue(elem, propDef) {
+	  return typeof propDef.default === 'function' ? propDef.default(elem, { name: propDef.nameOrSymbol }) : propDef.default;
 	}
 
-	function getInitialValue(elem, name, opts) {
-	  return typeof opts.initial === 'function' ? opts.initial(elem, { name: name }) : opts.initial;
+	function getInitialValue(elem, propDef) {
+	  return typeof propDef.initial === 'function' ? propDef.initial(elem, { name: propDef.nameOrSymbol }) : propDef.initial;
 	}
 
 	function getPropData(elem, name) {
@@ -4890,122 +7836,79 @@ var require$$0 = Object.freeze({
 	  return elemData[name] || (elemData[name] = {});
 	}
 
-	function syncFirstTimeProp(elem, prop, propName, attributeName, propData) {
-	  var syncAttrValue = propData.lastAssignedValue;
-	  if (empty(syncAttrValue)) {
-	    if ('initial' in prop) {
-	      syncAttrValue = getInitialValue(elem, propName, prop);
-	    } else if ('default' in prop) {
-	      syncAttrValue = getDefaultValue(elem, propName, prop);
-	    }
-	  }
-	  if (!empty(syncAttrValue) && prop.serialize) {
-	    syncAttrValue = prop.serialize(syncAttrValue);
-	  }
-	  if (!empty(syncAttrValue)) {
-	    propData.syncingAttribute = true;
-	    elem.setAttribute(attributeName, syncAttrValue);
-	  }
-	}
+	function createNativePropertyDescriptor(propDef) {
+	  var nameOrSymbol = propDef.nameOrSymbol;
 
-	function syncExistingProp(elem, prop, propName, attributeName, propData) {
-	  if (attributeName && !propData.settingAttribute) {
-	    var internalValue = propData.internalValue;
 
-	    var serializedValue = prop.serialize(internalValue);
-	    var currentAttrValue = elem.getAttribute(attributeName);
-	    var serializedIsEmpty = empty(serializedValue);
-	    var attributeChanged = !(serializedIsEmpty && empty(currentAttrValue) || serializedValue === currentAttrValue);
-
-	    propData.syncingAttribute = true;
-
-	    var shouldRemoveAttribute = empty(propData.lastAssignedValue);
-	    if (shouldRemoveAttribute || serializedIsEmpty) {
-	      elem.removeAttribute(attributeName);
-	    } else {
-	      elem.setAttribute(attributeName, serializedValue);
-	    }
-
-	    if (!attributeChanged && propData.syncingAttribute) {
-	      propData.syncingAttribute = false;
-	    }
-	  }
-
-	  // Allow the attribute to be linked again.
-	  propData.settingAttribute = false;
-	}
-
-	function syncPropToAttr(elem, prop, propName, isFirstSync) {
-	  var attributeName = data(elem, 'propertyLinks')[propName];
-	  var propData = getPropData(elem, propName);
-
-	  if (attributeName) {
-	    if (isFirstSync) {
-	      syncFirstTimeProp(elem, prop, propName, attributeName, propData);
-	    } else {
-	      syncExistingProp(elem, prop, propName, attributeName, propData);
-	    }
-	  }
-	}
-
-	function createNativePropertyDefinition(name, opts) {
 	  var prop = {
 	    configurable: true,
 	    enumerable: true
 	  };
 
-	  prop.created = function created(elem) {
-	    var propData = getPropData(elem, name);
-	    var attributeName = opts.attribute === true ? dashCase(name) : opts.attribute;
-	    var initialValue = elem[name];
+	  prop.beforeDefineProperty = function (elem) {
+	    var propData = getPropData(elem, nameOrSymbol);
+	    var attrSource = propDef.attrSource;
 
-	    // Store property to attribute link information.
-	    data(elem, 'attributeLinks')[attributeName] = name;
-	    data(elem, 'propertyLinks')[name] = attributeName;
+	    // Store attrSource name to property link.
+	    if (attrSource) {
+	      data(elem, 'attrSourceLinks')[attrSource] = nameOrSymbol;
+	    }
+
+	    // prop value before upgrading
+	    var initialValue = elem[nameOrSymbol];
 
 	    // Set up initial value if it wasn't specified.
+	    var valueFromAttrSource = false;
 	    if (empty(initialValue)) {
-	      if (attributeName && elem.hasAttribute(attributeName)) {
-	        initialValue = opts.deserialize(elem.getAttribute(attributeName));
-	      } else if ('initial' in opts) {
-	        initialValue = getInitialValue(elem, name, opts);
-	      } else if ('default' in opts) {
-	        initialValue = getDefaultValue(elem, name, opts);
+	      if (attrSource && elem.hasAttribute(attrSource)) {
+	        valueFromAttrSource = true;
+	        initialValue = propDef.deserialize(elem.getAttribute(attrSource));
+	      } else if ('initial' in propDef) {
+	        initialValue = getInitialValue(elem, propDef);
+	      } else {
+	        initialValue = getDefaultValue(elem, propDef);
 	      }
 	    }
 
-	    propData.internalValue = opts.coerce ? opts.coerce(initialValue) : initialValue;
+	    initialValue = propDef.coerce(initialValue);
+
+	    propData.internalValue = initialValue;
+
+	    // Reflect to Target Attribute
+	    var mustReflect = propDef.attrTarget && !empty(initialValue) && (!valueFromAttrSource || propDef.attrTargetIsNotSource);
+
+	    if (mustReflect) {
+	      var serializedValue = propDef.serialize(initialValue);
+	      getAttrMgr(elem).setAttrValue(propDef.attrTarget, serializedValue);
+	    }
 	  };
 
 	  prop.get = function get() {
-	    var propData = getPropData(this, name);
+	    var propData = getPropData(this, nameOrSymbol);
 	    var internalValue = propData.internalValue;
 
-	    return typeof opts.get === 'function' ? opts.get(this, { name: name, internalValue: internalValue }) : internalValue;
+	    return propDef.get ? propDef.get(this, { name: nameOrSymbol, internalValue: internalValue }) : internalValue;
 	  };
 
 	  prop.set = function set(newValue) {
-	    var propData = getPropData(this, name);
-	    propData.lastAssignedValue = newValue;
-	    var oldValue = propData.oldValue;
+	    var propData = getPropData(this, nameOrSymbol);
 
-
-	    if (empty(oldValue)) {
-	      oldValue = null;
+	    var useDefaultValue = empty(newValue);
+	    if (useDefaultValue) {
+	      newValue = getDefaultValue(this, propDef);
 	    }
 
-	    if (empty(newValue)) {
-	      newValue = getDefaultValue(this, name, opts);
-	    }
+	    newValue = propDef.coerce(newValue);
 
-	    if (typeof opts.coerce === 'function') {
-	      newValue = opts.coerce(newValue);
-	    }
+	    if (propDef.set) {
+	      var oldValue = propData.oldValue;
 
-	    var changeData = { name: name, newValue: newValue, oldValue: oldValue };
 
-	    if (typeof opts.set === 'function') {
-	      opts.set(this, changeData);
+	      if (empty(oldValue)) {
+	        oldValue = null;
+	      }
+	      var changeData = { name: nameOrSymbol, newValue: newValue, oldValue: oldValue };
+	      propDef.set(this, changeData);
 	    }
 
 	    // Queue a re-render.
@@ -5014,34 +7917,37 @@ var require$$0 = Object.freeze({
 	    // Update prop data so we can use it next time.
 	    propData.internalValue = propData.oldValue = newValue;
 
-	    // Link up the attribute.
-	    if (this[$connected]) {
-	      syncPropToAttr(this, opts, name, false);
+	    // Reflect to Target attribute.
+	    var mustReflect = propDef.attrTarget && (propDef.attrTargetIsNotSource || !propData.settingPropFromAttrSource);
+	    if (mustReflect) {
+	      // Note: setting the prop to empty implies the default value
+	      // and therefore no attribute should be present!
+	      var serializedValue = useDefaultValue ? null : propDef.serialize(newValue);
+	      getAttrMgr(this).setAttrValue(propDef.attrTarget, serializedValue);
 	    }
 	  };
 
 	  return prop;
 	}
 
-	function initProps (opts) {
-	  opts = opts || {};
-
-	  if (typeof opts === 'function') {
-	    opts = { coerce: opts };
-	  }
-
-	  return function (name) {
-	    return createNativePropertyDefinition(name, assign({
-	      default: null,
-	      deserialize: function deserialize(value) {
-	        return value;
-	      },
-	      serialize: function serialize(value) {
-	        return value;
-	      }
-	    }, opts));
+	/**
+	 * Polyfill Object.is for IE
+	 * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+	 */
+	if (!Object.is) {
+	  Object.is = function (x, y) {
+	    // SameValue algorithm
+	    if (x === y) {
+	      // Steps 1-5, 7-10
+	      // Steps 6.b-6.e: +0 != -0
+	      return x !== 0 || 1 / x === 1 / y;
+	    } else {
+	      // Step 6.a: NaN == NaN
+	      return x !== x && y !== y;
+	    }
 	  };
 	}
+	var objectIs = Object.is;
 
 	var HTMLElement$3 = root.HTMLElement || function () {
 	  function _class() {
@@ -5058,37 +7964,12 @@ var require$$0 = Object.freeze({
 	  return name === elem[_prevName] && oldValue === elem[_prevOldValue] && newValue === elem[_prevNewValue];
 	}
 
-	function syncPropsToAttrs(elem) {
-	  var props = elem.constructor.props;
-	  Object.keys(props).forEach(function (propName) {
-	    var prop = props[propName];
-	    syncPropToAttr(elem, prop, propName, true);
-	  });
-	}
-
 	// TODO remove when not catering to Safari < 10.
-	//
-	// Ensures that definitions passed as part of the constructor are functions
-	// that return property definitions used on the element.
-	function ensurePropertyFunctions(Ctor) {
-	  var props = Ctor.props;
-	  return keys(props).reduce(function (descriptors, descriptorName) {
-	    descriptors[descriptorName] = props[descriptorName];
-	    if (typeof descriptors[descriptorName] !== 'function') {
-	      descriptors[descriptorName] = initProps(descriptors[descriptorName]);
-	    }
-	    return descriptors;
-	  }, {});
-	}
-
-	// TODO remove when not catering to Safari < 10.
-	//
-	// This can probably be simplified into createInitProps().
-	function ensurePropertyDefinitions(Ctor) {
-	  var props = ensurePropertyFunctions(Ctor);
-	  return keys(props).reduce(function (descriptors, descriptorName) {
-	    descriptors[descriptorName] = props[descriptorName](descriptorName);
-	    return descriptors;
+	function createNativePropertyDescriptors(Ctor) {
+	  var propDefs = getPropsMap(Ctor);
+	  return getPropNamesAndSymbols(propDefs).reduce(function (propDescriptors, nameOrSymbol) {
+	    propDescriptors[nameOrSymbol] = createNativePropertyDescriptor(propDefs[nameOrSymbol]);
+	    return propDescriptors;
 	  }, {});
 	}
 
@@ -5096,25 +7977,21 @@ var require$$0 = Object.freeze({
 	//
 	// We should be able to simplify this where all we do is Object.defineProperty().
 	function createInitProps(Ctor) {
-	  var props = ensurePropertyDefinitions(Ctor);
+	  var propDescriptors = createNativePropertyDescriptors(Ctor);
 
 	  return function (elem) {
-	    if (!props) {
-	      return;
-	    }
-
-	    keys(props).forEach(function (name) {
-	      var prop = props[name];
-	      prop.created(elem);
+	    getPropNamesAndSymbols(propDescriptors).forEach(function (nameOrSymbol) {
+	      var propDescriptor = propDescriptors[nameOrSymbol];
+	      propDescriptor.beforeDefineProperty(elem);
 
 	      // We check here before defining to see if the prop was specified prior
 	      // to upgrading.
-	      var hasPropBeforeUpgrading = name in elem;
+	      var hasPropBeforeUpgrading = nameOrSymbol in elem;
 
 	      // This is saved prior to defining so that we can set it after it it was
 	      // defined prior to upgrading. We don't want to invoke the getter if we
 	      // don't need to, so we only get the value if we need to re-sync.
-	      var valueBeforeUpgrading = hasPropBeforeUpgrading && elem[name];
+	      var valueBeforeUpgrading = hasPropBeforeUpgrading && elem[nameOrSymbol];
 
 	      // https://bugs.webkit.org/show_bug.cgi?id=49739
 	      //
@@ -5122,7 +7999,7 @@ var require$$0 = Object.freeze({
 	      // retrieved, we can move defining the property to the prototype and away
 	      // from having to do if for every instance as all other browsers support
 	      // this.
-	      Object.defineProperty(elem, name, prop);
+	      Object.defineProperty(elem, nameOrSymbol, propDescriptor);
 
 	      // DEPRECATED
 	      //
@@ -5134,7 +8011,7 @@ var require$$0 = Object.freeze({
 	      // in native where the definition may be registerd after elements it
 	      // represents have already been created.
 	      if (hasPropBeforeUpgrading) {
-	        elem[name] = valueBeforeUpgrading;
+	        elem[nameOrSymbol] = valueBeforeUpgrading;
 	      }
 	    });
 	  };
@@ -5144,32 +8021,56 @@ var require$$0 = Object.freeze({
 	  inherits(_class2, _HTMLElement);
 	  createClass(_class2, null, [{
 	    key: 'observedAttributes',
-	    get: function get() {
-	      var props = this.props;
 
-	      return Object.keys(props).map(function (key) {
-	        var attribute = props[key].attribute;
+	    /**
+	     * Returns unique attribute names configured with props and
+	     * those set on the Component constructor if any
+	     */
+	    get: function get$$() {
+	      var attrsOnCtor = this.hasOwnProperty($ctorObservedAttributes) ? this[$ctorObservedAttributes] : [];
+	      var propDefs = getPropsMap(this);
 
-	        return attribute === true ? dashCase(key) : attribute;
+	      // Use Object.keys to skips symbol props since they have no linked attributes
+	      var attrsFromLinkedProps = Object.keys(propDefs).map(function (propName) {
+	        return propDefs[propName].attrSource;
 	      }).filter(Boolean);
+
+	      var all = attrsFromLinkedProps.concat(attrsOnCtor).concat(get(_class2.__proto__ || Object.getPrototypeOf(_class2), 'observedAttributes', this));
+	      return all.filter(function (item, index) {
+	        return all.indexOf(item) === index;
+	      });
 	    },
 	    set: function set(value) {
-	      Object.defineProperty(this, 'observedAttributes', { configurable: true, value: value });
+	      value = Array.isArray(value) ? value : [];
+	      setCtorNativeProperty(this, 'observedAttributes', value);
 	    }
+
+	    // Returns superclass props overwritten with this Component props
+
 	  }, {
 	    key: 'props',
-	    get: function get() {
-	      return {};
+	    get: function get$$() {
+	      return assign({}, get(_class2.__proto__ || Object.getPrototypeOf(_class2), 'props', this), this[$ctorProps]);
 	    },
 	    set: function set(value) {
-	      Object.defineProperty(this, 'props', { configurable: true, value: value });
+	      setCtorNativeProperty(this, $ctorProps, value);
 	    }
+
+	    // Passing args is designed to work with document-register-element. It's not
+	    // necessary for the webcomponents/custom-element polyfill.
+
 	  }]);
 
 	  function _class2() {
+	    var _ref;
+
 	    classCallCheck(this, _class2);
 
-	    var _this = possibleConstructorReturn(this, (_class2.__proto__ || Object.getPrototypeOf(_class2)).call(this));
+	    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	      args[_key] = arguments[_key];
+	    }
+
+	    var _this = possibleConstructorReturn(this, (_ref = _class2.__proto__ || Object.getPrototypeOf(_class2)).call.apply(_ref, [this].concat(args)));
 
 	    var constructor = _this.constructor;
 
@@ -5179,22 +8080,26 @@ var require$$0 = Object.freeze({
 
 	    // TODO refactor to not cater to Safari < 10. This means we can depend on
 	    // built-in property descriptors.
-	    if (!constructor[$props]) {
-	      constructor[$props] = createInitProps(constructor);
+	    // Must be defined on constructor and not from a superclass
+	    if (!constructor.hasOwnProperty($ctorCreateInitProps)) {
+	      setCtorNativeProperty(constructor, $ctorCreateInitProps, createInitProps(constructor));
 	    }
 
 	    // Set up a renderer that is debounced for property sets to call directly.
-	    _this[$rendererDebounced] = debounce$1(_this[$renderer].bind(_this));
+	    _this[$rendererDebounced] = debounce(_this[$renderer].bind(_this));
 
 	    // Set up property lifecycle.
-	    if (constructor.props && constructor[$props]) {
-	      constructor[$props](_this);
+	    var propDefsCount = getPropNamesAndSymbols(getPropsMap(constructor)).length;
+	    if (propDefsCount && constructor[$ctorCreateInitProps]) {
+	      constructor[$ctorCreateInitProps](_this);
 	    }
 
 	    // DEPRECATED
 	    //
 	    // static render()
+	    // Note that renderCallback is an optional method!
 	    if (!_this.renderCallback && constructor.render) {
+	      DEBUG && deprecated(_this, 'static render', 'renderCallback');
 	      _this.renderCallback = constructor.render.bind(constructor, _this);
 	    }
 
@@ -5203,8 +8108,11 @@ var require$$0 = Object.freeze({
 	    // static created()
 	    //
 	    // Props should be set up before calling this.
-	    if (typeof constructor.created === 'function') {
-	      constructor.created(_this);
+	    var created = constructor.created;
+
+	    if (isFunction(created)) {
+	      DEBUG && deprecated(_this, 'static created', 'constructor');
+	      created(_this);
 	    }
 
 	    // DEPRECATED
@@ -5229,13 +8137,8 @@ var require$$0 = Object.freeze({
 	  createClass(_class2, [{
 	    key: 'connectedCallback',
 	    value: function connectedCallback() {
-	      var constructor = this.constructor;
-
-	      // DEPRECATED
-	      //
-	      // No more reflecting back to attributes in favour of one-way reflection.
-
-	      syncPropsToAttrs(this);
+	      // Reflect attributes pending values
+	      getAttrMgr(this).resumeAttributesUpdates();
 
 	      // Used to check whether or not the component can render.
 	      this[$connected] = true;
@@ -5246,8 +8149,11 @@ var require$$0 = Object.freeze({
 	      // DEPRECATED
 	      //
 	      // static attached()
-	      if (typeof constructor.attached === 'function') {
-	        constructor.attached(this);
+	      var attached = this.constructor.attached;
+
+	      if (isFunction(attached)) {
+	        DEBUG && deprecated(this, 'static attached', 'connectedCallback');
+	        attached(this);
 	      }
 
 	      // DEPRECATED
@@ -5261,17 +8167,20 @@ var require$$0 = Object.freeze({
 	  }, {
 	    key: 'disconnectedCallback',
 	    value: function disconnectedCallback() {
-	      var constructor = this.constructor;
+	      // Suspend updating attributes until re-connected
+	      getAttrMgr(this).suspendAttributesUpdates();
 
 	      // Ensures the component can't be rendered while disconnected.
-
 	      this[$connected] = false;
 
 	      // DEPRECATED
 	      //
 	      // static detached()
-	      if (typeof constructor.detached === 'function') {
-	        constructor.detached(this);
+	      var detached = this.constructor.detached;
+
+	      if (isFunction(detached)) {
+	        DEBUG && deprecated(this, 'static detached', 'disconnectedCallback');
+	        detached(this);
 	      }
 	    }
 
@@ -5290,52 +8199,51 @@ var require$$0 = Object.freeze({
 	      this[_prevOldValue] = oldValue;
 	      this[_prevNewValue] = newValue;
 
-	      var attributeChanged = this.constructor.attributeChanged;
-
-	      var propertyName = data(this, 'attributeLinks')[name];
-
-	      if (propertyName) {
-	        var propData = data(this, 'props')[propertyName];
-
-	        // This ensures a property set doesn't cause the attribute changed
-	        // handler to run again once we set this flag. This only ever has a
-	        // chance to run when you set an attribute, it then sets a property and
-	        // then that causes the attribute to be set again.
-	        if (propData.syncingAttribute) {
-	          propData.syncingAttribute = false;
-	        } else {
+	      var propNameOrSymbol = data(this, 'attrSourceLinks')[name];
+	      if (propNameOrSymbol) {
+	        var changedExternally = getAttrMgr(this).onAttributeChanged(name, newValue);
+	        if (changedExternally) {
 	          // Sync up the property.
-	          var propOpts = this.constructor.props[propertyName];
-	          propData.settingAttribute = true;
-	          var newPropVal = newValue !== null && propOpts.deserialize ? propOpts.deserialize(newValue) : newValue;
-	          this[propertyName] = newPropVal;
+	          var propDef = getPropsMap(this.constructor)[propNameOrSymbol];
+	          var newPropVal = newValue !== null && propDef.deserialize ? propDef.deserialize(newValue) : newValue;
+
+	          var propData = data(this, 'props')[propNameOrSymbol];
+	          propData.settingPropFromAttrSource = true;
+	          this[propNameOrSymbol] = newPropVal;
+	          propData.settingPropFromAttrSource = false;
 	        }
 	      }
 
-	      if (attributeChanged) {
+	      // DEPRECATED
+	      //
+	      // static attributeChanged()
+	      var attributeChanged = this.constructor.attributeChanged;
+
+	      if (isFunction(attributeChanged)) {
+	        DEBUG && deprecated(this, 'static attributeChanged', 'attributeChangedCallback');
 	        attributeChanged(this, { name: name, newValue: newValue, oldValue: oldValue });
 	      }
 	    }
 
 	    // Skate
-	    //
-	    // Maps to the static updated() callback. That logic should be moved here
-	    // when that is finally removed.
 
 	  }, {
 	    key: 'updatedCallback',
-	    value: function updatedCallback(prev) {
-	      return this.constructor.updated(this, prev);
+	    value: function updatedCallback(prevProps) {
+	      if (this.constructor.hasOwnProperty('updated')) {
+	        DEBUG && deprecated(this, 'static updated', 'updatedCallback');
+	      }
+	      return this.constructor.updated(this, prevProps);
 	    }
 
 	    // Skate
-	    //
-	    // Maps to the static rendered() callback. That logic should be moved here
-	    // when that is finally removed.
 
 	  }, {
 	    key: 'renderedCallback',
 	    value: function renderedCallback() {
+	      if (this.constructor.hasOwnProperty('rendered')) {
+	        DEBUG && deprecated(this, 'static rendered', 'renderedCallback');
+	      }
 	      return this.constructor.rendered(this);
 	    }
 
@@ -5343,15 +8251,17 @@ var require$$0 = Object.freeze({
 	    //
 	    // Maps to the static renderer() callback. That logic should be moved here
 	    // when that is finally removed.
+	    // TODO: finalize how to support different rendering strategies.
 
 	  }, {
 	    key: 'rendererCallback',
 	    value: function rendererCallback() {
+	      // TODO: cannot move code here because tests expects renderer function to still exist on constructor!
 	      return this.constructor.renderer(this);
 	    }
 
 	    // Skate
-	    //
+	    // @internal
 	    // Invokes the complete render lifecycle.
 
 	  }, {
@@ -5364,8 +8274,7 @@ var require$$0 = Object.freeze({
 	      // Flag as rendering. This prevents anything from trying to render - or
 	      // queueing a render - while there is a pending render.
 	      this[$rendering] = true;
-
-	      if (this[$updated]() && typeof this.renderCallback === 'function') {
+	      if (this[$updated]() && isFunction(this.renderCallback)) {
 	        this.rendererCallback();
 	        this.renderedCallback();
 	      }
@@ -5374,15 +8283,15 @@ var require$$0 = Object.freeze({
 	    }
 
 	    // Skate
-	    //
-	    // Calls the user-defined updated() lifecycle callback.
+	    // @internal
+	    // Calls the updatedCallback() with previous props.
 
 	  }, {
 	    key: $updated,
 	    value: function value() {
-	      var prev = this[$props];
+	      var prevProps = this[$props];
 	      this[$props] = props(this);
-	      return this.updatedCallback(prev);
+	      return this.updatedCallback(prevProps);
 	    }
 
 	    // Skate
@@ -5405,17 +8314,9 @@ var require$$0 = Object.freeze({
 	        return Ctor;
 	      }(Base);
 
-	      // Pass on statics from the Base if not supported (IE 9 and 10).
-
-
-	      if (!Ctor.observedAttributes) {
-	        var staticOpts = getOwnPropertyDescriptors(Base);
-	        delete staticOpts.length;
-	        delete staticOpts.prototype;
-	        Object.defineProperties(Ctor, staticOpts);
-	      }
-
 	      // For inheriting from the object literal.
+
+
 	      var opts = getOwnPropertyDescriptors(definition);
 	      var prot = getOwnPropertyDescriptors(definition.prototype);
 
@@ -5433,32 +8334,7 @@ var require$$0 = Object.freeze({
 	    //
 	    // DEPRECATED
 	    //
-	    // Move this to rendererCallback() before removing.
-
-	  }, {
-	    key: 'updated',
-	    value: function updated(elem, prev) {
-	      if (!prev) {
-	        return true;
-	      }
-
-	      // use get all keys so that we check Symbols as well as regular props
-	      // using a for loop so we can break early
-	      var allKeys = keys(prev);
-	      for (var i = 0; i < allKeys.length; i += 1) {
-	        if (prev[allKeys[i]] !== elem[allKeys[i]]) {
-	          return true;
-	        }
-	      }
-
-	      return false;
-	    }
-
-	    // Skate
-	    //
-	    // DEPRECATED
-	    //
-	    // Move this to rendererCallback() before removing.
+	    // Stubbed in case any subclasses are calling it.
 
 	  }, {
 	    key: 'rendered',
@@ -5477,17 +8353,49 @@ var require$$0 = Object.freeze({
 	        elem.attachShadow({ mode: 'open' });
 	      }
 	      patchInner(elem.shadowRoot, function () {
-	        var possibleFn = elem.renderCallback();
-	        if (typeof possibleFn === 'function') {
+	        var possibleFn = elem.renderCallback(elem);
+	        if (isFunction(possibleFn)) {
 	          possibleFn();
 	        } else if (Array.isArray(possibleFn)) {
 	          possibleFn.forEach(function (fn) {
-	            if (typeof fn === 'function') {
+	            if (isFunction(fn)) {
 	              fn();
 	            }
 	          });
 	        }
 	      });
+	    }
+
+	    // Skate
+	    //
+	    // DEPRECATED
+	    //
+	    // Move this to updatedCallback() before removing.
+
+	  }, {
+	    key: 'updated',
+	    value: function updated(elem, previousProps) {
+	      // The 'previousProps' will be undefined if it is the initial render.
+	      if (!previousProps) {
+	        return true;
+	      }
+
+	      // The 'previousProps' will always contain all of the keys.
+	      //
+	      // Use classic loop because:
+	      // 'for ... in' skips symbols and 'for ... of' is not working yet with IE!?
+	      // for (let nameOrSymbol of getPropNamesAndSymbols(previousProps)) {
+	      var namesAndSymbols = getPropNamesAndSymbols(previousProps);
+	      for (var i = 0; i < namesAndSymbols.length; i++) {
+	        var nameOrSymbol = namesAndSymbols[i];
+
+	        // With Object.is NaN is equal to NaN
+	        if (!objectIs(previousProps[nameOrSymbol], elem[nameOrSymbol])) {
+	          return true;
+	        }
+	      }
+
+	      return false;
 	    }
 	  }]);
 	  return _class2;
@@ -11317,7 +14225,7 @@ var require$$0 = Object.freeze({
 
 	interopDefault(combinatorics);
 
-	var index$4 = createCommonjsModule(function (module, exports) {
+	var index$3 = createCommonjsModule(function (module, exports) {
 	  exports = module.exports = Victor;
 
 	  /**
@@ -12648,7 +15556,7 @@ var require$$0 = Object.freeze({
 	  }
 	});
 
-	var Vec = interopDefault(index$4);
+	var Vec = interopDefault(index$3);
 
 	var X = Vec(1, 0);
 	var P = 100;
@@ -14684,14 +17592,14 @@ var require$$0 = Object.freeze({
 
 	var NumberFormatter$1 = interopDefault(NumberFormatter);
 
-var require$$0$3 = Object.freeze({
+var require$$0$2 = Object.freeze({
 	  default: NumberFormatter$1
 	});
 
 	var number$1 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var NumberFormatter = interopDefault(require$$0$3);
+	  var NumberFormatter = interopDefault(require$$0$2);
 
 	  /**
 	   * Test whether value is a number
@@ -14977,7 +17885,7 @@ var require$$0$3 = Object.freeze({
 	var isInteger = number$1.isInteger;
 	var isNumber = number$1.isNumber;
 
-var require$$0$2 = Object.freeze({
+var require$$0$1 = Object.freeze({
 	  default: number$2,
 	  nearlyEqual: nearlyEqual,
 	  DBL_EPSILON: DBL_EPSILON,
@@ -14994,7 +17902,7 @@ var require$$0$2 = Object.freeze({
 
 	var typed = createCommonjsModule(function (module, exports) {
 	  var typedFunction = interopDefault(require$$1$1);
-	  var digits = interopDefault(require$$0$2).digits;
+	  var digits = interopDefault(require$$0$1).digits;
 
 	  // returns a new instance of typed-function
 	  var _createTyped = function createTyped() {
@@ -15206,7 +18114,7 @@ var require$$0$2 = Object.freeze({
 	  create: create$2
 	});
 
-	var index$5 = createCommonjsModule(function (module) {
+	var index$4 = createCommonjsModule(function (module) {
 	  function E() {
 	    // Keep this empty so it's easier to inherit from
 	    // (via https://github.com/lipsmack from https://github.com/scottcorgan/tiny-emitter/issues/3)
@@ -15272,14 +18180,14 @@ var require$$0$2 = Object.freeze({
 	  module.exports = E;
 	});
 
-	var index$6 = interopDefault(index$5);
+	var index$5 = interopDefault(index$4);
 
-var require$$0$5 = Object.freeze({
-	  default: index$6
+var require$$0$4 = Object.freeze({
+	  default: index$5
 	});
 
 	var emitter = createCommonjsModule(function (module, exports) {
-	  var Emitter = interopDefault(require$$0$5);
+	  var Emitter = interopDefault(require$$0$4);
 
 	  /**
 	   * Extend given object with emitter functions `on`, `off`, `once`, `emit`
@@ -15303,7 +18211,7 @@ var require$$0$5 = Object.freeze({
 	var emitter$1 = interopDefault(emitter);
 	var mixin = emitter.mixin;
 
-var require$$0$4 = Object.freeze({
+var require$$0$3 = Object.freeze({
 	  default: emitter$1,
 	  mixin: mixin
 	});
@@ -15346,7 +18254,7 @@ var require$$0$4 = Object.freeze({
 
 	var ArgumentsError$1 = interopDefault(ArgumentsError);
 
-var require$$0$6 = Object.freeze({
+var require$$0$5 = Object.freeze({
 	  default: ArgumentsError$1
 	});
 
@@ -15357,7 +18265,7 @@ var require$$0$6 = Object.freeze({
 	  var isFactory = interopDefault(require$$1).isFactory;
 	  var traverse = interopDefault(require$$1).traverse;
 	  var extend = interopDefault(require$$1).extend;
-	  var ArgumentsError = interopDefault(require$$0$6);
+	  var ArgumentsError = interopDefault(require$$0$5);
 
 	  function factory(type, config, load, typed, math) {
 	    /**
@@ -15736,7 +18644,7 @@ var require$$0$6 = Object.freeze({
 	var math$2 = config.math;
 	var name$1 = config.name;
 
-var require$$0$7 = Object.freeze({
+var require$$0$6 = Object.freeze({
 	  default: config$1,
 	  factory: factory$1,
 	  math: math$2,
@@ -15747,10 +18655,10 @@ var require$$0$7 = Object.freeze({
 	  var isFactory = interopDefault(require$$1).isFactory;
 	  var deepExtend = interopDefault(require$$1).deepExtend;
 	  var typedFactory = interopDefault(require$$3);
-	  var emitter = interopDefault(require$$0$4);
+	  var emitter = interopDefault(require$$0$3);
 
 	  var importFactory = interopDefault(require$$1$2);
-	  var configFactory = interopDefault(require$$0$7);
+	  var configFactory = interopDefault(require$$0$6);
 
 	  /**
 	   * Math.js core. Creates a new, empty math.js instance
@@ -15870,13 +18778,13 @@ var require$$0$7 = Object.freeze({
 	var core$3 = interopDefault(core$2);
 	var create$1 = core$2.create;
 
-var require$$0$1 = Object.freeze({
+var require$$0 = Object.freeze({
 	  default: core$3,
 	  create: create$1
 	});
 
 	var core = createCommonjsModule(function (module) {
-	  module.exports = interopDefault(require$$0$1);
+	  module.exports = interopDefault(require$$0);
 	});
 
 	var core$1 = interopDefault(core);
@@ -16068,7 +18976,7 @@ var require$$0$1 = Object.freeze({
 	var toExponential$1 = formatter.toExponential;
 	var format$2 = formatter.format;
 
-var require$$0$8 = Object.freeze({
+var require$$0$7 = Object.freeze({
 	  default: formatter$1,
 	  toFixed: toFixed$1,
 	  toExponential: toExponential$1,
@@ -16078,8 +18986,8 @@ var require$$0$8 = Object.freeze({
 	var string$2 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var formatNumber = interopDefault(require$$0$2).format;
-	  var formatBigNumber = interopDefault(require$$0$8).format;
+	  var formatNumber = interopDefault(require$$0$1).format;
+	  var formatBigNumber = interopDefault(require$$0$7).format;
 
 	  /**
 	   * Test whether value is a string
@@ -16220,7 +19128,7 @@ var require$$0$8 = Object.freeze({
 	var string$3 = interopDefault(string$2);
 	var format$1 = string$2.format;
 	var endsWith = string$2.endsWith;
-	var isString = string$2.isString;
+	var isString$1 = string$2.isString;
 
 
 
@@ -16228,7 +19136,7 @@ var require$$0$8 = Object.freeze({
 	  default: string$3,
 	  format: format$1,
 	  endsWith: endsWith,
-	  isString: isString
+	  isString: isString$1
 	});
 
 	var types$1 = createCommonjsModule(function (module, exports) {
@@ -16338,7 +19246,7 @@ var require$$0$8 = Object.freeze({
 
 	var DimensionError$1 = interopDefault(DimensionError);
 
-var require$$0$9 = Object.freeze({
+var require$$0$8 = Object.freeze({
 	  default: DimensionError$1
 	});
 
@@ -16391,20 +19299,20 @@ var require$$0$9 = Object.freeze({
 
 	var IndexError$1 = interopDefault(IndexError);
 
-var require$$0$10 = Object.freeze({
+var require$$0$9 = Object.freeze({
 	  default: IndexError$1
 	});
 
 	var array$2 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var number = interopDefault(require$$0$2);
+	  var number = interopDefault(require$$0$1);
 	  var string = interopDefault(require$$4);
 	  var object = interopDefault(require$$1);
 	  var types = interopDefault(require$$2$1);
 
-	  var DimensionError = interopDefault(require$$0$9);
-	  var IndexError = interopDefault(require$$0$10);
+	  var DimensionError = interopDefault(require$$0$8);
+	  var IndexError = interopDefault(require$$0$9);
 
 	  /**
 	   * Calculate the size of a multi dimensional array.
@@ -16843,29 +19751,29 @@ var require$$6 = Object.freeze({
 	  memoize: memoize
 	});
 
-	var index$8 = createCommonjsModule(function (module, exports) {
+	var index$7 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
 	  exports.array = interopDefault(require$$7);
 	  exports['boolean'] = interopDefault(require$$6);
 	  exports['function'] = interopDefault(require$$5);
-	  exports.number = interopDefault(require$$0$2);
+	  exports.number = interopDefault(require$$0$1);
 	  exports.object = interopDefault(require$$1);
 	  exports.string = interopDefault(require$$4);
 	  exports.types = interopDefault(require$$2$1);
-	  exports.emitter = interopDefault(require$$0$4);
+	  exports.emitter = interopDefault(require$$0$3);
 	});
 
-	var index$9 = interopDefault(index$8);
-	var emitter$2 = index$8.emitter;
-	var types = index$8.types;
-	var string$1 = index$8.string;
-	var object$2 = index$8.object;
-	var number$3 = index$8.number;
-	var array$1 = index$8.array;
+	var index$8 = interopDefault(index$7);
+	var emitter$2 = index$7.emitter;
+	var types = index$7.types;
+	var string$1 = index$7.string;
+	var object$2 = index$7.object;
+	var number$3 = index$7.number;
+	var array$1 = index$7.array;
 
 var require$$2 = Object.freeze({
-	  default: index$9,
+	  default: index$8,
 	  emitter: emitter$2,
 	  types: types,
 	  string: string$1,
@@ -17145,7 +20053,7 @@ var require$$1$3 = Object.freeze({
 	  'use strict';
 
 	  var util = interopDefault(require$$2);
-	  var DimensionError = interopDefault(require$$0$9);
+	  var DimensionError = interopDefault(require$$0$8);
 
 	  var string = util.string;
 	  var array = util.array;
@@ -18044,7 +20952,7 @@ var require$$7$1 = Object.freeze({
 	var equalScalar = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var nearlyEqual = interopDefault(require$$0$2).nearlyEqual;
+	  var nearlyEqual = interopDefault(require$$0$1).nearlyEqual;
 	  var bigNearlyEqual = interopDefault(require$$7$1);
 
 	  function factory(type, config, load, typed) {
@@ -18100,7 +21008,7 @@ var require$$7$1 = Object.freeze({
 	var equalScalar$1 = interopDefault(equalScalar);
 	var factory$5 = equalScalar.factory;
 
-var require$$0$11 = Object.freeze({
+var require$$0$10 = Object.freeze({
 	  default: equalScalar$1,
 	  factory: factory$5
 	});
@@ -18109,7 +21017,7 @@ var require$$0$11 = Object.freeze({
 	  'use strict';
 
 	  var util = interopDefault(require$$2);
-	  var DimensionError = interopDefault(require$$0$9);
+	  var DimensionError = interopDefault(require$$0$8);
 
 	  var array = util.array;
 	  var object = util.object;
@@ -18125,7 +21033,7 @@ var require$$0$11 = Object.freeze({
 
 	  function factory(type, config, load, typed) {
 	    var Matrix = load(interopDefault(require$$1$3)); // force loading Matrix (do not use via type.Matrix)
-	    var equalScalar = load(interopDefault(require$$0$11));
+	    var equalScalar = load(interopDefault(require$$0$10));
 
 	    /**
 	     * Sparse Matrix implementation. This type implements a Compressed Column Storage format
@@ -19697,7 +22605,7 @@ var require$$6$2 = Object.freeze({
 	var operators = latex.operators;
 	var symbols$2 = latex.symbols;
 
-var require$$0$12 = Object.freeze({
+var require$$0$11 = Object.freeze({
 	  default: latex$1,
 	  toSymbol: toSymbol,
 	  defaultTemplate: defaultTemplate,
@@ -19708,7 +22616,7 @@ var require$$0$12 = Object.freeze({
 	var algorithm01 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var DimensionError = interopDefault(require$$0$9);
+	  var DimensionError = interopDefault(require$$0$8);
 
 	  function factory(type, config, load, typed) {
 
@@ -19830,11 +22738,11 @@ var require$$4$1 = Object.freeze({
 	var algorithm04 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var DimensionError = interopDefault(require$$0$9);
+	  var DimensionError = interopDefault(require$$0$8);
 
 	  function factory(type, config, load, typed) {
 
-	    var equalScalar = load(interopDefault(require$$0$11));
+	    var equalScalar = load(interopDefault(require$$0$10));
 
 	    var SparseMatrix = type.SparseMatrix;
 
@@ -20144,7 +23052,7 @@ var require$$2$2 = Object.freeze({
 	  'use strict';
 
 	  var util = interopDefault(require$$2);
-	  var DimensionError = interopDefault(require$$0$9);
+	  var DimensionError = interopDefault(require$$0$8);
 
 	  var string = util.string,
 	      isString = string.isString;
@@ -20357,7 +23265,7 @@ var require$$1$6 = Object.freeze({
 
 	    var matrix = load(interopDefault(require$$6$1));
 	    var addScalar = load(interopDefault(require$$6$2));
-	    var latex = interopDefault(require$$0$12);
+	    var latex = interopDefault(require$$0$11);
 
 	    var algorithm01 = load(interopDefault(require$$4$1));
 	    var algorithm04 = load(interopDefault(require$$3$1));
@@ -20531,7 +23439,7 @@ var require$$1$5 = Object.freeze({
 	  function factory(type, config, load) {
 
 	    var add = load(interopDefault(require$$1$5));
-	    var equalScalar = load(interopDefault(require$$0$11));
+	    var equalScalar = load(interopDefault(require$$0$10));
 
 	    /**
 	     * An ordered Sparse Accumulator is a representation for a sparse vector that includes a dense array 
@@ -20676,7 +23584,7 @@ var require$$7$2 = Object.freeze({
 	var algorithm03 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var DimensionError = interopDefault(require$$0$9);
+	  var DimensionError = interopDefault(require$$0$8);
 
 	  function factory(type, config, load, typed) {
 
@@ -20810,7 +23718,7 @@ var require$$5$1 = Object.freeze({
 	var algorithm07 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var DimensionError = interopDefault(require$$0$9);
+	  var DimensionError = interopDefault(require$$0$8);
 
 	  function factory(type, config, load, typed) {
 
@@ -21065,7 +23973,7 @@ var require$$3$2 = Object.freeze({
 	var smaller = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var nearlyEqual = interopDefault(require$$0$2).nearlyEqual;
+	  var nearlyEqual = interopDefault(require$$0$1).nearlyEqual;
 	  var bigNearlyEqual = interopDefault(require$$7$1);
 
 	  function factory(type, config, load, typed) {
@@ -21078,7 +23986,7 @@ var require$$3$2 = Object.freeze({
 	    var algorithm13 = load(interopDefault(require$$2$3));
 	    var algorithm14 = load(interopDefault(require$$1$6));
 
-	    var latex = interopDefault(require$$0$12);
+	    var latex = interopDefault(require$$0$11);
 
 	    /**
 	     * Test whether value x is smaller than y.
@@ -21248,7 +24156,7 @@ var require$$3$2 = Object.freeze({
 	var factory$16 = smaller.factory;
 	var name$14 = smaller.name;
 
-var require$$0$13 = Object.freeze({
+var require$$0$12 = Object.freeze({
 	  default: smaller$1,
 	  factory: factory$16,
 	  name: name$14
@@ -21257,7 +24165,7 @@ var require$$0$13 = Object.freeze({
 	var larger = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var nearlyEqual = interopDefault(require$$0$2).nearlyEqual;
+	  var nearlyEqual = interopDefault(require$$0$1).nearlyEqual;
 	  var bigNearlyEqual = interopDefault(require$$7$1);
 
 	  function factory(type, config, load, typed) {
@@ -21270,7 +24178,7 @@ var require$$0$13 = Object.freeze({
 	    var algorithm13 = load(interopDefault(require$$2$3));
 	    var algorithm14 = load(interopDefault(require$$1$6));
 
-	    var latex = interopDefault(require$$0$12);
+	    var latex = interopDefault(require$$0$11);
 
 	    /**
 	     * Test whether value x is larger than y.
@@ -21440,7 +24348,7 @@ var require$$0$13 = Object.freeze({
 	var factory$20 = larger.factory;
 	var name$18 = larger.name;
 
-var require$$0$14 = Object.freeze({
+var require$$0$13 = Object.freeze({
 	  default: larger$1,
 	  factory: factory$20,
 	  name: name$18
@@ -21451,8 +24359,8 @@ var require$$0$14 = Object.freeze({
 
 	  function factory(type, config, load, typed) {
 
-	    var smaller = load(interopDefault(require$$0$13));
-	    var larger = load(interopDefault(require$$0$14));
+	    var smaller = load(interopDefault(require$$0$12));
+	    var larger = load(interopDefault(require$$0$13));
 
 	    var oneOverLogPhi = 1.0 / Math.log((1.0 + Math.sqrt(5.0)) / 2.0);
 
@@ -21810,7 +24718,7 @@ var require$$6$3 = Object.freeze({
 
 	    var DenseMatrix = load(interopDefault(require$$1$4));
 
-	    var smaller = load(interopDefault(require$$0$13));
+	    var smaller = load(interopDefault(require$$0$12));
 
 	    function ImmutableDenseMatrix(data, datatype) {
 	      if (!(this instanceof ImmutableDenseMatrix)) throw new SyntaxError('Constructor must be called with the new operator');
@@ -22031,7 +24939,7 @@ var require$$5$2 = Object.freeze({
 	  'use strict';
 
 	  var clone = interopDefault(require$$1).clone;
-	  var isInteger = interopDefault(require$$0$2).isInteger;
+	  var isInteger = interopDefault(require$$0$1).isInteger;
 
 	  function factory(type) {
 
@@ -22324,7 +25232,7 @@ var require$$4$3 = Object.freeze({
 	var Range = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
-	  var number = interopDefault(require$$0$2);
+	  var number = interopDefault(require$$0$1);
 
 	  function factory(type, config, load, typed) {
 	    /**
@@ -22636,7 +25544,7 @@ var require$$3$3 = Object.freeze({
 	  name: name$21
 	});
 
-	var index$10 = createCommonjsModule(function (module, exports) {
+	var index$9 = createCommonjsModule(function (module, exports) {
 	  'use strict';
 
 	  function factory(type, config, load, typed) {
@@ -22701,12 +25609,12 @@ var require$$3$3 = Object.freeze({
 	  exports.factory = factory;
 	});
 
-	var index$11 = interopDefault(index$10);
-	var factory$24 = index$10.factory;
-	var name$22 = index$10.name;
+	var index$10 = interopDefault(index$9);
+	var factory$24 = index$9.factory;
+	var name$22 = index$9.name;
 
 var require$$2$4 = Object.freeze({
-	  default: index$11,
+	  default: index$10,
 	  factory: factory$24,
 	  name: name$22
 	});
@@ -22779,22 +25687,22 @@ var require$$2$4 = Object.freeze({
 	var factory$25 = sparse$1.factory;
 	var name$23 = sparse$1.name;
 
-var require$$0$15 = Object.freeze({
+var require$$0$14 = Object.freeze({
 	  default: sparse$2,
 	  factory: factory$25,
 	  name: name$23
 	});
 
-	var index$7 = createCommonjsModule(function (module) {
+	var index$6 = createCommonjsModule(function (module) {
 	  module.exports = [
 	  // types
 	  interopDefault(require$$1$3), interopDefault(require$$1$4), interopDefault(require$$8), interopDefault(require$$7$2), interopDefault(require$$6$3), interopDefault(require$$5$2), interopDefault(require$$4$3), interopDefault(require$$3$3),
 
 	  // construction functions
-	  interopDefault(require$$2$4), interopDefault(require$$6$1), interopDefault(require$$0$15)];
+	  interopDefault(require$$2$4), interopDefault(require$$6$1), interopDefault(require$$0$14)];
 	});
 
-	var matrices = interopDefault(index$7);
+	var matrices = interopDefault(index$6);
 
 	var math = core$1.create();
 	math.import(matrices);
@@ -24742,7 +27650,7 @@ var 	t1$1 = new Date();
 
 	var plasma = ramp(colors("0d088710078813078916078a19068c1b068d1d068e20068f2206902406912605912805922a05932c05942e05952f059631059733059735049837049938049a3a049a3c049b3e049c3f049c41049d43039e44039e46039f48039f4903a04b03a14c02a14e02a25002a25102a35302a35502a45601a45801a45901a55b01a55c01a65e01a66001a66100a76300a76400a76600a76700a86900a86a00a86c00a86e00a86f00a87100a87201a87401a87501a87701a87801a87a02a87b02a87d03a87e03a88004a88104a78305a78405a78606a68707a68808a68a09a58b0aa58d0ba58e0ca48f0da4910ea3920fa39410a29511a19613a19814a099159f9a169f9c179e9d189d9e199da01a9ca11b9ba21d9aa31e9aa51f99a62098a72197a82296aa2395ab2494ac2694ad2793ae2892b02991b12a90b22b8fb32c8eb42e8db52f8cb6308bb7318ab83289ba3388bb3488bc3587bd3786be3885bf3984c03a83c13b82c23c81c33d80c43e7fc5407ec6417dc7427cc8437bc9447aca457acb4679cc4778cc4977cd4a76ce4b75cf4c74d04d73d14e72d24f71d35171d45270d5536fd5546ed6556dd7566cd8576bd9586ada5a6ada5b69db5c68dc5d67dd5e66de5f65de6164df6263e06363e16462e26561e26660e3685fe4695ee56a5de56b5de66c5ce76e5be76f5ae87059e97158e97257ea7457eb7556eb7655ec7754ed7953ed7a52ee7b51ef7c51ef7e50f07f4ff0804ef1814df1834cf2844bf3854bf3874af48849f48948f58b47f58c46f68d45f68f44f79044f79143f79342f89441f89540f9973ff9983ef99a3efa9b3dfa9c3cfa9e3bfb9f3afba139fba238fca338fca537fca636fca835fca934fdab33fdac33fdae32fdaf31fdb130fdb22ffdb42ffdb52efeb72dfeb82cfeba2cfebb2bfebd2afebe2afec029fdc229fdc328fdc527fdc627fdc827fdca26fdcb26fccd25fcce25fcd025fcd225fbd324fbd524fbd724fad824fada24f9dc24f9dd25f8df25f8e125f7e225f7e425f6e626f6e826f5e926f5eb27f4ed27f3ee27f3f027f2f227f1f426f1f525f0f724f0f921"));
 
-	var index$12 = createCommonjsModule(function (module) {
+	var index$11 = createCommonjsModule(function (module) {
 	  'use strict';
 
 	  /** Calculator for finding widest and/or shortest paths in a graph using the Floyed-Warshall algorithm. */
@@ -24865,7 +27773,7 @@ var 	t1$1 = new Date();
 	  module.exports = FloydWarshall;
 	});
 
-	var FloydWarshall = interopDefault(index$12);
+	var FloydWarshall = interopDefault(index$11);
 
 	// import core from 'mathjs/core'
 	// import matrices from 'mathjs/lib/type/matrix'
