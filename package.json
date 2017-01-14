@@ -1,7 +1,7 @@
 {
-  "name": "riot-rollup-example",
-  "version": "1.0.0",
-  "description": "Riot with Rollup",
+  "name": "tangled-web-components",
+  "version": "0.0.1",
+  "description": "Graphs and other stuff with Web Components + d3.js",
   "private": true,
   "main": "dist/tangled-web-components.js",
   "jsnext:main": "src/main.js",
@@ -28,7 +28,7 @@
     "mathjs": "^3.5.3",
     "skatejs": "4.1.2",
     "skatejs-web-components": "^5.0.0",
-    "victor": "^1.1.0",
+    "victor": "^1.1.0"
   },
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.18.0",
