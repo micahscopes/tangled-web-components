@@ -28,7 +28,7 @@
     "mathjs": "^3.5.3",
     "skatejs": "4.1.2",
     "skatejs-web-components": "^5.0.0",
-    "victor": "^1.1.0"
+    "victor": "^1.1.0",
   },
   "devDependencies": {
     "babel-plugin-external-helpers": "^6.18.0",

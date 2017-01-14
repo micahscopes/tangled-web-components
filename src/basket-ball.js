@@ -1,8 +1,8 @@
 import { define, h } from 'skatejs';
 import {startDragging, stopDragging, draggableHostStyle} from './draggable.js';
 
-var puppyStyle = `
-  div {
+var style = `
+  ._basket-ball_inner {
     display: inline-block;
     background-image: url('basketball.png');
     background-position: center;
@@ -12,7 +12,7 @@ var puppyStyle = `
     width: 100%;
     height: 100%;
   }
-  puppy-dog {
+  basket-ball {
     display: inline-block;
     // position: relative;
     background-size: 100%;
@@ -42,7 +42,7 @@ define("basket-ball",{
       // stopDragging(elem);
     },
     render(elem){
-      return [h("div",""),h("style",puppyStyle)]
+      return [h("div",{class: '_basket-ball_inner'}),h("style",style)]
     },
     rendered(elem){
     }

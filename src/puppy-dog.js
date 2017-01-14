@@ -2,7 +2,7 @@ import { define, h } from 'skatejs';
 import {startDragging, stopDragging, draggableHostStyle} from './draggable.js';
 
 var puppyStyle = `
-  div {
+  ._puppy-dog_inner {
     display: inline-block;
     background-image: url(http://i.imgur.com/B2YwP9u.gif);
     background-position: center;
@@ -36,7 +36,7 @@ define("puppy-dog",{
       // stopDragging(elem);
     },
     render(elem){
-      return [h("div",""),h("style",puppyStyle)]
+      return [h("div",{ class: '_puppy-dog_inner' }),h("style",puppyStyle)]
     },
     rendered(elem){
     }
